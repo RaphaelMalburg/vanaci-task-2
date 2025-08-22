@@ -1,0 +1,184 @@
+{
+  "name": "farmacia-vanaci",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "625a0c49-7cb9-4b91-920f-aa12ed951292",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "webhookId": "pharmacy-chat"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Process incoming chat request\nconst userMessage = $input.first().json.message;\nconst chatHistory = $input.first().json.chatHistory || [];\n\n// Create system prompt for pharmacy assistant\nconst systemPrompt = `You are a helpful pharmacy assistant for \"My Pharmacy\". You should:\n\n1. Provide general information about medications, health conditions, and pharmacy services\n2. Answer questions about over-the-counter medications\n3. Explain medication usage, side effects, and interactions in simple terms\n4. Recommend when to consult a pharmacist or doctor\n5. Provide information about pharmacy hours, location, and services\n6. Be friendly, professional, and empathetic\n7. Always remind users to consult healthcare professionals for serious medical concerns\n\nIMPORTANT DISCLAIMERS:\n- You cannot diagnose medical conditions\n- You cannot prescribe medications\n- For prescription medications, users must consult with a licensed pharmacist\n- In emergencies, direct users to call emergency services\n\nPharmacy Information:\n- Name: My Pharmacy\n- Address: 123 Healthcare Avenue, Medical District\n- Phone: (555) 123-MEDS\n- Hours: Mon-Fri 8AM-9PM, Sat 9AM-7PM, Sun 10AM-6PM\n- Emergency Hotline: (555) 911-HELP (24/7)\n\nUser's message: \"${userMessage}\"\n\nPlease respond helpfully and professionally.`;\n\nreturn {\n  userMessage,\n  chatHistory,\n  systemPrompt\n};"
+      },
+      "id": "55e198fe-1799-4cef-bef2-27cdd0b212d6",
+      "name": "Process Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [368, 16]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "={{ $json.systemPrompt }}"
+        }
+      },
+      "id": "bb995adb-c3cf-4b1b-b8c1-d16d4025ef1f",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1,
+      "position": [640, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"response\": $json.output,\n  \"timestamp\": new Date().toISOString(),\n  \"status\": \"success\"\n}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "ac56af10-6288-4c7e-b3d0-27213c191ad9",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [960, 0]
+    },
+    {
+      "parameters": {
+        "content": "## My Pharmacy\n",
+        "height": 240,
+        "width": 304
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [-96, -64],
+      "typeVersion": 1,
+      "id": "54970ee2-f6b2-4ffa-9724-a2dcf697a79b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [576, 272],
+      "id": "8935f3ed-e4aa-491c-b198-1fe22e4c8339",
+      "name": "Mistral Cloud Chat Model",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "PjVYqWDPtQNmmEbN",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [736, 288],
+      "id": "2ad65594-8dd8-416b-bfa4-13577ab4d03c",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Process Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "df1deb28-b270-4f2d-b2be-d3387e9b8c8d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ba7c85f7f3161f9599fb286b1fe95ab6ddf63d5b47930f2089ebc19745ae2a0a"
+  },
+  "id": "QEzLPZXjtg9R4DiO",
+  "tags": [
+    {
+      "createdAt": "2025-08-22T13:41:01.224Z",
+      "updatedAt": "2025-08-22T13:41:01.224Z",
+      "id": "hL4XWRrVu3VdxAHV",
+      "name": "pharmacy"
+    }
+  ]
+}
