@@ -3,9 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// Removed unused Card imports
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MessageCircle, Send, X } from "lucide-react";
+import { MessageCircle, Send } from "lucide-react";
 
 interface Message {
   id: string;
@@ -120,11 +120,11 @@ export function Chat() {
           </Button>
         </DialogTrigger>
         
-        <DialogContent className="sm:max-w-md h-[600px] flex flex-col p-0">
-          <DialogHeader className="p-4 border-b">
-            <DialogTitle className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-blue-600" />
-              Pharmacy Assistant
+        <DialogContent className="sm:max-w-md h-[600px] flex flex-col p-0 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 transition-colors duration-300">
+          <DialogHeader className="p-4 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
+            <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-white transition-colors duration-300">
+              <MessageCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 transition-colors duration-300" />
+              Assistente da Farmácia
             </DialogTitle>
           </DialogHeader>
           
@@ -136,15 +136,15 @@ export function Chat() {
                 className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                  className={`max-w-[80%] rounded-lg px-3 py-2 transition-colors duration-300 ${
                     message.isUser
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
+                      ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                   }`}
                 >
                   <p className="text-sm">{message.text}</p>
-                  <p className={`text-xs mt-1 ${
-                    message.isUser ? 'text-blue-100' : 'text-gray-500'
+                  <p className={`text-xs mt-1 transition-colors duration-300 ${
+                    message.isUser ? 'text-blue-100 dark:text-blue-200' : 'text-gray-500 dark:text-gray-400'
                   }`}>
                     {message.timestamp.toLocaleTimeString([], { 
                       hour: '2-digit', 
@@ -157,11 +157,11 @@ export function Chat() {
             
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-lg px-3 py-2">
+                <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2 transition-colors duration-300">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce transition-colors duration-300"></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce transition-colors duration-300" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce transition-colors duration-300" style={{animationDelay: '0.2s'}}></div>
                   </div>
                 </div>
               </div>
@@ -171,15 +171,15 @@ export function Chat() {
           </div>
           
           {/* Input Area */}
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-gray-200 dark:border-gray-700 transition-colors duration-300">
             <div className="flex space-x-2">
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
+                placeholder="Digite sua mensagem..."
                 disabled={isLoading}
-                className="flex-1"
+                className="flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 transition-colors duration-300"
               />
               <Button 
                 onClick={sendMessage} 
@@ -189,8 +189,8 @@ export function Chat() {
                 <Send className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-xs text-gray-500 mt-2">
-              This chat is powered by AI. For urgent medical needs, please call (555) 123-MEDS.
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 transition-colors duration-300">
+              Este chat é alimentado por IA. Para necessidades médicas urgentes, ligue (11) 9999-8888.
             </p>
           </div>
         </DialogContent>
