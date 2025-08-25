@@ -1,173 +1,80 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BreadcrumbsContainer } from "@/components/breadcrumbs";
-import { ShoppingCart, Search, Filter, Plus, Minus } from "lucide-react";
+import { ShoppingCart, Search, Filter, Plus, Minus, Loader2 } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
+import { Cart } from "@/components/Cart";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
-  description: string;
+  description: string | null;
   price: number;
-  originalPrice?: number;
   category: string;
-  inStock: boolean;
-  rating: number;
-  reviews: number;
-  isPromotion?: boolean;
+  stock: number;
+  prescription: boolean;
+  manufacturer: string | null;
+  imagePath: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Paracetamol 500mg",
-    description: "Analgésico e antitérmico para alívio da dor e febre",
-    price: 8.90,
-    category: "Analgésicos",
-    inStock: true,
-    rating: 4.8,
-    reviews: 245
-  },
-  {
-    id: 2,
-    name: "Ibuprofeno 400mg",
-    description: "Anti-inflamatório para dores e inflamações",
-    price: 12.50,
-    category: "Anti-inflamatórios",
-    inStock: true,
-    rating: 4.6,
-    reviews: 189
-  },
-  {
-    id: 3,
-    name: "Vitamina D3 1000 UI",
-    description: "Vitamina essencial para saúde óssea e imunidade",
-    price: 15.99,
-    originalPrice: 19.99,
-    category: "Vitaminas",
-    inStock: true,
-    rating: 4.9,
-    reviews: 312,
-    isPromotion: true
-  },
-  {
-    id: 4,
-    name: "Ômega-3 1000mg",
-    description: "Suplemento para saúde cardiovascular e cerebral",
-    price: 24.99,
-    category: "Suplementos",
-    inStock: false,
-    rating: 4.7,
-    reviews: 156
-  },
-  {
-    id: 5,
-    name: "Xarope para Tosse",
-    description: "Alívio para tosse seca e produtiva",
-    price: 9.75,
-    category: "Gripe e Resfriado",
-    inStock: true,
-    rating: 4.4,
-    reviews: 98
-  },
-  {
-    id: 6,
-    name: "Complexo Multivitamínico",
-    description: "Suplemento vitamínico completo para uso diário",
-    price: 18.99,
-    category: "Vitaminas",
-    inStock: true,
-    rating: 4.5,
-    reviews: 203
-  },
-  {
-    id: 7,
-    name: "Antiácido Mastigável",
-    description: "Alívio rápido para azia e má digestão",
-    price: 6.50,
-    originalPrice: 8.50,
-    category: "Digestivos",
-    inStock: true,
-    rating: 4.3,
-    reviews: 87,
-    isPromotion: true
-  },
-  {
-    id: 8,
-    name: "Antialérgico 24h",
-    description: "Antialérgico de longa duração sem sonolência",
-    price: 14.25,
-    category: "Antialérgicos",
-    inStock: true,
-    rating: 4.6,
-    reviews: 134
-  },
-  {
-    id: 9,
-    name: "Probióticos",
-    description: "Suporte para sistema digestivo e imunológico",
-    price: 29.99,
-    category: "Digestivos",
-    inStock: false,
-    rating: 4.8,
-    reviews: 167
-  },
-  {
-    id: 10,
-    name: "Vitamina C 1000mg",
-    description: "Vitamina C efervescente para imunidade",
-    price: 13.90,
-    category: "Vitaminas",
-    inStock: true,
-    rating: 4.7,
-    reviews: 278
-  },
-  {
-    id: 11,
-    name: "Dipirona 500mg",
-    description: "Analgésico e antitérmico de ação rápida",
-    price: 6.75,
-    category: "Analgésicos",
-    inStock: true,
-    rating: 4.5,
-    reviews: 198
-  },
-  {
-    id: 12,
-    name: "Protetor Solar FPS 60",
-    description: "Proteção solar avançada para pele sensível",
-    price: 32.90,
-    originalPrice: 39.90,
-    category: "Dermatológicos",
-    inStock: true,
-    rating: 4.9,
-    reviews: 89,
-    isPromotion: true
-  }
-];
+// Produtos serão carregados do banco de dados
 
-const categories = ["Todos", "Analgésicos", "Anti-inflamatórios", "Vitaminas", "Suplementos", "Gripe e Resfriado", "Digestivos", "Antialérgicos", "Dermatológicos"];
-
-type SortOption = "name" | "price-low" | "price-high" | "rating";
+type SortOption = "name" | "price-low" | "price-high" | "category";
 
 export default function Products() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { addToCart, getItemCount, cart } = useCart();
+
+  // Fetch produtos do banco de dados
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/products');
+        if (!response.ok) {
+          throw new Error('Erro ao carregar produtos');
+        }
+        const data = await response.json();
+        setProducts(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Erro desconhecido');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchProducts();
+  }, []);
+
+  // Extrair categorias únicas dos produtos
+  const categories = useMemo(() => {
+    const uniqueCategories = [...new Set(products.map(p => p.category))];
+    return ['Todos', ...uniqueCategories.sort()];
+  }, [products]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [sortBy, setSortBy] = useState<SortOption>("name");
   const [showOnlyInStock, setShowOnlyInStock] = useState(false);
-  const [cart, setCart] = useState<{[key: number]: number}>({});
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const filteredAndSortedProducts = useMemo(() => {
     const filtered = products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.description.toLowerCase().includes(searchTerm.toLowerCase());
+                           (product.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
       const matchesCategory = selectedCategory === "Todos" || product.category === selectedCategory;
-      const matchesStock = !showOnlyInStock || product.inStock;
+      const matchesStock = !showOnlyInStock || product.stock > 0;
       
       return matchesSearch && matchesCategory && matchesStock;
     });
@@ -178,8 +85,8 @@ export default function Products() {
           return a.price - b.price;
         case "price-high":
           return b.price - a.price;
-        case "rating":
-          return b.rating - a.rating;
+        case "category":
+          return a.category.localeCompare(b.category);
         case "name":
         default:
           return a.name.localeCompare(b.name);
@@ -187,14 +94,70 @@ export default function Products() {
     });
 
     return filtered;
-  }, [searchTerm, selectedCategory, sortBy, showOnlyInStock]);
+  }, [products, searchTerm, selectedCategory, sortBy, showOnlyInStock]);
 
-  const addToCart = (productId: number) => {
-    setCart(prev => ({
-      ...prev,
-      [productId]: (prev[productId] || 0) + 1
-    }));
+  const handleAddToCart = (product: Product, event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    if (product.stock <= 0) {
+      toast.error('Produto fora de estoque');
+      return;
+    }
+
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      imagePath: product.imagePath,
+      category: product.category
+    });
+
+    toast.success(`${product.name} adicionado ao carrinho!`);
   };
+
+  // Agrupar produtos por categoria
+  const productsByCategory = useMemo(() => {
+    const grouped: { [key: string]: Product[] } = {};
+    
+    filteredAndSortedProducts.forEach(product => {
+      if (!grouped[product.category]) {
+        grouped[product.category] = [];
+      }
+      grouped[product.category].push(product);
+    });
+    
+    return grouped;
+  }, [filteredAndSortedProducts]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Carregando produtos...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center text-red-600">
+          <p>Erro ao carregar produtos: {error}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+          >
+            Tentar novamente
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const removeFromCart = (productId: number) => {
     setCart(prev => {
@@ -208,16 +171,7 @@ export default function Products() {
     });
   };
 
-  const getTotalItems = () => {
-    return Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
-  };
 
-  const getTotalPrice = () => {
-    return Object.entries(cart).reduce((sum, [productId, quantity]) => {
-      const product = products.find(p => p.id === parseInt(productId));
-      return sum + (product ? product.price * quantity : 0);
-    }, 0);
-  };
 
   const renderStars = (rating: number) => {
     return "★".repeat(Math.floor(rating)) + "☆".repeat(5 - Math.floor(rating));
@@ -229,26 +183,44 @@ export default function Products() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 fade-in">
         {/* Header */}
         <div className="text-center mb-12 slide-up">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 transition-colors duration-300">
-            Nossos Produtos
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 transition-colors duration-300">
-            Produtos de qualidade para sua saúde e bem-estar
-          </p>
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-8">
+            <div className="flex-1">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 transition-colors duration-300">
+                Nossos Produtos
+              </h1>
+              <p className="text-xl text-gray-600 dark:text-gray-300 transition-colors duration-300">
+                Produtos de qualidade para sua saúde e bem-estar
+              </p>
+            </div>
+            
+            <Button
+              onClick={() => setIsCartOpen(true)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Carrinho ({getItemCount()})
+              {getItemCount() > 0 && (
+                <Badge variant="destructive" className="ml-1">
+                  {getItemCount()}
+                </Badge>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Cart Summary */}
-        {getTotalItems() > 0 && (
+        {getItemCount() > 0 && (
           <div className="mb-8 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-4 transition-colors duration-300 scale-in">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400" />
                 <span className="font-medium text-green-800 dark:text-green-100 transition-colors duration-300">
-                  {getTotalItems()} {getTotalItems() === 1 ? 'item' : 'itens'} no carrinho
+                  {getItemCount()} {getItemCount() === 1 ? 'item' : 'itens'} no carrinho
                 </span>
               </div>
               <div className="text-green-800 dark:text-green-100 font-bold transition-colors duration-300">
-                Total: R$ {getTotalPrice().toFixed(2)}
+                Total: R$ {cart.total.toFixed(2)}
               </div>
             </div>
           </div>
@@ -319,106 +291,187 @@ export default function Products() {
           </p>
         </div>
 
-        {/* Products Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredAndSortedProducts.map((product) => {
-            const cartQuantity = cart[product.id] || 0;
-            
-            return (
-              <Card key={product.id} className="h-full flex flex-col hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <CardTitle className="text-lg leading-tight">{product.name}</CardTitle>
-                      <Badge variant="outline" className="text-xs mt-1">
-                        {product.category}
-                      </Badge>
-                    </div>
-                    {product.isPromotion && (
-                      <Badge variant="destructive" className="text-xs">
-                        Promoção
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-1 text-sm">
-                    <span className="text-yellow-500">{renderStars(product.rating)}</span>
-                    <span className="text-gray-500">({product.reviews})</span>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="flex-1 flex flex-col">
-                  <CardDescription className="mb-4 flex-1 text-sm">
-                    {product.description}
-                  </CardDescription>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      {product.originalPrice && (
-                        <span className="text-sm text-gray-500 line-through">
-                          R$ {product.originalPrice.toFixed(2)}
-                        </span>
-                      )}
-                      <span className="text-xl font-bold text-green-600">
-                        R$ {product.price.toFixed(2)}
-                      </span>
-                    </div>
+        {/* Produtos organizados por categoria */}
+        {selectedCategory === 'Todos' ? (
+          <div className="space-y-8">
+            {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
+              <div key={category}>
+                <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">{category}</h2>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {categoryProducts.map((product) => {
+                    const cartQuantity = getItemCount(product.id);
                     
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm font-medium ${
-                        product.inStock ? "text-green-600" : "text-red-600"
-                      }`}>
-                        {product.inStock ? "Em estoque" : "Fora de estoque"}
-                      </span>
-                    </div>
-                    
-                    {product.inStock ? (
-                      cartQuantity > 0 ? (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                    return (
+                      <Card key={product.id} className="h-full flex flex-col hover:shadow-lg transition-shadow">
+                        <CardHeader>
+                          <div className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
+                            {product.imagePath ? (
+                              <Image
+                                src={product.imagePath}
+                                alt={product.name}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                <span>Sem imagem</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1">
+                              <CardTitle className="text-lg leading-tight">{product.name}</CardTitle>
+                              <Badge variant="outline" className="text-xs mt-1">
+                                {product.category}
+                              </Badge>
+                            </div>
+                            {product.prescription && (
+                              <Badge variant="destructive" className="text-xs">
+                                Receita
+                              </Badge>
+                            )}
+                          </div>
+                        </CardHeader>
+                        
+                        <CardContent className="flex-1 flex flex-col">
+                          <CardDescription className="mb-4 flex-1 text-sm">
+                            {product.description}
+                          </CardDescription>
+                          
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl font-bold text-green-600">
+                                R$ {product.price.toFixed(2)}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className={`text-sm font-medium ${
+                                product.stock > 0 ? "text-green-600" : "text-red-600"
+                              }`}>
+                                {product.stock > 0 ? `Em estoque (${product.stock})` : "Fora de estoque"}
+                              </span>
+                            </div>
+                            
+                            {product.stock > 0 ? (
+                              cartQuantity > 0 ? (
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium">{cartQuantity} no carrinho</span>
+                                  </div>
+                                  <span className="text-sm text-gray-600">
+                                    R$ {(product.price * cartQuantity).toFixed(2)}
+                                  </span>
+                                </div>
+                              ) : null
+                            ) : null}
+                            
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() => removeFromCart(product.id)}
-                              className="h-8 w-8 p-0"
+                              onClick={(e) => handleAddToCart(product, e)}
+                              disabled={product.stock <= 0}
+                              className="w-full"
                             >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <span className="font-medium">{cartQuantity}</span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => addToCart(product.id)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Plus className="h-4 w-4" />
+                              <ShoppingCart className="h-4 w-4 mr-2" />
+                              {product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
                             </Button>
                           </div>
-                          <span className="text-sm text-gray-600">
-                            R$ {(product.price * cartQuantity).toFixed(2)}
-                          </span>
-                        </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredAndSortedProducts.map((product) => {
+              const cartQuantity = getItemCount(product.id);
+              
+              return (
+                <Card key={product.id} className="h-full flex flex-col hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
+                      {product.imagePath ? (
+                        <Image
+                          src={product.imagePath}
+                          alt={product.name}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                        />
                       ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => addToCart(product.id)}
-                          className="w-full"
-                        >
-                          <ShoppingCart className="h-4 w-4 mr-2" />
-                          Adicionar
-                        </Button>
-                      )
-                    ) : (
-                      <Button size="sm" disabled className="w-full">
-                        Indisponível
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <span>Sem imagem</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <CardTitle className="text-lg leading-tight">{product.name}</CardTitle>
+                        <Badge variant="outline" className="text-xs mt-1">
+                          {product.category}
+                        </Badge>
+                      </div>
+                      {product.prescription && (
+                        <Badge variant="destructive" className="text-xs">
+                          Receita
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="flex-1 flex flex-col">
+                    <CardDescription className="mb-4 flex-1 text-sm">
+                      {product.description}
+                    </CardDescription>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl font-bold text-green-600">
+                          R$ {product.price.toFixed(2)}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${
+                          product.stock > 0 ? "text-green-600" : "text-red-600"
+                        }`}>
+                          {product.stock > 0 ? `Em estoque (${product.stock})` : "Fora de estoque"}
+                        </span>
+                      </div>
+                      
+                      {product.stock > 0 ? (
+                        cartQuantity > 0 ? (
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{cartQuantity} no carrinho</span>
+                            </div>
+                            <span className="text-sm text-gray-600">
+                              R$ {(product.price * cartQuantity).toFixed(2)}
+                            </span>
+                          </div>
+                        ) : null
+                      ) : null}
+                      
+                      <Button
+                        size="sm"
+                        onClick={(e) => handleAddToCart(product, e)}
+                        disabled={product.stock <= 0}
+                        className="w-full"
+                      >
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        {product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
                       </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
 
         {/* No Results */}
         {filteredAndSortedProducts.length === 0 && (
@@ -450,6 +503,13 @@ export default function Products() {
           </p>
         </div>
       </div>
+      
+      {/* Cart Component */}
+      <Cart 
+        products={products} 
+        isOpen={isCartOpen} 
+        onClose={() => setIsCartOpen(false)} 
+      />
     </div>
   );
 }
