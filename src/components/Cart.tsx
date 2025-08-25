@@ -15,13 +15,13 @@ interface Product {
   name: string;
   price: number;
   category: string;
-  description?: string;
-  imagePath?: string;
+  description: string | null;
+  imagePath: string | null;
   stock: number;
   prescription: boolean;
-  manufacturer: string;
-  createdAt: Date;
-  updatedAt: Date;
+  manufacturer: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface CartProps {
@@ -84,8 +84,8 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
-      <div className="bg-white dark:bg-gray-900 w-full max-w-md h-full overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="bg-white dark:bg-gray-900 w-full max-w-md h-full overflow-y-auto shadow-2xl border-l">
         <Card className="h-full rounded-none border-0">
           <CardHeader className="sticky top-0 bg-white dark:bg-gray-900 z-10 border-b">
             <div className="flex items-center justify-between">

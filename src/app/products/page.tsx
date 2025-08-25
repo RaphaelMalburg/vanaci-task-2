@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BreadcrumbsContainer } from "@/components/breadcrumbs";
-import { ShoppingCart, Search, Filter, Plus, Minus, Loader2 } from "lucide-react";
+import { ShoppingCart, Search, Filter, Loader2 } from "lucide-react";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { Cart } from "@/components/Cart";
@@ -111,7 +111,7 @@ export default function Products() {
       id: product.id,
       name: product.name,
       price: product.price,
-      imagePath: product.imagePath,
+      imagePath: product.imagePath || undefined,
       category: product.category
     });
 
@@ -159,23 +159,11 @@ export default function Products() {
     );
   }
 
-  const removeFromCart = (productId: number) => {
-    setCart(prev => {
-      const newCart = { ...prev };
-      if (newCart[productId] > 1) {
-        newCart[productId]--;
-      } else {
-        delete newCart[productId];
-      }
-      return newCart;
-    });
-  };
 
 
 
-  const renderStars = (rating: number) => {
-    return "★".repeat(Math.floor(rating)) + "☆".repeat(5 - Math.floor(rating));
-  };
+
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 py-12">
@@ -201,7 +189,7 @@ export default function Products() {
               <ShoppingCart className="h-4 w-4" />
               Carrinho ({getItemCount()})
               {getItemCount() > 0 && (
-                <Badge variant="destructive" className="ml-1">
+                <Badge variant="secondary" className="ml-1">
                   {getItemCount()}
                 </Badge>
               )}

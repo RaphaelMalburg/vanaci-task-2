@@ -136,7 +136,11 @@ export function useCart() {
     })
   }
 
-  const getItemCount = () => {
+  const getItemCount = (productId?: string) => {
+    if (productId) {
+      const item = cart.items.find(item => item.id === productId)
+      return item ? item.quantity : 0
+    }
     return cart.items.reduce((sum, item) => sum + item.quantity, 0)
   }
 

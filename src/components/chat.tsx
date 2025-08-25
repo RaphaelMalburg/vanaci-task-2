@@ -50,6 +50,14 @@ export function Chat() {
     scrollToBottom();
   }, [messages]);
 
+  const [sessionId, setSessionId] = useState<string>('');
+
+  // Generate session ID on component mount
+  useEffect(() => {
+    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    setSessionId(newSessionId);
+  }, []);
+
   const sendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
@@ -65,19 +73,32 @@ export function Chat() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('https://primary-production-8189a.up.railway.app/webhook/chat', {
+      // Prepare chat history for n8n (last 10 messages)
+      const chatHistory = messages.slice(-10).map(msg => ({
+        role: msg.isUser ? 'user' : 'assistant',
+        content: msg.text
+      }));
+
+      const response = await fetch(process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/pharmacy-chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message: inputValue,
-          chatHistory: messages.slice(-9)
+          sessionId: sessionId,
+          chatHistory: chatHistory
         })
       });
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Update session ID if provided
+        if (data.sessionId && data.sessionId !== sessionId) {
+          setSessionId(data.sessionId);
+        }
+        
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
           text: data.response || "Desculpe, não consegui processar sua solicitação no momento.",
@@ -92,7 +113,7 @@ export function Chat() {
       console.error('Erro ao enviar mensagem:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Desculpe, ocorreu um erro. Tente novamente mais tarde.",
+        text: "Desculpe, ocorreu um erro ao conectar com o assistente n8n. Verifique se o serviço está disponível.",
         isUser: false,
         timestamp: new Date()
       };
@@ -126,9 +147,14 @@ export function Chat() {
       }`}>
         {/* Header */}
         <div className="border-b dark:border-gray-700 p-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white transition-colors duration-300">
-            Assistente Virtual da Farmácia
-          </h2>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white transition-colors duration-300">
+              Assistente Virtual da Farmácia
+            </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Powered by n8n + Mistral AI • Sessão: {sessionId.slice(-8)}
+            </p>
+          </div>
           <Button
             onClick={() => setIsChatOpen(false)}
             variant="ghost"
@@ -225,9 +251,14 @@ export function Chat() {
           </div>
           
           {/* Disclaimer */}
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center leading-relaxed transition-colors duration-300">
-            Este assistente fornece informações gerais. Consulte sempre um farmacêutico para orientações específicas.
-          </p>
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed transition-colors duration-300">
+              Este assistente fornece informações gerais. Consulte sempre um farmacêutico para orientações específicas.
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              🤖 Conectado ao n8n workflow • Experimente: &quot;Busque dipirona&quot; ou &quot;Adicione ao carrinho&quot;
+            </p>
+          </div>
         </div>
       </div>
     </>
