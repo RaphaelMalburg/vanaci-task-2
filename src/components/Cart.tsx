@@ -75,6 +75,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
       clearCart();
       onClose();
     } catch (error) {
+      console.error('Checkout error:', error);
       toast.error('Erro ao processar pedido. Tente novamente.');
     } finally {
       setIsCheckingOut(false);
