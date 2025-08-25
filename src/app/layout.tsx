@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "My Pharmacy - Your Trusted Healthcare Partner",
-  description: "A modern pharmacy providing quality healthcare products and services to our community.",
+  title: "Farmácia Vanaci - Seu Parceiro de Confiança em Saúde",
+  description: "Uma farmácia moderna oferecendo produtos e serviços de saúde de qualidade para nossa comunidade.",
 };
 
 export default function RootLayout({

@@ -244,7 +244,7 @@ export default function Products() {
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400" />
                 <span className="font-medium text-green-800 dark:text-green-100 transition-colors duration-300">
-                  {getTotalItems()} item(s) no carrinho
+                  {getTotalItems()} {getTotalItems() === 1 ? 'item' : 'itens'} no carrinho
                 </span>
               </div>
               <div className="text-green-800 dark:text-green-100 font-bold transition-colors duration-300">

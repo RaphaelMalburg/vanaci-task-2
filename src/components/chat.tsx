@@ -3,9 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-// Removed unused Card imports
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MessageCircle, Send } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { MessageCircle, Send, Bot, User } from "lucide-react";
 
 interface Message {
   id: string;
@@ -15,15 +14,12 @@ interface Message {
 }
 
 export function Chat() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Hello! I'm your pharmacy assistant. How can I help you today?",
-      isUser: false,
-      timestamp: new Date()
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([{
+    id: "1",
+    text: "Olá! Sou seu assistente virtual da farmácia. Como posso ajudá-lo hoje?",
+    isUser: false,
+    timestamp: new Date()
+  }]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -46,13 +42,11 @@ export function Chat() {
       timestamp: new Date()
     };
 
-    // Add user message
     setMessages(prev => [...prev, userMessage]);
     setInputValue("");
     setIsLoading(true);
 
     try {
-      // Send to n8n webhook
       const response = await fetch('https://primary-production-8189a.up.railway.app/webhook/chat', {
         method: 'POST',
         headers: {
@@ -60,7 +54,7 @@ export function Chat() {
         },
         body: JSON.stringify({
           message: inputValue,
-          chatHistory: messages.slice(-9) // Send last 9 messages for context (keeping 10 total with new message)
+          chatHistory: messages.slice(-9)
         })
       });
 
@@ -68,33 +62,23 @@ export function Chat() {
         const data = await response.json();
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: data.response || "I'm sorry, I couldn't process your request right now.",
+          text: data.response || "Desculpe, não consegui processar sua solicitação no momento.",
           isUser: false,
           timestamp: new Date()
         };
-        
-        setMessages(prev => {
-          const newMessages = [...prev, botMessage];
-          // Keep only last 10 messages
-          return newMessages.slice(-10);
-        });
+        setMessages(prev => [...prev, botMessage]);
       } else {
-        throw new Error('Failed to get response');
+        throw new Error('Falha na resposta do servidor');
       }
     } catch (error) {
-      console.error('Chat error:', error);
-      // Fallback response for demo purposes
-      const botMessage: Message = {
+      console.error('Erro ao enviar mensagem:', error);
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm currently experiencing some technical difficulties. Please try again later or contact our pharmacy directly at (555) 123-MEDS for immediate assistance.",
+        text: "Desculpe, ocorreu um erro. Tente novamente mais tarde.",
         isUser: false,
         timestamp: new Date()
       };
-      
-      setMessages(prev => {
-        const newMessages = [...prev, botMessage];
-        return newMessages.slice(-10);
-      });
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -109,59 +93,80 @@ export function Chat() {
 
   return (
     <>
-      {/* Floating Chat Button */}
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
+      <Sheet>
+        <SheetTrigger asChild>
           <Button
-            className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-50"
+            className="fixed bottom-4 right-4 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 shadow-lg transition-all duration-300 ease-in-out z-50"
             size="icon"
           >
-            <MessageCircle className="h-6 w-6" />
+            <MessageCircle className="h-6 w-6 text-white" />
           </Button>
-        </DialogTrigger>
+        </SheetTrigger>
         
-        <DialogContent className="sm:max-w-md h-[600px] flex flex-col p-0 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 transition-colors duration-300">
-          <DialogHeader className="p-4 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
-            <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-white transition-colors duration-300">
-              <MessageCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 transition-colors duration-300" />
-              Assistente da Farmácia
-            </DialogTitle>
-          </DialogHeader>
+        <SheetContent side="right" className="w-[400px] sm:w-[500px] h-full flex flex-col bg-white dark:bg-gray-900 border-l dark:border-gray-700 transition-colors duration-300">
+          <SheetHeader className="border-b dark:border-gray-700 pb-4">
+            <SheetTitle className="text-gray-900 dark:text-white transition-colors duration-300">
+              Assistente Virtual da Farmácia
+            </SheetTitle>
+          </SheetHeader>
           
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-lg px-3 py-2 transition-colors duration-300 ${
-                    message.isUser
-                      ? 'bg-blue-600 dark:bg-blue-500 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                  }`}
-                >
-                  <p className="text-sm">{message.text}</p>
-                  <p className={`text-xs mt-1 transition-colors duration-300 ${
-                    message.isUser ? 'text-blue-100 dark:text-blue-200' : 'text-gray-500 dark:text-gray-400'
-                  }`}>
-                    {message.timestamp.toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </p>
-                </div>
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+            {messages.length === 0 ? (
+              <div className="text-center text-gray-500 dark:text-gray-400 mt-12 transition-colors duration-300">
+                <Bot className="h-16 w-16 mx-auto mb-6 text-blue-600 dark:text-blue-400 transition-colors duration-300" />
+                <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Assistente Virtual</h3>
+                <p className="mb-2">Olá! Como posso ajudá-lo hoje?</p>
+                <p className="text-sm">Pergunte sobre medicamentos, horários ou serviços da farmácia.</p>
               </div>
-            ))}
+            ) : (
+              messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-lg p-4 transition-colors duration-300 ${
+                      message.isUser
+                        ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                        : 'bg-white text-gray-900 dark:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      {!message.isUser && (
+                        <Bot className="h-5 w-5 mt-0.5 text-blue-600 dark:text-blue-400 flex-shrink-0 transition-colors duration-300" />
+                      )}
+                      {message.isUser && (
+                        <User className="h-5 w-5 mt-0.5 text-white flex-shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm leading-relaxed">{message.text}</p>
+                        <p className={`text-xs mt-1 transition-colors duration-300 ${
+                          message.isUser ? 'text-blue-100 dark:text-blue-200' : 'text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {message.timestamp.toLocaleTimeString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
             
+            {/* Loading indicator */}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-2 transition-colors duration-300">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce transition-colors duration-300"></div>
-                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce transition-colors duration-300" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce transition-colors duration-300" style={{animationDelay: '0.2s'}}></div>
+                <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm transition-colors duration-300">
+                  <div className="flex items-center gap-3">
+                    <Bot className="h-5 w-5 text-blue-600 dark:text-blue-400 transition-colors duration-300" />
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce transition-colors duration-300"></div>
+                      <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce transition-colors duration-300" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce transition-colors duration-300" style={{animationDelay: '0.2s'}}></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -171,30 +176,34 @@ export function Chat() {
           </div>
           
           {/* Input Area */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700 transition-colors duration-300">
-            <div className="flex space-x-2">
+          <div className="border-t dark:border-gray-700 p-6 bg-white dark:bg-gray-800 transition-colors duration-300">
+            <div className="flex gap-3">
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
                 placeholder="Digite sua mensagem..."
+                onKeyPress={handleKeyPress}
                 disabled={isLoading}
-                className="flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 transition-colors duration-300"
+                className="flex-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300 h-12"
               />
-              <Button 
-                onClick={sendMessage} 
-                disabled={!inputValue.trim() || isLoading}
-                size="icon"
+              <Button
+                onClick={sendMessage}
+                disabled={isLoading || !inputValue.trim()}
+                className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white transition-colors duration-300 h-12 px-4"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-5 w-5" />
               </Button>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 transition-colors duration-300">
-              Este chat é alimentado por IA. Para necessidades médicas urgentes, ligue (11) 9999-8888.
+            
+            {/* Disclaimer */}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center leading-relaxed transition-colors duration-300">
+              Este assistente fornece informações gerais. Consulte sempre um farmacêutico para orientações específicas.
             </p>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
+
+export default Chat;

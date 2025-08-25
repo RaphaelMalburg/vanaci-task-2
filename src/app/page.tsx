@@ -11,14 +11,14 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center fade-in">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Welcome to My Pharmacy
+              Bem-vindo à Farmácia Vanaci
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100">
-              Your trusted healthcare partner providing quality medicines and professional care
+              Seu parceiro de confiança em saúde, oferecendo medicamentos de qualidade e cuidado profissional
             </p>
             <Link href="/products">
               <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
-                View Our Products
+                Ver Nossos Produtos
               </Button>
             </Link>
           </div>
