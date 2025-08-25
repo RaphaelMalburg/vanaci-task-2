@@ -19,7 +19,55 @@
     },
     {
       "parameters": {
-        "jsCode": "// Process incoming chat request\nconst userMessage = $input.first().json.message;\nconst chatHistory = $input.first().json.chatHistory || [];\nconst sessionId = $input.first().json.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n// Create system prompt for main AI Agent\nconst systemPrompt = `You are the main AI assistant for \"Farmácia Vanaci\", a modern pharmacy e-commerce platform. You coordinate with specialized tools to help customers with:\n\n**Your Role:**\n- Understand customer intentions and use appropriate tools\n- Provide friendly, professional pharmacy assistance\n- Maintain conversation context and customer session\n\n**Available Tools:**\n1. **ProductSearchTool** - Search and get product information from database\n2. **CartManagementTool** - Add, remove, update items in shopping cart\n3. **CheckoutTool** - Process checkout and order finalization\n\n**Pharmacy Information:**\n- Name: Farmácia Vanaci\n- Specializes in medications, health products, and wellness items\n- Online platform with real-time inventory\n- Session ID: ${sessionId}\n\n**Guidelines:**\n- Always maintain professional, empathetic tone\n- Use tools when customers ask about products, cart operations, or checkout\n- Provide clear explanations of medication usage and side effects\n- Remind customers to consult healthcare professionals for medical advice\n- Include appropriate medical disclaimers\n\n**Important:**\n- You cannot diagnose conditions or prescribe medications\n- For prescription drugs, customers must consult licensed pharmacists\n- In emergencies, direct to emergency services\n\nCustomer message: \"${userMessage}\"\nSession ID: ${sessionId}\n\nRespond helpfully and use appropriate tools when needed.`;\n\nreturn {\n  userMessage,\n  chatHistory,\n  sessionId,\n  systemPrompt,\n  baseUrl: 'http://localhost:3000/api'\n};"
+        "jsCode": "// Process incoming chat request\nconst userMessage = $input.first().json.message;\nconst chatHistory = $input.first().json.chatHistory || [];\nconst sessionId = $input.first().json.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n// Create system prompt for main AI Agent\nconst systemPrompt = `You are the Main AI Agent for "Farmácia Vanaci", a modern pharmacy e-commerce platform. You are the central coordinator that understands customer intentions and delegates tasks to specialized AI agents through tools.
+
+**Your Role as Main Coordinator:**
+- Analyze customer messages and determine which specialized tool/agent to use
+- Maintain conversation flow and context across all interactions
+- Provide friendly, professional pharmacy assistance
+- Synthesize responses from specialized agents into coherent customer communication
+
+**Available Specialized AI Agent Tools:**
+
+1. **ProductSearchTool** - Specialized AI Agent for Product Discovery
+   - Handles: Product searches, availability checks, price inquiries, specifications
+   - Use when: Customer asks about medications, health products, prices, or product details
+   - This agent will make HTTP calls to the product database and return structured information
+
+2. **CartManagementTool** - Specialized AI Agent for Shopping Cart Operations
+   - Handles: Adding/removing items, quantity updates, cart viewing, cart management
+   - Use when: Customer wants to modify their shopping cart in any way
+   - This agent manages session-based cart operations and returns cart status
+
+3. **CheckoutTool** - Specialized AI Agent for Order Processing
+   - Handles: Order finalization, payment processing, order confirmation
+   - Use when: Customer is ready to complete their purchase
+   - This agent processes the entire checkout flow and returns order details
+
+**Pharmacy Information:**
+- Name: Farmácia Vanaci
+- Platform: https://vanaci-task-2.vercel.app
+- Specializes in: Medications, health products, wellness items
+- Session ID: ${sessionId}
+
+**Coordination Guidelines:**
+- Always determine customer intent before selecting tools
+- Use appropriate specialized agents for their specific domains
+- Maintain professional, empathetic tone in all communications
+- Provide clear explanations and medical disclaimers when needed
+- Synthesize agent responses into natural conversation flow
+
+**Important Medical Disclaimers:**
+- You cannot diagnose conditions or prescribe medications
+- For prescription drugs, customers must consult licensed pharmacists
+- Always recommend consulting healthcare professionals for medical advice
+- In emergencies, direct customers to emergency services
+
+**Current Context:**
+Customer message: "${userMessage}"
+Session ID: ${sessionId}
+
+Analyze the customer's intent and use the appropriate specialized agent tool to help them.`;\n\nreturn {\n  userMessage,\n  chatHistory,\n  sessionId,\n  systemPrompt,\n  baseUrl: 'https://vanaci-task-2.vercel.app/api'\n};"
       },
       "id": "55e198fe-1799-4cef-bef2-27cdd0b212d6",
       "name": "Process Input",
@@ -53,9 +101,9 @@
     {
       "parameters": {
         "name": "ProductSearchTool",
-        "description": "Search for products in the pharmacy database. Use this when customers ask about medications, health products, prices, availability, or product specifications.",
+        "description": "Specialized AI Agent for product discovery and information. This agent handles all product-related queries including searches, availability checks, price inquiries, and detailed product specifications. It makes HTTP calls to the product database and returns structured product information. Use this when customers ask about medications, health products, prices, availability, or any product-related questions.",
         "method": "GET",
-        "url": "=http://localhost:3000/api/products",
+        "url": "=https://vanaci-task-2.vercel.app/api/products",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -82,9 +130,9 @@
     {
       "parameters": {
         "name": "CartManagementTool",
-        "description": "Manage shopping cart operations. Use this when customers want to add items to cart, remove items, update quantities, or view cart contents.",
+        "description": "Specialized AI Agent for shopping cart management. This agent handles all cart-related operations including adding items, removing items, updating quantities, and viewing cart contents. It manages session-based cart operations and maintains cart state across the customer's shopping session. Use this when customers want to modify their shopping cart in any way or check their current cart status.",
         "method": "POST",
-        "url": "=http://localhost:3000/api/cart/{{ $fromAI('action', 'Cart operation: add, remove, update, or view') }}",
+        "url": "=https://vanaci-task-2.vercel.app/api/cart/{{ $fromAI('action', 'Cart operation: add, remove, update, or view') }}",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -119,9 +167,9 @@
     {
       "parameters": {
         "name": "CheckoutTool",
-        "description": "Process checkout and finalize orders. Use this when customers want to complete their purchase.",
+        "description": "Specialized AI Agent for order processing and checkout. This agent handles the complete checkout flow including order finalization, payment processing, and order confirmation. It processes customer information, validates cart contents, handles payment methods, and generates order confirmations. Use this when customers are ready to complete their purchase and finalize their order.",
         "method": "POST",
-        "url": "=http://localhost:3000/api/checkout",
+        "url": "=https://vanaci-task-2.vercel.app/api/checkout",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
