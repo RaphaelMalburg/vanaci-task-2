@@ -1,5 +1,5 @@
 {
-  "name": "farmacia-vanaci-advanced",
+  "name": "farmacia-vanaci-multi-agent-system",
   "nodes": [
     {
       "parameters": {
@@ -14,46 +14,120 @@
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [0, 0],
+      "position": [100, 300],
       "webhookId": "pharmacy-chat"
     },
     {
       "parameters": {
-        "jsCode": "// Process incoming chat request\nconst userMessage = $input.first().json.message;\nconst chatHistory = $input.first().json.chatHistory || [];\nconst sessionId = $input.first().json.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n// Create system prompt for main AI Agent\nconst systemPrompt = `You are the Main AI Agent for \"Farmácia Vanaci\", a modern pharmacy e-commerce platform. You are the central coordinator that understands customer intentions and delegates tasks to specialized AI agents through tools.\n\n**Your Role as Main Coordinator:**\n- Analyze customer messages and determine which specialized tool/agent to use\n- Maintain conversation flow and context across all interactions\n- Provide friendly, professional pharmacy assistance\n- Synthesize responses from specialized agents into coherent customer communication\n\n**Available Specialized AI Agent Tools:**\n\n1. **ProductSearchTool** - Specialized AI Agent for Product Discovery\n   - Handles: Product searches, availability checks, price inquiries, specifications\n   - Use when: Customer asks about medications, health products, prices, or product details\n   - This agent will make HTTP calls to the product database and return structured information\n\n2. **CartManagementTool** - Specialized AI Agent for Shopping Cart Operations\n   - Handles: Adding/removing items, quantity updates, cart viewing, cart management\n   - Use when: Customer wants to modify their shopping cart in any way\n   - This agent manages session-based cart operations and returns cart status\n\n3. **CheckoutTool** - Specialized AI Agent for Order Processing\n   - Handles: Order finalization, payment processing, order confirmation\n   - Use when: Customer is ready to complete their purchase\n   - This agent processes the entire checkout flow and returns order details\n\n**Pharmacy Information:**\n- Name: Farmácia Vanaci\n- Platform: https://vanaci-task-2.vercel.app\n- Specializes in: Medications, health products, wellness items\n- Session ID: ${sessionId}\n\n**Coordination Guidelines:**\n- Always determine customer intent before selecting tools\n- Use appropriate specialized agents for their specific domains\n- Maintain professional, empathetic tone in all communications\n- Provide clear explanations and medical disclaimers when needed\n- Synthesize agent responses into natural conversation flow\n\n**Important Medical Disclaimers:**\n- You cannot diagnose conditions or prescribe medications\n- For prescription drugs, customers must consult licensed pharmacists\n- Always recommend consulting healthcare professionals for medical advice\n- In emergencies, direct customers to emergency services\n\n**Current Context:**\nCustomer message: \"${userMessage}\"\nSession ID: ${sessionId}\n\nAnalyze the customer's intent and use the appropriate specialized agent tool to help them.`;\n\nreturn {\n  userMessage,\n  chatHistory,\n  sessionId,\n  systemPrompt,\n  baseUrl: 'https://vanaci-task-2.vercel.app/api'\n};"
+        "jsCode": "// Process incoming chat request\nconst userMessage = $input.first().json.message;\nconst chatHistory = $input.first().json.chatHistory || [];\nconst sessionId = $input.first().json.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n// Create enhanced context for multi-agent system\nconst enhancedContext = {\n  userMessage,\n  chatHistory,\n  sessionId,\n  timestamp: new Date().toISOString(),\n  baseUrl: 'https://vanaci-task-2.vercel.app/api',\n  pharmacyInfo: {\n    name: 'Farmácia Vanaci',\n    platform: 'https://vanaci-task-2.vercel.app',\n    specialties: ['Medications', 'Health products', 'Wellness items']\n  }\n};\n\nreturn enhancedContext;"
       },
       "id": "55e198fe-1799-4cef-bef2-27cdd0b212d6",
       "name": "Process Input",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [300, 0]
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "model": "mistral-large-latest",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 1000
+        }
+      },
+      "id": "mistral-chat-model-001",
+      "name": "Mistral Cloud Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [500, 150]
     },
     {
       "parameters": {
         "sessionIdKey": "sessionId",
-        "contextWindowSize": 10
+        "contextWindowSize": 20
       },
-      "id": "memory-node-12345",
+      "id": "memory-node-advanced",
       "name": "Simple Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1,
-      "position": [500, 200]
+      "position": [500, 450]
     },
     {
       "parameters": {
         "options": {
-          "systemMessage": "={{ $json.systemPrompt }}"
+          "systemMessage": "You are the Main AI Agent for Farmácia Vanaci, coordinating a sophisticated multi-agent system. Your role is to analyze customer requests and delegate to specialized agents: Product Agent (product searches), Navigation Agent (site navigation), Cart Management Agent (cart operations), and Checkout Agent (order processing). Maintain professional pharmacy service standards and provide seamless customer experience."
         }
       },
-      "id": "bb995adb-c3cf-4b1b-b8c1-d16d4025ef1f",
+      "id": "main-ai-agent-coordinator",
       "name": "Main AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1,
-      "position": [600, 0]
+      "position": [700, 300]
     },
     {
       "parameters": {
-        "name": "ProductSearchTool",
-        "description": "Specialized AI Agent for product discovery and information. This agent handles all product-related queries including searches, availability checks, price inquiries, and detailed product specifications. It makes HTTP calls to the product database and returns structured product information. Use this when customers ask about medications, health products, prices, availability, or any product-related questions.",
+        "options": {
+          "systemMessage": "You are the Product Agent for Farmácia Vanaci. You specialize in product discovery, search, availability checks, price inquiries, and detailed product specifications. You have deep knowledge of medications, health products, and wellness items. Always provide accurate product information and appropriate medical disclaimers."
+        }
+      },
+      "id": "product-search-agent",
+      "name": "ProductSearchTool",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1,
+      "position": [900, 100]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are the Navigation Agent for Farmácia Vanaci. You help customers navigate the website, find specific pages, understand site features, and provide guidance on using the platform effectively. You know all site sections, categories, and user interface elements."
+        }
+      },
+      "id": "navigation-agent",
+      "name": "Agente Navegador",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are the Cart Management Agent for Farmácia Vanaci. You handle all shopping cart operations including adding items, removing items, updating quantities, viewing cart contents, and managing cart state. You maintain session-based cart operations and provide clear cart status updates."
+        }
+      },
+      "id": "cart-management-agent",
+      "name": "CartManagementTool",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are the Checkout Agent for Farmácia Vanaci. You handle the complete checkout process including order finalization, payment processing, customer information collection, and order confirmation. You ensure secure transactions and provide clear order details."
+        }
+      },
+      "id": "checkout-processing-agent",
+      "name": "Agente de checkout",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are the Item Removal Agent for Farmácia Vanaci. You specialize in helping customers remove items from their cart, cancel orders, and handle product returns or exchanges. You provide clear guidance on removal processes and policies."
+        }
+      },
+      "id": "item-removal-agent",
+      "name": "Agente Removedor",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1,
+      "position": [900, 500]
+    },
+    {
+      "parameters": {
+        "name": "ProductSearchAPI",
+        "description": "API tool for product search and information retrieval",
         "method": "GET",
         "url": "=https://vanaci-task-2.vercel.app/api/products",
         "sendQuery": true,
@@ -64,25 +138,18 @@
               "value": "={{ $fromAI('query', 'Search term or product name') }}"
             }
           ]
-        },
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
         }
       },
-      "id": "f8e7d6c5-b4a3-9281-c7e6-f5d4e3c2b1a0",
-      "name": "ProductSearchTool",
+      "id": "product-api-tool",
+      "name": "Product API",
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1,
-      "position": [800, -200]
+      "position": [1100, 100]
     },
     {
       "parameters": {
-        "name": "CartManagementTool",
-        "description": "Specialized AI Agent for shopping cart management. This agent handles all cart-related operations including adding items, removing items, updating quantities, and viewing cart contents. It manages session-based cart operations and maintains cart state across the customer's shopping session. Use this when customers want to modify their shopping cart in any way or check their current cart status.",
+        "name": "CartAPI",
+        "description": "API tool for cart management operations",
         "method": "POST",
         "url": "=https://vanaci-task-2.vercel.app/api/cart/{{ $fromAI('action', 'Cart operation: add, remove, update, or view') }}",
         "sendBody": true,
@@ -90,36 +157,29 @@
           "parameters": [
             {
               "name": "productId",
-              "value": "={{ $fromAI('productId', 'Product ID for add/remove/update operations') }}"
+              "value": "={{ $fromAI('productId', 'Product ID') }}"
             },
             {
               "name": "quantity",
-              "value": "={{ $fromAI('quantity', 'Quantity for add/update operations') }}"
+              "value": "={{ $fromAI('quantity', 'Quantity') }}"
             },
             {
               "name": "sessionId",
               "value": "={{ $('Process Input').first().json.sessionId }}"
             }
           ]
-        },
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
         }
       },
-      "id": "a9b8c7d6-e5f4-3210-9876-543210fedcba",
-      "name": "CartManagementTool",
+      "id": "cart-api-tool",
+      "name": "Cart API",
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1,
-      "position": [800, 0]
+      "position": [1100, 300]
     },
     {
       "parameters": {
-        "name": "CheckoutTool",
-        "description": "Specialized AI Agent for order processing and checkout. This agent handles the complete checkout flow including order finalization, payment processing, and order confirmation. It processes customer information, validates cart contents, handles payment methods, and generates order confirmations. Use this when customers are ready to complete their purchase and finalize their order.",
+        "name": "CheckoutAPI",
+        "description": "API tool for checkout and order processing",
         "method": "POST",
         "url": "=https://vanaci-task-2.vercel.app/api/checkout",
         "sendBody": true,
@@ -131,27 +191,20 @@
             },
             {
               "name": "customerInfo",
-              "value": "={{ $fromAI('customerInfo', 'Customer details object with name, email, and address') }}"
+              "value": "={{ $fromAI('customerInfo', 'Customer details') }}"
             },
             {
               "name": "paymentMethod",
-              "value": "={{ $fromAI('paymentMethod', 'Payment method selection', 'credit_card') }}"
+              "value": "={{ $fromAI('paymentMethod', 'Payment method') }}"
             }
           ]
-        },
-        "options": {
-          "response": {
-            "response": {
-              "neverError": true
-            }
-          }
         }
       },
-      "id": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
-      "name": "CheckoutTool",
+      "id": "checkout-api-tool",
+      "name": "Checkout API",
       "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
       "typeVersion": 1,
-      "position": [800, 200]
+      "position": [1100, 400]
     }
   ],
   "connections": {
@@ -177,6 +230,42 @@
         ]
       ]
     },
+    "Mistral Cloud Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "ProductSearchTool",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente Navegador",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "CartManagementTool",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente de checkout",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente Removedor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "Simple Memory": {
       "ai_memory": [
         [
@@ -184,12 +273,48 @@
             "node": "Main AI Agent",
             "type": "ai_memory",
             "index": 0
+          },
+          {
+            "node": "ProductSearchTool",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "Agente Navegador",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "CartManagementTool",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "Agente de checkout",
+            "type": "ai_memory",
+            "index": 0
+          },
+          {
+            "node": "Agente Removedor",
+            "type": "ai_memory",
+            "index": 0
           }
         ]
       ]
     },
     "ProductSearchTool": {
-      "ai_tool": [
+      "ai_agent": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Navegador": {
+      "ai_agent": [
         [
           {
             "node": "Main AI Agent",
@@ -200,7 +325,7 @@
       ]
     },
     "CartManagementTool": {
-      "ai_tool": [
+      "ai_agent": [
         [
           {
             "node": "Main AI Agent",
@@ -210,11 +335,60 @@
         ]
       ]
     },
-    "CheckoutTool": {
-      "ai_tool": [
+    "Agente de checkout": {
+      "ai_agent": [
         [
           {
             "node": "Main AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Removedor": {
+      "ai_agent": [
+        [
+          {
+            "node": "Main AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Product API": {
+      "ai_tool": [
+        [
+          {
+            "node": "ProductSearchTool",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cart API": {
+      "ai_tool": [
+        [
+          {
+            "node": "CartManagementTool",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "Agente Removedor",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Checkout API": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente de checkout",
             "type": "ai_tool",
             "index": 0
           }
@@ -230,5 +404,5 @@
   "tags": [],
   "triggerCount": 0,
   "updatedAt": "2024-01-15T10:30:00.000Z",
-  "versionId": "1"
+  "versionId": "2"
 }
