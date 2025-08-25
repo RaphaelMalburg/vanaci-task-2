@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-// Simular armazenamento em memória (mesmo do cart/route.ts)
-const cartStorage = new Map<string, any>()
+import { cartStorage } from '@/lib/cart-storage'
 
 // POST - Limpar carrinho
 export async function POST(request: NextRequest) {

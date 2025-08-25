@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-// Simular armazenamento em memória (mesmo do cart/route.ts)
-// Em produção, usar Redis ou banco de dados compartilhado
-const cartStorage = new Map<string, any>()
+import { cartStorage } from '@/lib/cart-storage'
 
 // POST - Finalizar compra
 export async function POST(request: NextRequest) {

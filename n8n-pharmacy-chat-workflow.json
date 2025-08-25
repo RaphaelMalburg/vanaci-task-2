@@ -1,408 +1,447 @@
 {
-  "name": "farmacia-vanaci-multi-agent-system",
+  "name": "farmacia-vanaci-chat-workflow",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "chat",
-        "responseMode": "responseNode",
-        "options": {
-          "allowedOrigins": "*"
-        }
+        "path": "farmacia-chat",
+        "options": {}
       },
-      "id": "625a0c49-7cb9-4b91-920f-aa12ed951292",
-      "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 1,
-      "position": [100, 300],
-      "webhookId": "pharmacy-chat"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Process incoming chat request\nconst userMessage = $input.first().json.message;\nconst chatHistory = $input.first().json.chatHistory || [];\nconst sessionId = $input.first().json.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;\n\n// Create enhanced context for multi-agent system\nconst enhancedContext = {\n  userMessage,\n  chatHistory,\n  sessionId,\n  timestamp: new Date().toISOString(),\n  baseUrl: 'https://vanaci-task-2.vercel.app/api',\n  pharmacyInfo: {\n    name: 'Farmácia Vanaci',\n    platform: 'https://vanaci-task-2.vercel.app',\n    specialties: ['Medications', 'Health products', 'Wellness items']\n  }\n};\n\nreturn enhancedContext;"
-      },
-      "id": "55e198fe-1799-4cef-bef2-27cdd0b212d6",
-      "name": "Process Input",
-      "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [300, 300]
+      "position": [
+        912,
+        432
+      ],
+      "id": "webhook-entrada",
+      "name": "🌐 Webhook Entrada",
+      "webhookId": "farmacia-chat-webhook"
     },
     {
       "parameters": {
-        "model": "mistral-large-latest",
-        "options": {
-          "temperature": 0.7,
-          "maxTokens": 1000
-        }
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.sessionId }}",
+        "contextWindowLength": 10
       },
-      "id": "mistral-chat-model-001",
-      "name": "Mistral Cloud Chat Model",
-      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
-      "typeVersion": 1,
-      "position": [500, 150]
-    },
-    {
-      "parameters": {
-        "sessionIdKey": "sessionId",
-        "contextWindowSize": 20
-      },
-      "id": "memory-node-advanced",
-      "name": "Simple Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1,
-      "position": [500, 450]
+      "typeVersion": 1.3,
+      "position": [
+        1280,
+        656
+      ],
+      "id": "reescritor-memory",
+      "name": "💾 Reescritor Memory"
     },
     {
       "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message }}",
         "options": {
-          "systemMessage": "You are the Main AI Agent for Farmácia Vanaci, coordinating a sophisticated multi-agent system. Your role is to analyze customer requests and delegate to specialized agents: Product Agent (product searches), Navigation Agent (site navigation), Cart Management Agent (cart operations), and Checkout Agent (order processing). Maintain professional pharmacy service standards and provide seamless customer experience."
+          "systemMessage": "Você é um Agente de Clareza de Mensagens para uma farmácia. Sua principal função é reescrever e expandir as mensagens curtas ou ambíguas dos clientes para torná-las mais compreensíveis e interpretáveis, mantendo sempre a intenção original.\n\nSeu objetivo é garantir que cada comunicação do cliente seja inequívoca, como se o cliente tivesse falado de forma completa e detalhada desde o início.\n\nRegras Essenciais:\n\n1. Preservar a Intenção: Nunca altere o significado ou a intenção por trás da mensagem original do cliente.\n2. Contexto de Farmácia: As interações serão sobre medicamentos, produtos farmacêuticos, carrinho de compras, etc.\n3. Expansão Consciente:\n   - Afirmações Curtas: Se o cliente disser \"sim\", \"quero\", \"ok\", expanda para algo como \"Sim, eu quero isso\".\n   - Pedidos Específicos: Se o cliente mencionar apenas um medicamento, adicione contexto. Ex: \"dipirona\" deve ser \"Eu gostaria de comprar dipirona\".\n   - Negativas: Se o cliente disser \"não\", expanda para \"Não, eu não quero isso\".\n\n4. Linguagem Natural e Profissional: As mensagens reescritas devem soar naturais e manter um tom profissional.\n\nExemplos:\n- Cliente: \"sim\" → \"Sim, eu quero isso.\"\n- Cliente: \"dipirona\" → \"Eu estou procurando dipirona.\"\n- Cliente: \"adicionar carrinho\" → \"Eu gostaria de adicionar este produto ao carrinho.\"\n\nSua tarefa é receber a mensagem do cliente e fornecer apenas a versão reescrita e clara dessa mensagem."
         }
       },
-      "id": "main-ai-agent-coordinator",
-      "name": "Main AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1,
-      "position": [700, 300]
+      "typeVersion": 2,
+      "position": [
+        1328,
+        432
+      ],
+      "id": "reescritor-agente",
+      "name": "✍️ Reescritor"
     },
     {
       "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('🌐 Webhook Entrada').item.json.body.sessionId }}",
+        "contextWindowLength": 25
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1904,
+        608
+      ],
+      "id": "orquestrador-memory",
+      "name": "💾 Orquestrador Memory"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('🌐 Webhook Entrada').item.json.body.message }}",
         "options": {
-          "systemMessage": "You are the Product Agent for Farmácia Vanaci. You specialize in product discovery, search, availability checks, price inquiries, and detailed product specifications. You have deep knowledge of medications, health products, and wellness items. Always provide accurate product information and appropriate medical disclaimers."
+          "systemMessage": "Você é o agente principal da Farmácia Vanaci\n\n# TODAS AS REQUESTS PRECISAM PASSAR O SESSION ID COMO PARÂMETRO NO BODY, O SESSION ID É EXCLUSIVAMENTE ESSE {{ $('🌐 Webhook Entrada').item.json.body.sessionId }}\n\n# CASO VOCÊ NÃO PASSE O SESSION ID {{ $('🌐 Webhook Entrada').item.json.body.sessionId }} EM TODAS AS FERRAMENTAS HTTP, O SISTEMA VAI FALHAR\n\n## Use a ferramenta 'Buscar Produtos' para buscar medicamentos, suplementos e produtos farmacêuticos quando o cliente quiser informações sobre produtos, preços, disponibilidade\n\n## Use a ferramenta 'Gerenciar Carrinho' para adicionar, remover ou visualizar itens no carrinho quando o cliente quiser gerenciar seu carrinho de compras\n\n## Use a ferramenta 'Finalizar Compra' para processar checkout e finalizar pedidos quando o cliente quiser finalizar a compra\n\n## Use a ferramenta 'Navegação Site' para ajudar o cliente a navegar pelo site, encontrar seções específicas ou orientações gerais\n\n## Use a ferramenta 'Remover Itens' para remover produtos específicos do carrinho com confirmações de segurança\n\n# Nunca peça o session id para o cliente, não peça login do usuário\n\n# SEMPRE MANDE O SESSION ID {{ $('🌐 Webhook Entrada').item.json.body.sessionId }} COMO PARÂMETRO EM TODAS AS REQUISIÇÕES\n\n# Seja profissional, atencioso e focado em saúde e bem-estar dos clientes"
         }
       },
-      "id": "product-search-agent",
-      "name": "ProductSearchTool",
       "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1,
-      "position": [900, 100]
+      "typeVersion": 1.9,
+      "position": [
+        2224,
+        432
+      ],
+      "id": "orquestrador-principal",
+      "name": "🏥 Farmácia Orquestrador",
+      "retryOnFail": true
     },
     {
       "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/chat-response",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.output }}"
+            },
+            {
+              "name": "sessionId",
+              "value": "={{ $('🌐 Webhook Entrada').item.json.body.sessionId }}"
+            }
+          ]
+        },
         "options": {
-          "systemMessage": "You are the Navigation Agent for Farmácia Vanaci. You help customers navigate the website, find specific pages, understand site features, and provide guidance on using the platform effectively. You know all site sections, categories, and user interface elements."
+          "allowUnauthorizedCerts": true
         }
       },
-      "id": "navigation-agent",
-      "name": "Agente Navegador",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1,
-      "position": [900, 200]
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2608,
+        432
+      ],
+      "id": "resposta-final",
+      "name": "📤 Resposta Final"
     },
     {
       "parameters": {
-        "options": {
-          "systemMessage": "You are the Cart Management Agent for Farmácia Vanaci. You handle all shopping cart operations including adding items, removing items, updating quantities, viewing cart contents, and managing cart state. You maintain session-based cart operations and provide clear cart status updates."
-        }
-      },
-      "id": "cart-management-agent",
-      "name": "CartManagementTool",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1,
-      "position": [900, 300]
-    },
-    {
-      "parameters": {
-        "options": {
-          "systemMessage": "You are the Checkout Agent for Farmácia Vanaci. You handle the complete checkout process including order finalization, payment processing, customer information collection, and order confirmation. You ensure secure transactions and provide clear order details."
-        }
-      },
-      "id": "checkout-processing-agent",
-      "name": "Agente de checkout",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1,
-      "position": [900, 400]
-    },
-    {
-      "parameters": {
-        "options": {
-          "systemMessage": "You are the Item Removal Agent for Farmácia Vanaci. You specialize in helping customers remove items from their cart, cancel orders, and handle product returns or exchanges. You provide clear guidance on removal processes and policies."
-        }
-      },
-      "id": "item-removal-agent",
-      "name": "Agente Removedor",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1,
-      "position": [900, 500]
-    },
-    {
-      "parameters": {
-        "name": "ProductSearchAPI",
-        "description": "API tool for product search and information retrieval",
+        "toolDescription": "Buscar produtos farmacêuticos",
         "method": "GET",
-        "url": "=https://vanaci-task-2.vercel.app/api/products",
+        "url": "http://localhost:3000/api/products",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
             {
               "name": "search",
-              "value": "={{ $fromAI('query', 'Search term or product name') }}"
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('search', 'Termo de busca do produto', 'string') }}"
+            },
+            {
+              "name": "sessionId",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sessionId', 'ID da sessão', 'string') }}"
             }
           ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
         }
       },
-      "id": "product-api-tool",
-      "name": "Product API",
-      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
-      "typeVersion": 1,
-      "position": [1100, 100]
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2784,
+        800
+      ],
+      "id": "buscar-produtos-tool",
+      "name": "🔍 Buscar Produtos"
     },
     {
       "parameters": {
-        "name": "CartAPI",
-        "description": "API tool for cart management operations",
+        "toolDescription": "Gerenciar carrinho de compras",
         "method": "POST",
-        "url": "=https://vanaci-task-2.vercel.app/api/cart/{{ $fromAI('action', 'Cart operation: add, remove, update, or view') }}",
+        "url": "http://localhost:3000/api/cart",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "action",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('action', 'Ação: add, remove, view', 'string') }}"
+            },
+            {
+              "name": "productId",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('productId', 'ID do produto', 'string') }}"
+            },
+            {
+              "name": "quantity",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('quantity', 'Quantidade', 'number') }}"
+            },
+            {
+              "name": "sessionId",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sessionId', 'ID da sessão', 'string') }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2784,
+        960
+      ],
+      "id": "gerenciar-carrinho-tool",
+      "name": "🛒 Gerenciar Carrinho"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Finalizar compra e checkout",
+        "method": "POST",
+        "url": "http://localhost:3000/api/checkout",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "sessionId",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sessionId', 'ID da sessão', 'string') }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2784,
+        1120
+      ],
+      "id": "finalizar-compra-tool",
+      "name": "💳 Finalizar Compra"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Navegação e orientações no site",
+        "method": "GET",
+        "url": "http://localhost:3000/api/navigation",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "section",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('section', 'Seção do site', 'string') }}"
+            },
+            {
+              "name": "sessionId",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sessionId', 'ID da sessão', 'string') }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2784,
+        1280
+      ],
+      "id": "navegacao-site-tool",
+      "name": "🧭 Navegação Site"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Remover itens específicos do carrinho",
+        "method": "DELETE",
+        "url": "http://localhost:3000/api/cart/remove",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
             {
               "name": "productId",
-              "value": "={{ $fromAI('productId', 'Product ID') }}"
-            },
-            {
-              "name": "quantity",
-              "value": "={{ $fromAI('quantity', 'Quantity') }}"
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('productId', 'ID do produto a remover', 'string') }}"
             },
             {
               "name": "sessionId",
-              "value": "={{ $('Process Input').first().json.sessionId }}"
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('sessionId', 'ID da sessão', 'string') }}"
             }
           ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
         }
       },
-      "id": "cart-api-tool",
-      "name": "Cart API",
-      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
-      "typeVersion": 1,
-      "position": [1100, 300]
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2784,
+        1440
+      ],
+      "id": "remover-itens-tool",
+      "name": "🗑️ Remover Itens"
     },
     {
       "parameters": {
-        "name": "CheckoutAPI",
-        "description": "API tool for checkout and order processing",
-        "method": "POST",
-        "url": "=https://vanaci-task-2.vercel.app/api/checkout",
-        "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "sessionId",
-              "value": "={{ $('Process Input').first().json.sessionId }}"
-            },
-            {
-              "name": "customerInfo",
-              "value": "={{ $fromAI('customerInfo', 'Customer details') }}"
-            },
-            {
-              "name": "paymentMethod",
-              "value": "={{ $fromAI('paymentMethod', 'Payment method') }}"
-            }
-          ]
+        "model": "mistral-large-latest",
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 800
         }
       },
-      "id": "checkout-api-tool",
-      "name": "Checkout API",
-      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
       "typeVersion": 1,
-      "position": [1100, 400]
+      "position": [
+        1600,
+        656
+      ],
+      "id": "reescritor-llm",
+      "name": "🧠 Reescritor LLM"
+    },
+    {
+      "parameters": {
+        "model": "mistral-large-latest",
+        "options": {
+          "temperature": 0.4,
+          "maxTokens": 1000
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        2400,
+        608
+      ],
+      "id": "orquestrador-llm",
+      "name": "🧠 Orquestrador LLM"
     }
   ],
   "connections": {
-    "Webhook": {
+    "🌐 Webhook Entrada": {
       "main": [
         [
           {
-            "node": "Process Input",
+            "node": "✍️ Reescritor",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Process Input": {
+    "✍️ Reescritor": {
       "main": [
         [
           {
-            "node": "Main AI Agent",
+            "node": "🏥 Farmácia Orquestrador",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Mistral Cloud Chat Model": {
-      "ai_languageModel": [
+    "🏥 Farmácia Orquestrador": {
+      "main": [
         [
           {
-            "node": "Main AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "ProductSearchTool",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "Agente Navegador",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "CartManagementTool",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "Agente de checkout",
-            "type": "ai_languageModel",
-            "index": 0
-          },
-          {
-            "node": "Agente Removedor",
-            "type": "ai_languageModel",
+            "node": "📤 Resposta Final",
+            "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Simple Memory": {
+    "💾 Reescritor Memory": {
       "ai_memory": [
         [
           {
-            "node": "Main AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          },
-          {
-            "node": "ProductSearchTool",
-            "type": "ai_memory",
-            "index": 0
-          },
-          {
-            "node": "Agente Navegador",
-            "type": "ai_memory",
-            "index": 0
-          },
-          {
-            "node": "CartManagementTool",
-            "type": "ai_memory",
-            "index": 0
-          },
-          {
-            "node": "Agente de checkout",
-            "type": "ai_memory",
-            "index": 0
-          },
-          {
-            "node": "Agente Removedor",
+            "node": "✍️ Reescritor",
             "type": "ai_memory",
             "index": 0
           }
         ]
       ]
     },
-    "ProductSearchTool": {
-      "ai_agent": [
+    "🧠 Reescritor LLM": {
+      "ai_languageModel": [
         [
           {
-            "node": "Main AI Agent",
-            "type": "ai_tool",
+            "node": "✍️ Reescritor",
+            "type": "ai_languageModel",
             "index": 0
           }
         ]
       ]
     },
-    "Agente Navegador": {
-      "ai_agent": [
+    "💾 Orquestrador Memory": {
+      "ai_memory": [
         [
           {
-            "node": "Main AI Agent",
-            "type": "ai_tool",
+            "node": "🏥 Farmácia Orquestrador",
+            "type": "ai_memory",
             "index": 0
           }
         ]
       ]
     },
-    "CartManagementTool": {
-      "ai_agent": [
+    "🧠 Orquestrador LLM": {
+      "ai_languageModel": [
         [
           {
-            "node": "Main AI Agent",
-            "type": "ai_tool",
+            "node": "🏥 Farmácia Orquestrador",
+            "type": "ai_languageModel",
             "index": 0
           }
         ]
       ]
     },
-    "Agente de checkout": {
-      "ai_agent": [
-        [
-          {
-            "node": "Main AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Agente Removedor": {
-      "ai_agent": [
-        [
-          {
-            "node": "Main AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Product API": {
+    "🔍 Buscar Produtos": {
       "ai_tool": [
         [
           {
-            "node": "ProductSearchTool",
+            "node": "🏥 Farmácia Orquestrador",
             "type": "ai_tool",
             "index": 0
           }
         ]
       ]
     },
-    "Cart API": {
+    "🛒 Gerenciar Carrinho": {
       "ai_tool": [
         [
           {
-            "node": "CartManagementTool",
+            "node": "🏥 Farmácia Orquestrador",
             "type": "ai_tool",
-            "index": 0
-          },
-          {
-            "node": "Agente Removedor",
-            "type": "ai_tool",
-            "index": 0
+            "index": 1
           }
         ]
       ]
     },
-    "Checkout API": {
+    "💳 Finalizar Compra": {
       "ai_tool": [
         [
           {
-            "node": "Agente de checkout",
+            "node": "🏥 Farmácia Orquestrador",
             "type": "ai_tool",
-            "index": 0
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "🧭 Navegação Site": {
+      "ai_tool": [
+        [
+          {
+            "node": "🏥 Farmácia Orquestrador",
+            "type": "ai_tool",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "🗑️ Remover Itens": {
+      "ai_tool": [
+        [
+          {
+            "node": "🏥 Farmácia Orquestrador",
+            "type": "ai_tool",
+            "index": 4
           }
         ]
       ]
     }
   },
-  "pinData": {},
-  "settings": {
-    "executionOrder": "v1"
-  },
-  "staticData": null,
-  "tags": [],
-  "triggerCount": 0,
-  "updatedAt": "2024-01-15T10:30:00.000Z",
-  "versionId": "2"
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "farmacia-vanaci-workflow-instance"
+  }
 }

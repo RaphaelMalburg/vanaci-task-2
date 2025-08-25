@@ -1,24 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-// Tipo para os dados do carrinho
-interface CartItem {
-  id: string
-  name: string
-  price: number
-  imagePath: string | null
-  category: string
-  quantity: number
-}
-
-interface CartData {
-  sessionId: string
-  items: CartItem[]
-  total: number
-}
-
-// Simular armazenamento em memória (em produção, usar Redis ou banco de dados)
-const cartStorage = new Map<string, CartData>()
+import { CartItem, CartData, cartStorage, getOrCreateCart, saveCart } from '@/lib/cart-storage'
 
 // GET - Obter carrinho por session ID
 export async function GET(request: NextRequest) {
@@ -33,11 +15,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const cart = cartStorage.get(sessionId) || {
-      sessionId,
-      items: [],
-      total: 0
-    }
+    const cart = getOrCreateCart(sessionId)
 
     return NextResponse.json(cart)
   } catch (error) {
@@ -82,11 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Obter carrinho atual
-    let cart: CartData = cartStorage.get(sessionId) || {
-      sessionId,
-      items: [] as CartItem[],
-      total: 0
-    }
+    let cart: CartData = getOrCreateCart(sessionId)
 
     // Verificar se item já existe no carrinho
     const existingItemIndex = cart.items.findIndex(item => item.id === productId)
@@ -115,11 +89,8 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Recalcular total
-    cart.total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-
     // Salvar carrinho
-    cartStorage.set(sessionId, cart)
+    saveCart(cart)
 
     return NextResponse.json({
       message: 'Item adicionado ao carrinho',
@@ -190,11 +161,8 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Recalcular total
-    cart.total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-
     // Salvar carrinho
-    cartStorage.set(sessionId, cart)
+    saveCart(cart)
 
     return NextResponse.json({
       message: 'Carrinho atualizado',
@@ -234,11 +202,8 @@ export async function DELETE(request: NextRequest) {
     // Remover item
     cart.items = cart.items.filter(item => item.id !== productId)
 
-    // Recalcular total
-    cart.total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-
     // Salvar carrinho
-    cartStorage.set(sessionId, cart)
+    saveCart(cart)
 
     return NextResponse.json({
       message: 'Item removido do carrinho',
