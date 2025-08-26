@@ -9,7 +9,9 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "npx prisma migrate reset --force && npm run db:seed"
+    "db:reset": "npx prisma migrate reset --force && npm run db:seed",
+    "keep-warm": "node scripts/keep-warm.js",
+    "keep-warm:dev": "nodemon scripts/keep-warm.js"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",
