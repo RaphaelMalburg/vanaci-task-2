@@ -320,7 +320,7 @@
     },
     {
       "parameters": {
-        "url": "https://vanaci-task-2.vercel.app/api/products",
+        "url": "http://localhost:3007/api/products",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
@@ -397,14 +397,10 @@
     },
     {
       "parameters": {
-        "url": "https://vanaci-task-2.vercel.app/api/cart",
+        "url": "http://localhost:3007/api/cart",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
-            {
-              "name": "action",
-              "value": "={{ $json.action }}"
-            },
             {
               "name": "productId",
               "value": "={{ $json.productId }}"
@@ -466,7 +462,7 @@
     },
     {
       "parameters": {
-        "url": "https://vanaci-task-2.vercel.app/api/checkout",
+        "url": "http://localhost:3007/api/cart/checkout",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -523,13 +519,13 @@
     },
     {
       "parameters": {
-        "url": "https://vanaci-task-2.vercel.app/api/navigation",
+        "url": "http://localhost:3007/api/navigation",
         "sendQuery": true,
         "queryParameters": {
           "parameters": [
             {
-              "name": "section",
-              "value": "={{ $json.section }}"
+              "name": "query",
+              "value": "={{ $json.query }}"
             },
             {
               "name": "sessionId",
@@ -584,7 +580,7 @@
     },
     {
       "parameters": {
-        "url": "https://vanaci-task-2.vercel.app/api/cart/remove",
+        "url": "http://localhost:3007/api/cart/remove",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
