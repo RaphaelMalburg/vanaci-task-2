@@ -14,7 +14,8 @@ interface ChatMessage {
 }
 
 interface N8nChatResponse {
-  response: string;
+  response?: string;
+  text?: string;
   sessionId: string;
   timestamp: string;
   status: string;
@@ -102,7 +103,7 @@ export function N8nChatIntegration({
       // Add assistant response to chat
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: data.text || data.response,
+        content: data.text || data.response || 'Resposta não disponível',
         timestamp: data.timestamp || new Date().toISOString()
       };
 
