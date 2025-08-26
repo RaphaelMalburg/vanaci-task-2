@@ -27,7 +27,7 @@ interface N8nChatIntegrationProps {
 }
 
 export function N8nChatIntegration({ 
-  n8nWebhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/pharmacy-chat',
+  n8nWebhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'https://primary-production-8189a.up.railway.app/webhook/farmacia-chat',
   className = ''
 }: N8nChatIntegrationProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
