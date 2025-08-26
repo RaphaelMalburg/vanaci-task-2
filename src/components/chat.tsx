@@ -95,10 +95,12 @@ export function Chat() {
       content: msg.text,
     }));
 
+    // Mova a declaração do webhookUrl para fora do bloco try/catch
     const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "https://primary-production-8189a.up.railway.app/webhook/farmacia-chat";
+    // Declarar timeoutMessageId aqui para que esteja disponível em todo o escopo da função
+    let timeoutMessageId = "";
 
     try {
-
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
@@ -150,8 +152,12 @@ export function Chat() {
         errorText = "⏱️ O assistente está demorando para responder. Aguarde um momento...";
 
         // For timeout errors, wait a bit more and try to get a delayed response
+        timeoutMessageId = (Date.now() + 1).toString();
+        setPendingMessageId(timeoutMessageId);
+        
         setTimeout(async () => {
           try {
+            // Usar o webhookUrl do escopo externo
             const retryResponse = await fetch(webhookUrl, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -166,17 +172,17 @@ export function Chat() {
             if (retryResponse.ok) {
               const retryData = await retryResponse.json();
               const lateMessage: Message = {
-                id: (Date.now() + 1).toString(),
+                id: (Date.now() + 2).toString(),
                 text: retryData.response || "Resposta recebida com atraso.",
                 isUser: false,
                 timestamp: new Date(),
               };
 
-              // Replace the timeout error message
-              if (pendingMessageId) {
-                setMessages((prev) => prev.map((msg) => (msg.id === pendingMessageId ? lateMessage : msg)));
-                setPendingMessageId(null);
-              }
+              // Substituir a mensagem de erro de timeout
+              setMessages((prev) => prev.map((msg) => 
+                (msg.id === timeoutMessageId ? lateMessage : msg)
+              ));
+              setPendingMessageId(null);
             }
           } catch (retryError) {
             console.log("Retry also failed:", retryError);
@@ -187,16 +193,13 @@ export function Chat() {
       }
 
       const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: (error instanceof DOMException && error.name === "TimeoutError") 
+          ? timeoutMessageId 
+          : (Date.now() + 1).toString(),
         text: errorText,
         isUser: false,
         timestamp: new Date(),
       };
-
-      // Set this as a pending message that can be replaced
-      if (error instanceof DOMException && error.name === "TimeoutError") {
-        setPendingMessageId(errorMessage.id);
-      }
 
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
