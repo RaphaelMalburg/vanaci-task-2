@@ -106,7 +106,6 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
 
   return (
     <div className="fixed inset-0 z-[60] overflow-hidden">
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
       <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out">
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
@@ -134,17 +133,20 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                   
                   if (isProductNotFound) {
                     return (
-                      <div key={product.id} className="flex gap-3 p-3 border rounded-lg bg-gray-50 dark:bg-gray-700">
+                      <div key={product.id} className="flex gap-3 p-3 border rounded-lg bg-blue-50 dark:bg-blue-900/20">
                         <div className="flex-1">
                           <h4 className="font-medium text-sm text-gray-900 dark:text-white">
-                            Produto não encontrado (ID: {product.id})
+                            {product.name}
                           </h4>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
                             Quantidade: {quantity}
                           </p>
+                          <p className="text-xs text-blue-600 dark:text-blue-400">
+                            Produto temporariamente indisponível
+                          </p>
                         </div>
                         <Button
-                          variant="destructive"
+                          variant="outline"
                           size="sm"
                           onClick={() => removeFromCart(product.id)}
                           className="h-6 w-6 p-0"
@@ -181,7 +183,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                             R$ {product.price.toFixed(2)}
                           </Badge>
                           {product.prescription && (
-                            <Badge variant="destructive" className="text-xs">
+                            <Badge variant="outline" className="text-xs border-orange-300 text-orange-600">
                               Receita
                             </Badge>
                           )}
@@ -193,7 +195,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => removeFromCart(product.id)}
-                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                          className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>
