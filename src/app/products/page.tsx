@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BreadcrumbsContainer } from "@/components/breadcrumbs";
 import { ShoppingCart, Search, Filter, Loader2 } from "lucide-react";
-import { useCart } from "@/hooks/useCart";
+import { useCartStore } from "@/stores/cart-store";
 import { toast } from "sonner";
 import { Cart } from "@/components/Cart";
 
@@ -35,7 +35,7 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { addToCart, getItemCount, cart } = useCart();
+  const { addItem, getItemQuantity, getItemCount, items, total } = useCartStore();
 
   // Fetch produtos do banco de dados
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function Products() {
       return;
     }
 
-    addToCart({
+    addItem({
       id: product.id,
       name: product.name,
       price: product.price,
@@ -208,7 +208,7 @@ export default function Products() {
                 </span>
               </div>
               <div className="text-green-800 dark:text-green-100 font-bold transition-colors duration-300">
-                Total: R$ {cart.total.toFixed(2)}
+                Total: R$ {total.toFixed(2)}
               </div>
             </div>
           </div>
@@ -287,7 +287,7 @@ export default function Products() {
                 <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">{category}</h2>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {categoryProducts.map((product) => {
-                    const cartQuantity = getItemCount(product.id);
+                    const cartQuantity = getItemQuantity(product.id);
                     
                     return (
                       <Card key={product.id} className="h-full flex flex-col hover:shadow-lg transition-shadow">
@@ -376,7 +376,7 @@ export default function Products() {
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredAndSortedProducts.map((product) => {
-              const cartQuantity = getItemCount(product.id);
+              const cartQuantity = getItemQuantity(product.id);
               
               return (
                 <Card key={product.id} className="h-full flex flex-col hover:shadow-lg transition-shadow">

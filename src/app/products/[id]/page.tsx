@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 
 import { ShoppingCart, ArrowLeft, Star, Package, Clock, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCart } from '@/hooks/useCart';
+import { useCartStore } from '@/stores/cart-store';
 
 interface Product {
   id: string;
@@ -29,7 +29,7 @@ interface Product {
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { addToCart, getItemCount } = useCart();
+  const { addItem, getItemQuantity } = useCartStore();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export default function ProductDetailPage() {
       return;
     }
 
-    addToCart({
+    addItem({
       id: product.id,
       name: product.name,
       price: product.price,
@@ -151,7 +151,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const cartQuantity = getItemCount(product.id);
+  const cartQuantity = getItemQuantity(product.id);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-gray-800 p-4">
