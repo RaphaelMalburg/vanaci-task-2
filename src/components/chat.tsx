@@ -41,7 +41,7 @@ export function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [sessionId, setSessionId] = useState<string>("");
   const [n8nStatus, setN8nStatus] = useState<"checking" | "online" | "offline">("checking");
-  const [pendingMessageId, setPendingMessageId] = useState<string | null>(null);
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -138,13 +138,8 @@ export function Chat() {
     }));
     console.log("[Chat Debug] Histórico de chat preparado para n8n:", chatHistory);
 
-    // Usar URL alternativo para o webhook do n8n
     const webhookUrl = "https://primary-production-8189a.up.railway.app/webhook/farmacia-chat";
-    console.log("[Chat Debug] Usando URL alternativo para o webhook no envio:", webhookUrl);
-    // Declarar timeoutMessageId aqui para que esteja disponível em todo o escopo da função
-    let timeoutMessageId = "";
-
-    console.log("[Chat Debug] Usando webhook URL para envio:", webhookUrl);
+    console.log("[Chat Debug] Usando webhook URL:", webhookUrl);
     console.log("[Chat Debug] SessionId atual:", sessionId);
 
     try {
@@ -167,6 +162,7 @@ export function Chat() {
         }
       }
 
+      // Enviar mensagem para o n8n
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
@@ -177,125 +173,100 @@ export function Chat() {
           sessionId: sessionId,
           chatHistory: chatHistory,
         }),
-        // Add timeout to prevent hanging
-        signal: AbortSignal.timeout(30000), // 30 seconds timeout
+        signal: AbortSignal.timeout(10000), // 10 seconds timeout for initial request
       });
 
-      console.log("[Chat Debug] Requisição enviada com sucesso, aguardando resposta...");
-
-      console.log("[Chat Debug] Resposta recebida do n8n, status:", response.status);
+      console.log("[Chat Debug] Resposta inicial do n8n, status:", response.status);
 
       if (response.ok) {
-        console.log("[Chat Debug] Resposta OK recebida, processando dados...");
-        const responseText = await response.text();
-        console.log("[Chat Debug] Texto da resposta bruta:", responseText);
-
-        let data;
-        try {
-          data = JSON.parse(responseText);
-          console.log("[Chat Debug] Dados recebidos do n8n (parseados):", data);
-        } catch (parseError) {
-          console.error("[Chat Debug] Erro ao parsear resposta JSON:", parseError);
-          data = { response: "Erro ao processar resposta do servidor: " + responseText.substring(0, 50) + "..." };
-        }
-
-        // Update session ID if provided
-        if (data.sessionId && data.sessionId !== sessionId) {
-          console.log("[Chat Debug] Atualizando sessionId de", sessionId, "para", data.sessionId);
-          setSessionId(data.sessionId);
-        }
-
-        const botMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: data.text || data.response || "Desculpe, não consegui processar sua solicitação no momento.",
+        console.log("[Chat Debug] Mensagem enviada para n8n com sucesso, iniciando polling...");
+        
+        // Adicionar mensagem de "digitando" temporária
+        const typingMessage: Message = {
+          id: "typing-" + Date.now(),
+          text: "💭 Processando sua mensagem...",
           isUser: false,
           timestamp: new Date(),
         };
-        console.log("[Chat Debug] Mensagem do bot criada:", botMessage);
-
-        // If there's a pending error message, replace it
-        if (pendingMessageId) {
-          console.log("[Chat Debug] Substituindo mensagem pendente:", pendingMessageId);
-          setMessages((prev) => {
-            console.log("[Chat Debug] Estado anterior ao substituir mensagem pendente:", prev.length, "mensagens");
-            return prev.map((msg) => {
-              if (msg.id === pendingMessageId) {
-                console.log("[Chat Debug] Encontrada mensagem pendente para substituir");
-                return botMessage;
+        
+        setMessages((prev) => [...prev, typingMessage]);
+        
+        // Iniciar polling para buscar a resposta
+        const pollForResponse = async (attempts = 0, maxAttempts = 30) => {
+          if (attempts >= maxAttempts) {
+            console.log("[Chat Debug] Timeout no polling, máximo de tentativas atingido");
+            setMessages((prev) => 
+              prev.map((msg) => 
+                msg.id === typingMessage.id 
+                  ? { ...msg, text: "⏱️ Timeout: O assistente está demorando para responder. Tente novamente." }
+                  : msg
+              )
+            );
+            setIsLoading(false);
+            return;
+          }
+          
+          try {
+            console.log(`[Chat Debug] Polling tentativa ${attempts + 1}/${maxAttempts}`);
+            const pollResponse = await fetch(`/api/chat-response?sessionId=${sessionId}`);
+            
+            if (pollResponse.ok) {
+              const pollData = await pollResponse.json();
+              console.log("[Chat Debug] Resposta do polling:", pollData);
+              
+              if (pollData.success && pollData.text) {
+                console.log("[Chat Debug] Resposta encontrada via polling:", pollData.text);
+                
+                // Substituir mensagem de "digitando" pela resposta real
+                setMessages((prev) => 
+                  prev.map((msg) => 
+                    msg.id === typingMessage.id 
+                      ? {
+                          ...msg,
+                          id: Date.now().toString(),
+                          text: pollData.text,
+                        }
+                      : msg
+                  )
+                );
+                setIsLoading(false);
+                return;
               }
-              return msg;
-            });
-          });
-          setPendingMessageId(null);
-        } else {
-          console.log("[Chat Debug] Adicionando nova mensagem do bot");
-          setMessages((prev) => {
-            console.log("[Chat Debug] Estado anterior ao adicionar mensagem do bot:", prev.length, "mensagens");
-            return [...prev, botMessage];
-          });
-        }
+            }
+            
+            // Aguardar 1 segundo antes da próxima tentativa
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await pollForResponse(attempts + 1, maxAttempts);
+            
+          } catch (pollError) {
+            console.error("[Chat Debug] Erro no polling:", pollError);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await pollForResponse(attempts + 1, maxAttempts);
+          }
+        };
+        
+        // Iniciar o polling
+        await pollForResponse();
+        
       } else {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      console.error("[Chat Debug] Erro ao enviar mensagem:", error);
+      console.error("[Chat Debug] Erro ao enviar mensagem para n8n:", error);
+      setIsLoading(false);
 
-      let errorText = "Desculpe, não consegui processar sua solicitação no momento.";
+      let errorText = "❌ Não foi possível enviar sua mensagem. Tente novamente.";
 
-      // Provide more specific error messages
       if (error instanceof TypeError && error.message.includes("fetch")) {
-        errorText = "❌ Não foi possível conectar ao assistente. Verifique se o n8n está rodando em http://localhost:5678";
+        errorText = "❌ Não foi possível conectar ao assistente. Verifique sua conexão.";
       } else if (error instanceof DOMException && error.name === "TimeoutError") {
-        errorText = "⏱️ O assistente está demorando para responder. Aguarde um momento...";
-
-        // For timeout errors, wait a bit more and try to get a delayed response
-        timeoutMessageId = (Date.now() + 1).toString();
-        console.log("[Chat Debug] Definindo ID de mensagem de timeout:", timeoutMessageId);
-        setPendingMessageId(timeoutMessageId);
-
-        setTimeout(async () => {
-          console.log("[Chat Debug] Tentando novamente após timeout...");
-          try {
-            // Usar o webhookUrl do escopo externo
-            const retryResponse = await fetch(webhookUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                message: currentInput,
-                sessionId: sessionId,
-                chatHistory: chatHistory,
-              }),
-              signal: AbortSignal.timeout(15000),
-            });
-
-            console.log("[Chat Debug] Resposta da nova tentativa, status:", retryResponse.status);
-
-            if (retryResponse.ok) {
-              const retryData = await retryResponse.json();
-              console.log("[Chat Debug] Dados recebidos na nova tentativa:", retryData);
-
-              const lateMessage: Message = {
-                id: (Date.now() + 2).toString(),
-                text: retryData.text || retryData.response || "Resposta recebida com atraso.",
-                isUser: false,
-                timestamp: new Date(),
-              };
-
-              console.log("[Chat Debug] Substituindo mensagem de timeout por resposta tardia");
-              // Substituir a mensagem de erro de timeout
-              setMessages((prev) => prev.map((msg) => (msg.id === timeoutMessageId ? lateMessage : msg)));
-              setPendingMessageId(null);
-            }
-          } catch (retryError) {
-            console.log("[Chat Debug] Nova tentativa também falhou:", retryError);
-          }
-        }, 5000); // Wait 5 seconds before retry
+        errorText = "⏱️ Timeout ao enviar mensagem. Tente novamente.";
       } else if (error instanceof Error && error.message.includes("HTTP")) {
-        errorText = `❌ Erro do servidor: ${error.message}. Verifique a configuração do n8n.`;
+        errorText = `❌ Erro do servidor: ${error.message}`;
       }
 
       const errorMessage: Message = {
-        id: error instanceof DOMException && error.name === "TimeoutError" ? timeoutMessageId : (Date.now() + 1).toString(),
+        id: Date.now().toString(),
         text: errorText,
         isUser: false,
         timestamp: new Date(),

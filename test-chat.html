@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Chat N8N</title>
+</head>
+<body>
+    <h1>Teste Chat N8N</h1>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Digite sua mensagem...">
+    <button onclick="sendMessage()">Enviar</button>
+
+    <script>
+        const webhookUrl = 'https://primary-production-8189a.up.railway.app/webhook/farmacia-chat';
+        const sessionId = 'test-' + Date.now();
+        const messages = [];
+
+        function addMessage(content, isUser = false) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.margin = '10px 0';
+            messageDiv.style.padding = '10px';
+            messageDiv.style.backgroundColor = isUser ? '#e3f2fd' : '#f5f5f5';
+            messageDiv.style.borderRadius = '5px';
+            messageDiv.textContent = (isUser ? 'Você: ' : 'Bot: ') + content;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            addMessage(message, true);
+            input.value = '';
+            
+            try {
+                console.log('Enviando para:', webhookUrl);
+                console.log('Dados:', { message, sessionId, chatHistory: messages });
+                
+                const response = await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        sessionId: sessionId,
+                        chatHistory: messages
+                    })
+                });
+                
+                console.log('Status da resposta:', response.status);
+                console.log('Headers da resposta:', response.headers);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Resposta recebida:', data);
+                
+                const botMessage = data.text || data.response || data.message || 'Resposta não disponível';
+                addMessage(botMessage);
+                
+                messages.push({ role: 'user', content: message });
+                messages.push({ role: 'assistant', content: botMessage });
+                
+            } catch (error) {
+                console.error('Erro ao enviar mensagem:', error);
+                addMessage('Erro: ' + error.message);
+            }
+        }
+        
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
