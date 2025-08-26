@@ -104,7 +104,7 @@ export function Chat() {
 
     // Adicionar mensagem de debug inicial
     console.log("[Chat Debug] Estado inicial das mensagens:", messages);
-  }, []);
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -353,19 +353,15 @@ export function Chat() {
 
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-          {console.log("[Chat Debug] Renderizando área de mensagens, total:", messages.length)}
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 dark:text-gray-400 mt-12 transition-colors duration-300">
-              {console.log("[Chat Debug] Renderizando mensagem inicial (sem mensagens)")}
               <Bot className="h-16 w-16 mx-auto mb-6 text-blue-600 dark:text-blue-400 transition-colors duration-300" />
               <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Assistente Virtual</h3>
               <p className="mb-2">Olá! Como posso ajudá-lo hoje?</p>
               <p className="text-sm">Pergunte sobre medicamentos, horários ou serviços da farmácia.</p>
             </div>
           ) : (
-            messages.map((message, index) => {
-              console.log(`[Chat Debug] Renderizando mensagem ${index}, id: ${message.id}, isUser: ${message.isUser}`);
-              return (
+            messages.map((message, index) => (
                 <div key={message.id} className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}>
                   <div
                     className={`max-w-[85%] rounded-lg p-4 transition-colors duration-300 ${
@@ -390,8 +386,7 @@ export function Chat() {
                     </div>
                   </div>
                 </div>
-              );
-            })
+              ))
           )}
 
           {/* Loading indicator */}
