@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Trash2, Plus, Minus, CreditCard } from 'lucide-react';
@@ -34,10 +34,30 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
   const { cart, updateQuantity, removeFromCart, clearCart, getItemCount } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
+  // Melhor sincronização: usar dados do carrinho como fonte principal
   const cartItems = cart.items.map(cartItem => {
     const product = products.find(p => p.id === cartItem.id);
-    return product ? { product, quantity: cartItem.quantity } : null;
-  }).filter(Boolean) as { product: Product; quantity: number }[];
+    if (product) {
+      return { product, quantity: cartItem.quantity };
+    }
+    // Se o produto não for encontrado na lista, usar dados do carrinho
+    return {
+      product: {
+        id: cartItem.id,
+        name: cartItem.name,
+        price: cartItem.price,
+        category: cartItem.category,
+        description: null,
+        imagePath: cartItem.imagePath || null,
+        stock: 999, // Assumir disponível se não encontrado
+        prescription: false,
+        manufacturer: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      } as Product,
+      quantity: cartItem.quantity
+    };
+  }).filter(item => item.quantity > 0);
 
   const handleQuantityChange = (productId: string, newQuantity: number) => {
     const product = products.find(p => p.id === productId);
@@ -85,22 +105,23 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="bg-white dark:bg-gray-900 w-full max-w-md h-full overflow-y-auto shadow-2xl border-l">
-        <Card className="h-full rounded-none border-0">
-          <CardHeader className="sticky top-0 bg-white dark:bg-gray-900 z-10 border-b">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <ShoppingCart className="h-5 w-5" />
-                Carrinho ({getItemCount()})
-              </CardTitle>
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                ✕
-              </Button>
-            </div>
-          </CardHeader>
+    <div className="fixed inset-0 z-[60] overflow-hidden">
+      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
+      <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 ease-in-out">
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Carrinho ({getItemCount()})
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            >
+              ✕
+            </button>
+          </div>
 
-          <CardContent className="p-4">
+          <div className="flex-1 overflow-y-auto p-4">
             {cartItems.length === 0 ? (
               <div className="text-center py-8">
                 <ShoppingCart className="h-12 w-12 mx-auto text-gray-400 mb-4" />
@@ -108,77 +129,104 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
               </div>
             ) : (
               <div className="space-y-4">
-                {cartItems.map(({ product, quantity }) => (
-                  <div key={product.id} className="flex gap-3 p-3 border rounded-lg">
-                    <div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden flex-shrink-0">
-                      {product.imagePath ? (
-                        <Image
-                          src={product.imagePath}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                          Sem imagem
+                {cartItems.map(({ product, quantity }) => {
+                  const isProductNotFound = !products.find(p => p.id === product.id);
+                  
+                  if (isProductNotFound) {
+                    return (
+                      <div key={product.id} className="flex gap-3 p-3 border rounded-lg bg-gray-50 dark:bg-gray-700">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm text-gray-900 dark:text-white">
+                            Produto não encontrado (ID: {product.id})
+                          </h4>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Quantidade: {quantity}
+                          </p>
                         </div>
-                      )}
-                    </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => removeFromCart(product.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    );
+                  }
 
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm truncate">{product.name}</h4>
-                      <p className="text-xs text-gray-500 mb-1">{product.category}</p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          R$ {product.price.toFixed(2)}
-                        </Badge>
-                        {product.prescription && (
-                          <Badge variant="destructive" className="text-xs">
-                            Receita
-                          </Badge>
+                  return (
+                    <div key={product.id} className="flex gap-3 p-3 border rounded-lg">
+                      <div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden flex-shrink-0">
+                        {product.imagePath ? (
+                          <Image
+                            src={product.imagePath}
+                            alt={product.name}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                            Sem imagem
+                          </div>
                         )}
                       </div>
-                    </div>
 
-                    <div className="flex flex-col items-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFromCart(product.id)}
-                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuantityChange(product.id, quantity - 1)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="text-sm font-medium min-w-[20px] text-center">
-                          {quantity}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleQuantityChange(product.id, quantity + 1)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm truncate">{product.name}</h4>
+                        <p className="text-xs text-gray-500 mb-1">{product.category}</p>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            R$ {product.price.toFixed(2)}
+                          </Badge>
+                          {product.prescription && (
+                            <Badge variant="destructive" className="text-xs">
+                              Receita
+                            </Badge>
+                          )}
+                        </div>
                       </div>
 
-                      <p className="text-sm font-medium text-green-600">
-                        R$ {(product.price * quantity).toFixed(2)}
-                      </p>
+                      <div className="flex flex-col items-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFromCart(product.id)}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleQuantityChange(product.id, quantity - 1)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="text-sm font-medium min-w-[20px] text-center">
+                            {quantity}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleQuantityChange(product.id, quantity + 1)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+
+                        <p className="text-sm font-medium text-green-600">
+                          R$ {(product.price * quantity).toFixed(2)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 <Separator />
 
@@ -223,8 +271,8 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
