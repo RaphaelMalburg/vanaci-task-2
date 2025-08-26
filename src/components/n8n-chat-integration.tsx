@@ -102,7 +102,7 @@ export function N8nChatIntegration({
       // Add assistant response to chat
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: data.response,
+        content: data.text || data.response,
         timestamp: data.timestamp || new Date().toISOString()
       };
 

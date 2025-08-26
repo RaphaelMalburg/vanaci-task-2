@@ -207,7 +207,7 @@ export function Chat() {
 
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: data.response || "Desculpe, não consegui processar sua solicitação no momento.",
+          text: data.text || data.response || "Desculpe, não consegui processar sua solicitação no momento.",
           isUser: false,
           timestamp: new Date(),
         };
@@ -276,7 +276,7 @@ export function Chat() {
 
               const lateMessage: Message = {
                 id: (Date.now() + 2).toString(),
-                text: retryData.response || "Resposta recebida com atraso.",
+                text: retryData.text || retryData.response || "Resposta recebida com atraso.",
                 isUser: false,
                 timestamp: new Date(),
               };
