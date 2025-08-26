@@ -69,6 +69,11 @@ export function N8nChatIntegration({
     setIsLoading(true);
     setError(null);
 
+    // DEBUG: Log webhook URL and session info
+    console.log('🔧 [CHAT DEBUG] Webhook URL:', n8nWebhookUrl);
+    console.log('🔧 [CHAT DEBUG] Session ID:', sessionId);
+    console.log('🔧 [CHAT DEBUG] User message:', userMessage.content);
+
     try {
       // Prepare chat history for n8n (last 10 messages)
       const chatHistory = messages.slice(-10).map(msg => ({
@@ -76,27 +81,49 @@ export function N8nChatIntegration({
         content: msg.content
       }));
 
+      const requestPayload = {
+        message: userMessage.content,
+        sessionId: sessionId,
+        chatHistory: chatHistory
+      };
+
+      // DEBUG: Log request payload
+      console.log('🔧 [CHAT DEBUG] Request payload:', JSON.stringify(requestPayload, null, 2));
+
       // Send to n8n webhook
       const response = await fetch(n8nWebhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          message: userMessage.content,
-          sessionId: sessionId,
-          chatHistory: chatHistory
-        })
+        body: JSON.stringify(requestPayload)
       });
 
+      // DEBUG: Log response status
+      console.log('🔧 [CHAT DEBUG] Response status:', response.status);
+      console.log('🔧 [CHAT DEBUG] Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('🔧 [CHAT DEBUG] Error response body:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
       }
 
-      const data: N8nChatResponse = await response.json();
+      const responseText = await response.text();
+      console.log('🔧 [CHAT DEBUG] Raw response:', responseText);
+
+      let data: N8nChatResponse;
+      try {
+        data = JSON.parse(responseText);
+        console.log('🔧 [CHAT DEBUG] Parsed response:', JSON.stringify(data, null, 2));
+      } catch (parseError) {
+        console.error('🔧 [CHAT DEBUG] JSON parse error:', parseError);
+        throw new Error(`Invalid JSON response: ${responseText}`);
+      }
 
       // Update session ID if provided
       if (data.sessionId && data.sessionId !== sessionId) {
+        console.log('🔧 [CHAT DEBUG] Updating session ID from', sessionId, 'to', data.sessionId);
         setSessionId(data.sessionId);
       }
 
@@ -107,16 +134,24 @@ export function N8nChatIntegration({
         timestamp: data.timestamp || new Date().toISOString()
       };
 
+      console.log('🔧 [CHAT DEBUG] Assistant message:', assistantMessage);
       setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
-      console.error('Error sending message to n8n:', error);
-      setError('Erro ao enviar mensagem. Tente novamente.');
+      console.error('🔧 [CHAT DEBUG] Full error details:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        webhookUrl: n8nWebhookUrl,
+        sessionId: sessionId
+      });
+      
+      setError(`Erro ao enviar mensagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       
       // Add error message to chat
       const errorMessage: ChatMessage = {
         role: 'assistant',
-        content: 'Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.',
+        content: 'Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente. Verifique o console do navegador para mais detalhes.',
         timestamp: new Date().toISOString()
       };
       setMessages(prev => [...prev, errorMessage]);
