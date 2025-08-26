@@ -53,6 +53,7 @@ export function Chat() {
 
   // Check n8n status
   const checkN8nStatus = async () => {
+    console.log('[Chat Debug] Verificando status do n8n...');
     try {
       const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "https://primary-production-8189a.up.railway.app/webhook/farmacia-chat";
       const response = await fetch(webhookUrl, {
@@ -61,8 +62,11 @@ export function Chat() {
         body: JSON.stringify({ message: "ping", sessionId: "status-check", chatHistory: [] }),
         signal: AbortSignal.timeout(5000),
       });
-      setN8nStatus(response.ok ? "online" : "offline");
+      const newStatus = response.ok ? "online" : "offline";
+      console.log('[Chat Debug] Status do n8n:', newStatus);
+      setN8nStatus(newStatus);
     } catch (error) {
+      console.log('[Chat Debug] Erro ao verificar status do n8n:', error);
       setN8nStatus("offline");
     }
   };
@@ -70,6 +74,7 @@ export function Chat() {
   // Generate session ID and check n8n status on component mount
   useEffect(() => {
     const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log('[Chat Debug] Componente montado, novo sessionId gerado:', newSessionId);
     setSessionId(newSessionId);
     checkN8nStatus();
   }, []);
@@ -77,12 +82,16 @@ export function Chat() {
   const sendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
+    console.log('[Chat Debug] Iniciando envio de mensagem:', inputValue);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputValue,
       isUser: true,
       timestamp: new Date(),
     };
+
+    console.log('[Chat Debug] Mensagem do usuário criada:', userMessage);
 
     setMessages((prev) => [...prev, userMessage]);
     const currentInput = inputValue;
@@ -99,8 +108,12 @@ export function Chat() {
     const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "https://primary-production-8189a.up.railway.app/webhook/farmacia-chat";
     // Declarar timeoutMessageId aqui para que esteja disponível em todo o escopo da função
     let timeoutMessageId = "";
+    
+    console.log('[Chat Debug] Usando webhook URL:', webhookUrl);
 
     try {
+      console.log('[Chat Debug] Enviando requisição para n8n com sessionId:', sessionId);
+      
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
@@ -114,12 +127,16 @@ export function Chat() {
         // Add timeout to prevent hanging
         signal: AbortSignal.timeout(30000), // 30 seconds timeout
       });
+      
+      console.log('[Chat Debug] Resposta recebida do n8n, status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('[Chat Debug] Dados recebidos do n8n:', data);
 
         // Update session ID if provided
         if (data.sessionId && data.sessionId !== sessionId) {
+          console.log('[Chat Debug] Atualizando sessionId de', sessionId, 'para', data.sessionId);
           setSessionId(data.sessionId);
         }
 
@@ -132,16 +149,18 @@ export function Chat() {
 
         // If there's a pending error message, replace it
         if (pendingMessageId) {
+          console.log('[Chat Debug] Substituindo mensagem pendente:', pendingMessageId);
           setMessages((prev) => prev.map((msg) => (msg.id === pendingMessageId ? botMessage : msg)));
           setPendingMessageId(null);
         } else {
+          console.log('[Chat Debug] Adicionando nova mensagem do bot');
           setMessages((prev) => [...prev, botMessage]);
         }
       } else {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("[Chat Debug] Erro ao enviar mensagem:", error);
 
       let errorText = "Desculpe, não consegui processar sua solicitação no momento.";
 
@@ -152,41 +171,48 @@ export function Chat() {
         errorText = "⏱️ O assistente está demorando para responder. Aguarde um momento...";
 
         // For timeout errors, wait a bit more and try to get a delayed response
-        timeoutMessageId = (Date.now() + 1).toString();
-        setPendingMessageId(timeoutMessageId);
-        
-        setTimeout(async () => {
-          try {
-            // Usar o webhookUrl do escopo externo
-            const retryResponse = await fetch(webhookUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                message: currentInput,
-                sessionId: sessionId,
-                chatHistory: chatHistory,
-              }),
-              signal: AbortSignal.timeout(15000),
-            });
+      timeoutMessageId = (Date.now() + 1).toString();
+      console.log('[Chat Debug] Definindo ID de mensagem de timeout:', timeoutMessageId);
+      setPendingMessageId(timeoutMessageId);
+      
+      setTimeout(async () => {
+        console.log('[Chat Debug] Tentando novamente após timeout...');
+        try {
+          // Usar o webhookUrl do escopo externo
+          const retryResponse = await fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: currentInput,
+              sessionId: sessionId,
+              chatHistory: chatHistory,
+            }),
+            signal: AbortSignal.timeout(15000),
+          });
+          
+          console.log('[Chat Debug] Resposta da nova tentativa, status:', retryResponse.status);
 
             if (retryResponse.ok) {
-              const retryData = await retryResponse.json();
-              const lateMessage: Message = {
-                id: (Date.now() + 2).toString(),
-                text: retryData.response || "Resposta recebida com atraso.",
-                isUser: false,
-                timestamp: new Date(),
-              };
+            const retryData = await retryResponse.json();
+            console.log('[Chat Debug] Dados recebidos na nova tentativa:', retryData);
+            
+            const lateMessage: Message = {
+              id: (Date.now() + 2).toString(),
+              text: retryData.response || "Resposta recebida com atraso.",
+              isUser: false,
+              timestamp: new Date(),
+            };
 
-              // Substituir a mensagem de erro de timeout
-              setMessages((prev) => prev.map((msg) => 
-                (msg.id === timeoutMessageId ? lateMessage : msg)
-              ));
-              setPendingMessageId(null);
-            }
-          } catch (retryError) {
-            console.log("Retry also failed:", retryError);
+            console.log('[Chat Debug] Substituindo mensagem de timeout por resposta tardia');
+            // Substituir a mensagem de erro de timeout
+            setMessages((prev) => prev.map((msg) => 
+              (msg.id === timeoutMessageId ? lateMessage : msg)
+            ));
+            setPendingMessageId(null);
           }
+          } catch (retryError) {
+          console.log("[Chat Debug] Nova tentativa também falhou:", retryError);
+        }
         }, 5000); // Wait 5 seconds before retry
       } else if (error instanceof Error && error.message.includes("HTTP")) {
         errorText = `❌ Erro do servidor: ${error.message}. Verifique a configuração do n8n.`;

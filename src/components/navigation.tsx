@@ -23,7 +23,6 @@ export function Navigation() {
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const itemCount = useCartStore((state) => state.getItemCount());
-  const { openCart } = useCartContext();
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
@@ -60,23 +59,24 @@ export function Navigation() {
             ))}
             
             {/* Cart Button */}
-            <Button
-              onClick={openCart}
-              variant="ghost"
-              size="sm"
-              className="relative flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-            >
-              <ShoppingCart className="h-5 w-5" />
-              <span className="hidden sm:inline">Carrinho</span>
-              {itemCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                >
-                  {itemCount}
-                </Badge>
-              )}
-            </Button>
+            <Link href="/cart">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                <span className="hidden sm:inline">Carrinho</span>
+                {itemCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  >
+                    {itemCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
             
             {/* Theme Toggle */}
             <button
@@ -91,13 +91,13 @@ export function Navigation() {
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
             {/* Cart Button Mobile */}
-            <button
-              onClick={openCart}
-              className="relative p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300"
-              aria-label="Carrinho"
-            >
-              <ShoppingCart size={20} />
-              {itemCount > 0 && (
+            <Link href="/cart">
+              <button
+                className="relative p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300"
+                aria-label="Carrinho"
+              >
+                <ShoppingCart size={20} />
+                {itemCount > 0 && (
                 <Badge 
                   variant="destructive" 
                   className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs"
@@ -105,7 +105,8 @@ export function Navigation() {
                   {itemCount}
                 </Badge>
               )}
-            </button>
+              </button>
+            </Link>
             <button
               onClick={toggleTheme}
               className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300"
