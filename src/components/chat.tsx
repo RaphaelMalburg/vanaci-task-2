@@ -41,6 +41,8 @@ export function Chat() {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [sessionId, setSessionId] = useState<string>('');
+  const [n8nStatus, setN8nStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -50,12 +52,27 @@ export function Chat() {
     scrollToBottom();
   }, [messages]);
 
-  const [sessionId, setSessionId] = useState<string>('');
+  // Check n8n status
+  const checkN8nStatus = async () => {
+    try {
+      const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/pharmacy-chat';
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'ping', sessionId: 'status-check', chatHistory: [] }),
+        signal: AbortSignal.timeout(3000)
+      });
+      setN8nStatus(response.ok ? 'online' : 'offline');
+    } catch (error) {
+      setN8nStatus('offline');
+    }
+  };
 
-  // Generate session ID on component mount
+  // Generate session ID and check n8n status on component mount
   useEffect(() => {
     const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     setSessionId(newSessionId);
+    checkN8nStatus();
   }, []);
 
   const sendMessage = async () => {
@@ -69,6 +86,7 @@ export function Chat() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = inputValue;
     setInputValue("");
     setIsLoading(true);
 
@@ -79,16 +97,20 @@ export function Chat() {
         content: msg.text
       }));
 
-      const response = await fetch(process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/pharmacy-chat', {
+      const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook/pharmacy-chat';
+      
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: inputValue,
+          message: currentInput,
           sessionId: sessionId,
           chatHistory: chatHistory
-        })
+        }),
+        // Add timeout to prevent hanging
+        signal: AbortSignal.timeout(10000) // 10 seconds timeout
       });
 
       if (response.ok) {
@@ -107,13 +129,25 @@ export function Chat() {
         };
         setMessages(prev => [...prev, botMessage]);
       } else {
-        throw new Error('Falha na resposta do servidor');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
+      console.error('Error sending message:', error);
+      
+      let errorText = "Desculpe, não consegui processar sua solicitação no momento.";
+      
+      // Provide more specific error messages
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorText = "❌ Não foi possível conectar ao assistente. Verifique se o n8n está rodando em http://localhost:5678";
+      } else if (error instanceof DOMException && error.name === 'TimeoutError') {
+        errorText = "⏱️ A solicitação demorou muito para responder. Tente novamente.";
+      } else if (error instanceof Error && error.message.includes('HTTP')) {
+        errorText = `❌ Erro do servidor: ${error.message}. Verifique a configuração do n8n.`;
+      }
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Desculpe, ocorreu um erro ao conectar com o assistente n8n. Verifique se o serviço está disponível.",
+        text: errorText,
         isUser: false,
         timestamp: new Date()
       };
@@ -148,9 +182,24 @@ export function Chat() {
         {/* Header */}
         <div className="border-b dark:border-gray-700 p-4 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white transition-colors duration-300">
-              Assistente Virtual da Farmácia
-            </h2>
+            <div className="flex items-center space-x-2">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white transition-colors duration-300">
+                Assistente Virtual da Farmácia
+              </h2>
+              {/* N8N Status Indicator */}
+              <div className="flex items-center space-x-1">
+                <div className={`w-2 h-2 rounded-full ${
+                  n8nStatus === 'online' ? 'bg-green-400' :
+                  n8nStatus === 'offline' ? 'bg-red-400' :
+                  'bg-yellow-400 animate-pulse'
+                }`} />
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {n8nStatus === 'online' ? 'Online' :
+                   n8nStatus === 'offline' ? 'Offline' :
+                   'Verificando...'}
+                </span>
+              </div>
+            </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Powered by n8n + Mistral AI • Sessão: {sessionId.slice(-8)}
             </p>
@@ -230,20 +279,37 @@ export function Chat() {
           <div ref={messagesEndRef} />
         </div>
         
+        {/* Warning message when n8n is offline */}
+        {n8nStatus === 'offline' && (
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border-t border-red-200 dark:border-red-800">
+            <div className="flex items-center space-x-2 text-red-700 dark:text-red-400">
+              <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center">
+                <span className="text-white text-xs">!</span>
+              </div>
+              <span className="text-sm font-medium">
+                Assistente indisponível
+              </span>
+            </div>
+            <p className="text-xs text-red-600 dark:text-red-400 mt-1 ml-6">
+              O serviço n8n não está rodando. Inicie o n8n em http://localhost:5678 para usar o chat.
+            </p>
+          </div>
+        )}
+
         {/* Input Area */}
         <div className="border-t dark:border-gray-700 p-6 bg-white dark:bg-gray-800 transition-colors duration-300">
           <div className="flex gap-3">
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Digite sua mensagem..."
+              placeholder={n8nStatus === 'offline' ? 'Assistente indisponível...' : 'Digite sua mensagem...'}
               onKeyPress={handleKeyPress}
-              disabled={isLoading}
+              disabled={isLoading || n8nStatus === 'offline'}
               className="flex-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300 h-12"
             />
             <Button
               onClick={sendMessage}
-              disabled={isLoading || !inputValue.trim()}
+              disabled={isLoading || !inputValue.trim() || n8nStatus === 'offline'}
               className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white transition-colors duration-300 h-12 px-4"
             >
               <Send className="h-5 w-5" />
