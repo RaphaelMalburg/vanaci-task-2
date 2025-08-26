@@ -48,25 +48,42 @@ export function Chat() {
   };
 
   useEffect(() => {
+    console.log("[Chat Debug] Mensagens atualizadas, total:", messages.length);
+    console.log("[Chat Debug] Conteúdo das mensagens:", messages);
     scrollToBottom();
   }, [messages]);
 
   // Check n8n status
   const checkN8nStatus = async () => {
-    console.log('[Chat Debug] Verificando status do n8n...');
+    console.log("[Chat Debug] Verificando status do n8n...");
     try {
-      const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "https://primary-production-8189a.up.railway.app/webhook/farmacia-chat";
+      // Usar URL alternativo para o webhook do n8n
+      const webhookUrl = "https://primary-production-8189a.up.railway.app/webhook/farmacia-chat";
+      console.log("[Chat Debug] Usando URL alternativo para o webhook:", webhookUrl);
+      console.log("[Chat Debug] Usando webhook URL para verificação:", webhookUrl);
+
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: "ping", sessionId: "status-check", chatHistory: [] }),
         signal: AbortSignal.timeout(5000),
       });
+
+      console.log("[Chat Debug] Resposta da verificação de status:", response.status, response.statusText);
+
       const newStatus = response.ok ? "online" : "offline";
-      console.log('[Chat Debug] Status do n8n:', newStatus);
+      console.log("[Chat Debug] Status do n8n definido como:", newStatus);
       setN8nStatus(newStatus);
+
+      // Tentar ler o corpo da resposta para debug
+      try {
+        const responseText = await response.text();
+        console.log("[Chat Debug] Corpo da resposta de verificação:", responseText);
+      } catch (textError) {
+        console.log("[Chat Debug] Não foi possível ler o corpo da resposta:", textError);
+      }
     } catch (error) {
-      console.log('[Chat Debug] Erro ao verificar status do n8n:', error);
+      console.log("[Chat Debug] Erro ao verificar status do n8n:", error);
       setN8nStatus("offline");
     }
   };
@@ -74,15 +91,26 @@ export function Chat() {
   // Generate session ID and check n8n status on component mount
   useEffect(() => {
     const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log('[Chat Debug] Componente montado, novo sessionId gerado:', newSessionId);
+    console.log("[Chat Debug] Componente montado, novo sessionId gerado:", newSessionId);
     setSessionId(newSessionId);
+
+    // Verificar se o n8n está online
+    console.log("[Chat Debug] Iniciando verificação do status do n8n...");
     checkN8nStatus();
+
+    // Verificar o webhook URL configurado
+    const webhookUrl = "https://primary-production-8189a.up.railway.app/webhook/farmacia-chat";
+    console.log("[Chat Debug] Webhook URL configurado:", webhookUrl);
+
+    // Adicionar mensagem de debug inicial
+    console.log("[Chat Debug] Estado inicial das mensagens:", messages);
   }, []);
 
   const sendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
-    console.log('[Chat Debug] Iniciando envio de mensagem:', inputValue);
+    console.log("[Chat Debug] Iniciando envio de mensagem:", inputValue);
+    console.log("[Chat Debug] Estado atual - isLoading:", isLoading, "n8nStatus:", n8nStatus);
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -91,29 +119,54 @@ export function Chat() {
       timestamp: new Date(),
     };
 
-    console.log('[Chat Debug] Mensagem do usuário criada:', userMessage);
+    console.log("[Chat Debug] Mensagem do usuário criada:", userMessage);
+    console.log("[Chat Debug] Mensagens atuais:", messages.length);
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => {
+      console.log("[Chat Debug] Adicionando mensagem do usuário ao estado, total anterior:", prev.length);
+      return [...prev, userMessage];
+    });
     const currentInput = inputValue;
     setInputValue("");
     setIsLoading(true);
+    console.log("[Chat Debug] Estado de carregamento definido como true");
 
     // Prepare chat history for n8n (last 10 messages)
     const chatHistory = messages.slice(-10).map((msg) => ({
       role: msg.isUser ? "user" : "assistant",
       content: msg.text,
     }));
+    console.log("[Chat Debug] Histórico de chat preparado para n8n:", chatHistory);
 
-    // Mova a declaração do webhookUrl para fora do bloco try/catch
-    const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "https://primary-production-8189a.up.railway.app/webhook/farmacia-chat";
+    // Usar URL alternativo para o webhook do n8n
+    const webhookUrl = "https://primary-production-8189a.up.railway.app/webhook/farmacia-chat";
+    console.log("[Chat Debug] Usando URL alternativo para o webhook no envio:", webhookUrl);
     // Declarar timeoutMessageId aqui para que esteja disponível em todo o escopo da função
     let timeoutMessageId = "";
-    
-    console.log('[Chat Debug] Usando webhook URL:', webhookUrl);
+
+    console.log("[Chat Debug] Usando webhook URL para envio:", webhookUrl);
+    console.log("[Chat Debug] SessionId atual:", sessionId);
 
     try {
-      console.log('[Chat Debug] Enviando requisição para n8n com sessionId:', sessionId);
-      
+      console.log("[Chat Debug] Enviando requisição para n8n com sessionId:", sessionId);
+      console.log(
+        "[Chat Debug] Payload enviado:",
+        JSON.stringify({
+          message: currentInput,
+          sessionId: sessionId,
+          chatHistory: chatHistory,
+        })
+      );
+
+      // Verificar se o n8n está online antes de enviar a requisição
+      if (n8nStatus === "offline") {
+        console.log("[Chat Debug] N8n está offline, tentando reconectar...");
+        await checkN8nStatus();
+        if (n8nStatus === "offline") {
+          throw new Error("N8n está offline. Verifique se o serviço está rodando.");
+        }
+      }
+
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
@@ -127,16 +180,28 @@ export function Chat() {
         // Add timeout to prevent hanging
         signal: AbortSignal.timeout(30000), // 30 seconds timeout
       });
-      
-      console.log('[Chat Debug] Resposta recebida do n8n, status:', response.status);
+
+      console.log("[Chat Debug] Requisição enviada com sucesso, aguardando resposta...");
+
+      console.log("[Chat Debug] Resposta recebida do n8n, status:", response.status);
 
       if (response.ok) {
-        const data = await response.json();
-        console.log('[Chat Debug] Dados recebidos do n8n:', data);
+        console.log("[Chat Debug] Resposta OK recebida, processando dados...");
+        const responseText = await response.text();
+        console.log("[Chat Debug] Texto da resposta bruta:", responseText);
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+          console.log("[Chat Debug] Dados recebidos do n8n (parseados):", data);
+        } catch (parseError) {
+          console.error("[Chat Debug] Erro ao parsear resposta JSON:", parseError);
+          data = { response: "Erro ao processar resposta do servidor: " + responseText.substring(0, 50) + "..." };
+        }
 
         // Update session ID if provided
         if (data.sessionId && data.sessionId !== sessionId) {
-          console.log('[Chat Debug] Atualizando sessionId de', sessionId, 'para', data.sessionId);
+          console.log("[Chat Debug] Atualizando sessionId de", sessionId, "para", data.sessionId);
           setSessionId(data.sessionId);
         }
 
@@ -146,15 +211,28 @@ export function Chat() {
           isUser: false,
           timestamp: new Date(),
         };
+        console.log("[Chat Debug] Mensagem do bot criada:", botMessage);
 
         // If there's a pending error message, replace it
         if (pendingMessageId) {
-          console.log('[Chat Debug] Substituindo mensagem pendente:', pendingMessageId);
-          setMessages((prev) => prev.map((msg) => (msg.id === pendingMessageId ? botMessage : msg)));
+          console.log("[Chat Debug] Substituindo mensagem pendente:", pendingMessageId);
+          setMessages((prev) => {
+            console.log("[Chat Debug] Estado anterior ao substituir mensagem pendente:", prev.length, "mensagens");
+            return prev.map((msg) => {
+              if (msg.id === pendingMessageId) {
+                console.log("[Chat Debug] Encontrada mensagem pendente para substituir");
+                return botMessage;
+              }
+              return msg;
+            });
+          });
           setPendingMessageId(null);
         } else {
-          console.log('[Chat Debug] Adicionando nova mensagem do bot');
-          setMessages((prev) => [...prev, botMessage]);
+          console.log("[Chat Debug] Adicionando nova mensagem do bot");
+          setMessages((prev) => {
+            console.log("[Chat Debug] Estado anterior ao adicionar mensagem do bot:", prev.length, "mensagens");
+            return [...prev, botMessage];
+          });
         }
       } else {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -171,57 +249,53 @@ export function Chat() {
         errorText = "⏱️ O assistente está demorando para responder. Aguarde um momento...";
 
         // For timeout errors, wait a bit more and try to get a delayed response
-      timeoutMessageId = (Date.now() + 1).toString();
-      console.log('[Chat Debug] Definindo ID de mensagem de timeout:', timeoutMessageId);
-      setPendingMessageId(timeoutMessageId);
-      
-      setTimeout(async () => {
-        console.log('[Chat Debug] Tentando novamente após timeout...');
-        try {
-          // Usar o webhookUrl do escopo externo
-          const retryResponse = await fetch(webhookUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              message: currentInput,
-              sessionId: sessionId,
-              chatHistory: chatHistory,
-            }),
-            signal: AbortSignal.timeout(15000),
-          });
-          
-          console.log('[Chat Debug] Resposta da nova tentativa, status:', retryResponse.status);
+        timeoutMessageId = (Date.now() + 1).toString();
+        console.log("[Chat Debug] Definindo ID de mensagem de timeout:", timeoutMessageId);
+        setPendingMessageId(timeoutMessageId);
+
+        setTimeout(async () => {
+          console.log("[Chat Debug] Tentando novamente após timeout...");
+          try {
+            // Usar o webhookUrl do escopo externo
+            const retryResponse = await fetch(webhookUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                message: currentInput,
+                sessionId: sessionId,
+                chatHistory: chatHistory,
+              }),
+              signal: AbortSignal.timeout(15000),
+            });
+
+            console.log("[Chat Debug] Resposta da nova tentativa, status:", retryResponse.status);
 
             if (retryResponse.ok) {
-            const retryData = await retryResponse.json();
-            console.log('[Chat Debug] Dados recebidos na nova tentativa:', retryData);
-            
-            const lateMessage: Message = {
-              id: (Date.now() + 2).toString(),
-              text: retryData.response || "Resposta recebida com atraso.",
-              isUser: false,
-              timestamp: new Date(),
-            };
+              const retryData = await retryResponse.json();
+              console.log("[Chat Debug] Dados recebidos na nova tentativa:", retryData);
 
-            console.log('[Chat Debug] Substituindo mensagem de timeout por resposta tardia');
-            // Substituir a mensagem de erro de timeout
-            setMessages((prev) => prev.map((msg) => 
-              (msg.id === timeoutMessageId ? lateMessage : msg)
-            ));
-            setPendingMessageId(null);
-          }
+              const lateMessage: Message = {
+                id: (Date.now() + 2).toString(),
+                text: retryData.response || "Resposta recebida com atraso.",
+                isUser: false,
+                timestamp: new Date(),
+              };
+
+              console.log("[Chat Debug] Substituindo mensagem de timeout por resposta tardia");
+              // Substituir a mensagem de erro de timeout
+              setMessages((prev) => prev.map((msg) => (msg.id === timeoutMessageId ? lateMessage : msg)));
+              setPendingMessageId(null);
+            }
           } catch (retryError) {
-          console.log("[Chat Debug] Nova tentativa também falhou:", retryError);
-        }
+            console.log("[Chat Debug] Nova tentativa também falhou:", retryError);
+          }
         }, 5000); // Wait 5 seconds before retry
       } else if (error instanceof Error && error.message.includes("HTTP")) {
         errorText = `❌ Erro do servidor: ${error.message}. Verifique a configuração do n8n.`;
       }
 
       const errorMessage: Message = {
-        id: (error instanceof DOMException && error.name === "TimeoutError") 
-          ? timeoutMessageId 
-          : (Date.now() + 1).toString(),
+        id: error instanceof DOMException && error.name === "TimeoutError" ? timeoutMessageId : (Date.now() + 1).toString(),
         text: errorText,
         isUser: false,
         timestamp: new Date(),
@@ -279,40 +353,45 @@ export function Chat() {
 
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+          {console.log("[Chat Debug] Renderizando área de mensagens, total:", messages.length)}
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 dark:text-gray-400 mt-12 transition-colors duration-300">
+              {console.log("[Chat Debug] Renderizando mensagem inicial (sem mensagens)")}
               <Bot className="h-16 w-16 mx-auto mb-6 text-blue-600 dark:text-blue-400 transition-colors duration-300" />
               <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Assistente Virtual</h3>
               <p className="mb-2">Olá! Como posso ajudá-lo hoje?</p>
               <p className="text-sm">Pergunte sobre medicamentos, horários ou serviços da farmácia.</p>
             </div>
           ) : (
-            messages.map((message) => (
-              <div key={message.id} className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[85%] rounded-lg p-4 transition-colors duration-300 ${
-                    message.isUser
-                      ? "bg-blue-600 dark:bg-blue-500 text-white"
-                      : "bg-white text-gray-900 dark:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm"
-                  }`}>
-                  <div className="flex items-start gap-3">
-                    {!message.isUser && <Bot className="h-5 w-5 mt-0.5 text-blue-600 dark:text-blue-400 flex-shrink-0 transition-colors duration-300" />}
-                    {message.isUser && <User className="h-5 w-5 mt-0.5 text-white flex-shrink-0" />}
-                    <div className="flex-1">
-                      <p className="text-sm leading-relaxed">{message.text}</p>
-                      <p className={`text-xs mt-1 transition-colors duration-300 ${message.isUser ? "text-blue-100 dark:text-blue-200" : "text-gray-500 dark:text-gray-400"}`}>
-                        {typeof window !== "undefined"
-                          ? message.timestamp.toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "--:--"}
-                      </p>
+            messages.map((message, index) => {
+              console.log(`[Chat Debug] Renderizando mensagem ${index}, id: ${message.id}, isUser: ${message.isUser}`);
+              return (
+                <div key={message.id} className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[85%] rounded-lg p-4 transition-colors duration-300 ${
+                      message.isUser
+                        ? "bg-blue-600 dark:bg-blue-500 text-white"
+                        : "bg-white text-gray-900 dark:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm"
+                    }`}>
+                    <div className="flex items-start gap-3">
+                      {!message.isUser && <Bot className="h-5 w-5 mt-0.5 text-blue-600 dark:text-blue-400 flex-shrink-0 transition-colors duration-300" />}
+                      {message.isUser && <User className="h-5 w-5 mt-0.5 text-white flex-shrink-0" />}
+                      <div className="flex-1">
+                        <p className="text-sm leading-relaxed">{message.text}</p>
+                        <p className={`text-xs mt-1 transition-colors duration-300 ${message.isUser ? "text-blue-100 dark:text-blue-200" : "text-gray-500 dark:text-gray-400"}`}>
+                          {typeof window !== "undefined"
+                            ? message.timestamp.toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "--:--"}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
 
           {/* Loading indicator */}
