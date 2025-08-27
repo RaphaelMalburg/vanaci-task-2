@@ -53,7 +53,7 @@ export const searchProductsTool = tool({
       }
       
       const productsList = products
-        .map(product => `- ${product.name} - R$ ${product.price.toFixed(2)} (ID: ${product.id})`)
+        .map(product => `- ${product.name} - € ${product.price.toFixed(2)} (ID: ${product.id})`)
         .join('\n');
       
       return {
@@ -179,7 +179,7 @@ export const listRecommendedProductsTool = tool({
       }
       
       const productsList = recommendedProducts
-        .map(product => `- ${product.name} - R$ ${product.price.toFixed(2)} (ID: ${product.id})\n  ${product.description.substring(0, 100)}...`)
+        .map(product => `- ${product.name} - € ${product.price.toFixed(2)} (ID: ${product.id})\n  ${product.description.substring(0, 100)}...`)
         .join('\n\n');
       
       return {

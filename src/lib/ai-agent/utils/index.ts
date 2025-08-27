@@ -2,15 +2,15 @@ import type { CartItem, Product, ToolResult } from '../types';
 
 // Utilitários para formatação de preços
 export const formatPrice = (price: number): string => {
-  return new Intl.NumberFormat('pt-BR', {
+  return new Intl.NumberFormat('pt-PT', {
     style: 'currency',
-    currency: 'BRL',
+    currency: 'EUR',
   }).format(price);
 };
 
 // Utilitários para formatação de datas
 export const formatDate = (date: Date): string => {
-  return new Intl.DateTimeFormat('pt-BR', {
+  return new Intl.DateTimeFormat('pt-PT', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -19,17 +19,17 @@ export const formatDate = (date: Date): string => {
   }).format(date);
 };
 
-// Utilitários para validação de CEP
+// Utilitários para validação de Código Postal
 export const validateZipCode = (zipCode: string): boolean => {
   const cleanZip = zipCode.replace(/\D/g, '');
-  return cleanZip.length === 8;
+  return cleanZip.length === 7; // Códigos postais portugueses têm 7 dígitos
 };
 
-// Utilitários para formatação de CEP
+// Utilitários para formatação de Código Postal
 export const formatZipCode = (zipCode: string): string => {
   const cleanZip = zipCode.replace(/\D/g, '');
-  if (cleanZip.length === 8) {
-    return `${cleanZip.slice(0, 5)}-${cleanZip.slice(5)}`;
+  if (cleanZip.length === 7) {
+    return `${cleanZip.slice(0, 4)}-${cleanZip.slice(4)}`; // Formato português: 1234-567
   }
   return zipCode;
 };
@@ -72,33 +72,32 @@ export const calculateDiscount = (total: number, discountPercent: number): numbe
 // Utilitários para cálculo de frete (simulado)
 export const calculateShipping = (zipCode: string, total: number): number => {
   if (!validateZipCode(zipCode)) {
-    throw new Error('CEP inválido');
+    throw new Error('Código postal inválido');
   }
 
-  // Frete grátis para compras acima de R$ 100
-  if (total >= 100) {
+  // Portes grátis para compras acima de € 50
+  if (total >= 50) {
     return 0;
   }
 
-  // Simulação de cálculo de frete baseado no CEP
+  // Simulação de cálculo de frete baseado no código postal português
   const cleanZip = zipCode.replace(/\D/g, '');
   const firstDigit = parseInt(cleanZip[0]);
   
-  // Regiões com fretes diferentes
+  // Regiões de Portugal com portes diferentes
   const shippingRates = {
-    0: 15.90, // SP
-    1: 18.90, // SP interior
-    2: 22.90, // RJ/ES
-    3: 25.90, // MG
-    4: 28.90, // BA/SE/AL
-    5: 32.90, // PR/SC
-    6: 35.90, // PE/PB/RN/CE
-    7: 38.90, // DF/GO/TO/MT/MS
-    8: 42.90, // AC/RO/AM/RR/AP
-    9: 45.90, // MA/PI/PA
+    1: 3.50, // Lisboa
+    2: 4.50, // Santarém, Leiria
+    3: 5.50, // Coimbra, Viseu
+    4: 6.50, // Porto, Braga
+    5: 7.50, // Aveiro, Guarda
+    6: 8.50, // Castelo Branco, Portalegre
+    7: 9.50, // Évora, Setúbal
+    8: 10.50, // Beja, Faro
+    9: 12.50, // Ilhas (Açores, Madeira)
   };
 
-  return shippingRates[firstDigit as keyof typeof shippingRates] || 25.90;
+  return shippingRates[firstDigit as keyof typeof shippingRates] || 5.50;
 };
 
 // Utilitários para geração de IDs únicos

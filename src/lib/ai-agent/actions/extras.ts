@@ -227,8 +227,8 @@ export const loyaltyProgramTool = tool({
       success: true,
       message,
       data: {
-        pointsRatio: 1, // 1 ponto por R$ 1
-        redeemRatio: 0.1, // R$ 0.10 por ponto
+        pointsRatio: 1, // 1 ponto por € 1
+        redeemRatio: 0.1, // € 0.10 por ponto
         levels: {
           bronze: { min: 0, max: 499, multiplier: 1 },
           silver: { min: 500, max: 999, multiplier: 1.5 },
@@ -237,7 +237,7 @@ export const loyaltyProgramTool = tool({
         benefits: [
           'Desconto aniversário 20%',
           'Ofertas exclusivas',
-          'Frete grátis R$ 80+',
+          'Portes grátis € 40+',
           'Lembretes medicação',
         ],
       },

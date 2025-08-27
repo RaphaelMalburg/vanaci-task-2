@@ -23,7 +23,7 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
 export const suggestProductsWithinBudgetTool = tool({
   description: 'Sugere produtos que cabem dentro de um orçamento específico',
   inputSchema: z.object({
-    budgetAmount: z.number().min(0).describe('Valor máximo do orçamento em reais'),
+    budgetAmount: z.number().min(0).describe('Valor máximo do orçamento em euros'),
     category: z.string().optional().describe('Categoria específica (opcional)'),
     symptomOrNeed: z.string().optional().describe('Sintoma ou necessidade específica (opcional)'),
     limit: z.number().min(1).max(20).default(10).describe('Número máximo de sugestões'),
@@ -232,7 +232,7 @@ export const optimizeCartForBudgetTool = tool({
     if (suggestions.length > 0) {
       message += `Sugestões de produtos alternativos:\n`;
       message += suggestions
-        .map(product => `- ${product.name} - R$ ${product.price.toFixed(2)}`)
+        .map(product => `- ${product.name} - € ${product.price.toFixed(2)}`)
         .join('\n');
     }
     
@@ -287,9 +287,9 @@ export const comparePricesTool = tool({
       
       const message = `Comparação de preços para "${productName}":\n\n` +
         `📊 **Estatísticas:**\n` +
-        `• Menor preço: R$ ${minPrice.toFixed(2)}\n` +
-        `• Maior preço: R$ ${maxPrice.toFixed(2)}\n` +
-        `• Preço médio: R$ ${avgPrice.toFixed(2)}\n\n` +
+        `• Menor preço: € ${minPrice.toFixed(2)}\n` +
+        `• Maior preço: € ${maxPrice.toFixed(2)}\n` +
+        `• Preço médio: € ${avgPrice.toFixed(2)}\n\n` +
         `💰 **Produtos encontrados (${results.length}):**`;
 
       return {
@@ -356,7 +356,7 @@ export const compareProductPricesTool = tool({
         similarProducts: [],
         maxPrice,
         comparison: null,
-        message: `Nenhum produto similar encontrado${maxPrice ? ` abaixo de R$ ${maxPrice.toFixed(2)}` : ''}.`,
+        message: `Nenhum produto similar encontrado${maxPrice ? ` abaixo de € ${maxPrice.toFixed(2)}` : ''}.`,
       };
     }
     
@@ -369,7 +369,7 @@ export const compareProductPricesTool = tool({
         cheapestAlternative: similarProducts[0],
         potentialSavings: product.price - similarProducts[0].price,
       },
-      message: `Encontrados ${similarProducts.length} produtos similares. Economia potencial: R$ ${(product.price - similarProducts[0].price).toFixed(2)}.`,
+      message: `Encontrados ${similarProducts.length} produtos similares. Economia potencial: € ${(product.price - similarProducts[0].price).toFixed(2)}.`,
     };
   },
 });

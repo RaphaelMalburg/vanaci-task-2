@@ -274,12 +274,12 @@ export default function CartPage() {
                   
                   <div className="flex justify-between font-medium text-lg">
                     <span className="text-gray-900 dark:text-white">Total</span>
-                    <span className="text-blue-600">R$ {total.toFixed(2)}</span>
+                    <span className="text-blue-600">€ {total.toFixed(2)}</span>
                   </div>
                   
-                  {subtotal < 100 && (
+                  {subtotal < 50 && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      Adicione mais R$ {(100 - subtotal).toFixed(2)} para ganhar 5% de desconto
+                      Adicione mais € {(50 - subtotal).toFixed(2)} para ganhar 5% de desconto
                     </p>
                   )}
                 </div>
