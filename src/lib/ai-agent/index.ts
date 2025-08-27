@@ -143,11 +143,13 @@ export class PharmacyAIAgent {
       console.log('🌡️ Temperatura configurada:', this.llmConfig.temperature || 0.7);
       
       console.log('🚀 Iniciando generateText...');
-      const result = await generateText({
+      const result = await streamText({
         model: llmModel,
-        messages,
+        messages: coreMessages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
+        maxSteps: 5, // Permite múltiplos passos para continuar após tool calls
+        experimental_continueSteps: true, // Força continuação após tool calls
       });
       
       console.log('✅ GenerateText concluído');
@@ -239,6 +241,8 @@ export class PharmacyAIAgent {
         messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
+        maxSteps: 5, // Permite múltiplos passos para continuar após tool calls
+        experimental_continueSteps: true, // Força continuação após tool calls
       });
       console.log('📡 StreamText result obtido:', !!result);
       console.log('📡 Result properties:', Object.keys(result));

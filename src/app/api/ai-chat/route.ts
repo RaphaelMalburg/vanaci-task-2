@@ -79,36 +79,34 @@ export async function POST(request: NextRequest) {
 
             let textChunkCount = 0;
             let toolCallCount = 0;
+            let hasProcessedToolCalls = false;
 
-            for await (const chunk of streamResult.textStream) {
-              textChunkCount++;
-              console.log(`📝 Chunk de texto ${textChunkCount}:`, chunk);
-              const data = JSON.stringify({
-                type: 'text',
-                content: chunk,
-                sessionId: finalSessionId,
-                timestamp: new Date().toISOString(),
-              });
-              controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
-            }
-
-            console.log(`📊 Total de chunks de texto processados: ${textChunkCount}`);
-
-            // Processar tool calls se existirem
-            const toolCalls = await streamResult.toolCalls;
-            if (toolCalls && toolCalls.length > 0) {
-              console.log('🔧 Processando tool calls:', toolCalls.length);
-              for (const toolCall of toolCalls) {
+            // Processar stream completo incluindo texto após tool calls
+            for await (const chunk of streamResult.fullStream) {
+              console.log('🔄 Processando chunk do fullStream:', chunk.type);
+              
+              if (chunk.type === 'text-delta') {
+                textChunkCount++;
+                console.log(`📝 Chunk de texto ${textChunkCount}:`, chunk.textDelta);
+                const data = JSON.stringify({
+                  type: 'text',
+                  content: chunk.textDelta,
+                  sessionId: finalSessionId,
+                  timestamp: new Date().toISOString(),
+                });
+                controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
+              } else if (chunk.type === 'tool-call') {
                 toolCallCount++;
+                hasProcessedToolCalls = true;
                 console.log(`🛠️ Processando tool call ${toolCallCount}:`, {
-                    toolName: toolCall.toolName,
-                    toolCallId: toolCall.toolCallId
+                    toolName: chunk.toolName,
+                    toolCallId: chunk.toolCallId
                   });
                 
                 try {
                   const toolData = JSON.stringify({
                     type: 'tool_call',
-                    toolCall,
+                    toolCall: chunk,
                     sessionId: finalSessionId,
                     timestamp: new Date().toISOString(),
                   });
@@ -118,12 +116,14 @@ export async function POST(request: NextRequest) {
                 } catch (toolError) {
                   console.error(`❌ Erro ao processar tool call ${toolCallCount}:`, toolError);
                 }
+              } else if (chunk.type === 'tool-result') {
+                console.log(`🔧 Tool result recebido para ${chunk.toolCallId}`);
               }
-            } else {
-              console.log('ℹ️ Nenhum tool call encontrado no resultado');
             }
 
+            console.log(`📊 Total de chunks de texto processados: ${textChunkCount}`);
             console.log(`📊 Total de tool calls processados: ${toolCallCount}`);
+            console.log(`🔧 Tool calls foram processados: ${hasProcessedToolCalls}`);
 
             // Finalizar stream
             console.log('🏁 Finalizando stream');
