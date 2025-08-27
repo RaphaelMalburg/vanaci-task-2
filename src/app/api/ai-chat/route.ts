@@ -125,6 +125,42 @@ export async function POST(request: NextRequest) {
             console.log(`📊 Total de tool calls processados: ${toolCallCount}`);
             console.log(`🔧 Tool calls foram processados: ${hasProcessedToolCalls}`);
 
+            // Solução híbrida: Se tool calls foram processados mas nenhum texto foi gerado,
+            // força uma segunda chamada ao modelo para gerar resposta textual
+            if (hasProcessedToolCalls && textChunkCount === 0) {
+              console.log('🔄 Implementando solução híbrida: forçando resposta textual após tool calls');
+              try {
+                const followUpResult = await agent.processMessage(
+                  finalSessionId,
+                  'Por favor, explique o que foi feito com base nos resultados das ferramentas executadas.',
+                  context
+                );
+                
+                if (followUpResult && followUpResult.trim()) {
+                  console.log('📝 Resposta textual forçada gerada:', followUpResult.substring(0, 100) + '...');
+                  const followUpData = JSON.stringify({
+                    type: 'text',
+                    content: followUpResult,
+                    sessionId: finalSessionId,
+                    timestamp: new Date().toISOString(),
+                  });
+                  controller.enqueue(new TextEncoder().encode(`data: ${followUpData}\n\n`));
+                } else {
+                  console.log('⚠️ Resposta textual forçada está vazia');
+                }
+              } catch (followUpError) {
+                console.error('❌ Erro ao gerar resposta textual forçada:', followUpError);
+                // Enviar uma resposta padrão em caso de erro
+                const fallbackData = JSON.stringify({
+                  type: 'text',
+                  content: 'Ação executada com sucesso! Como posso ajudá-lo mais?',
+                  sessionId: finalSessionId,
+                  timestamp: new Date().toISOString(),
+                });
+                controller.enqueue(new TextEncoder().encode(`data: ${fallbackData}\n\n`));
+              }
+            }
+
             // Finalizar stream
             console.log('🏁 Finalizando stream');
             const endData = JSON.stringify({
