@@ -2,8 +2,15 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import type { ToolResult, CartData, CartItem } from '../types';
 
+// Função auxiliar para gerar sessionId
+function generateSessionId(): string {
+  return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
 // Função auxiliar para fazer chamadas à API
-async function apiCall(endpoint: string, options: RequestInit = {}) {
+async function apiCall(endpoint: string, options: RequestInit = {}, sessionId?: string) {
+  const defaultSessionId = sessionId || generateSessionId();
+  
   const response = await fetch(`/api${endpoint}`, {
     headers: {
       'Content-Type': 'application/json',
@@ -13,7 +20,8 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
   });
   
   if (!response.ok) {
-    throw new Error(`API Error: ${response.statusText}`);
+    const errorText = await response.text();
+    throw new Error(`API Error: ${response.statusText} - ${errorText}`);
   }
   
   return response.json();
@@ -31,17 +39,26 @@ export const addToCartTool = tool({
     quantity: number;
   }) => {
     try {
-      const result = await apiCall('/cart/add', {
+      const sessionId = generateSessionId();
+      console.log(`[AI Agent] Adicionando produto ${productId} (qty: ${quantity}) ao carrinho ${sessionId}`);
+      
+      const result = await apiCall('/cart', {
         method: 'POST',
-        body: JSON.stringify({ productId, quantity }),
-      });
+        body: JSON.stringify({ sessionId, productId, quantity }),
+      }, sessionId);
 
+      console.log(`[AI Agent] Produto adicionado com sucesso:`, result);
       return {
-        ...result,
+        success: true,
         message: `Produto adicionado ao carrinho com sucesso! Quantidade: ${quantity}`,
+        data: result.cart,
       };
     } catch (error) {
-      throw new Error(`Erro ao adicionar produto ao carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      console.error(`[AI Agent] Erro ao adicionar produto:`, error);
+      return {
+        success: false,
+        message: `Erro ao adicionar produto ao carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      };
     }
   },
 });
@@ -56,17 +73,26 @@ export const removeFromCartTool = tool({
     productId: string;
   }) => {
     try {
+      const sessionId = generateSessionId();
+      console.log(`[AI Agent] Removendo produto ${productId} do carrinho ${sessionId}`);
+      
       const result = await apiCall('/cart/remove', {
         method: 'DELETE',
-        body: JSON.stringify({ productId }),
-      });
+        body: JSON.stringify({ sessionId, productId }),
+      }, sessionId);
 
+      console.log(`[AI Agent] Produto removido com sucesso:`, result);
       return {
-        ...result,
+        success: true,
         message: 'Produto removido do carrinho com sucesso!',
+        data: result.cart,
       };
     } catch (error) {
-      throw new Error(`Erro ao remover produto do carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      console.error(`[AI Agent] Erro ao remover produto:`, error);
+      return {
+        success: false,
+        message: `Erro ao remover produto do carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      };
     }
   },
 });
@@ -83,42 +109,60 @@ export const updateCartQuantityTool = tool({
     quantity: number;
   }) => {
     try {
+      const sessionId = generateSessionId();
+      console.log(`[AI Agent] Atualizando quantidade do produto ${productId} para ${quantity} no carrinho ${sessionId}`);
+      
       if (quantity === 0) {
         // Se quantidade for 0, remover o item
         const result = await apiCall('/cart/remove', {
           method: 'DELETE',
-          body: JSON.stringify({ productId }),
-        });
+          body: JSON.stringify({ sessionId, productId }),
+        }, sessionId);
 
+        console.log(`[AI Agent] Produto removido (qty=0):`, result);
         return {
-          ...result,
+          success: true,
           message: 'Produto removido do carrinho.',
+          data: result.cart,
         };
       } else {
         // Atualizar quantidade
-        const result = await apiCall('/cart/update', {
+        const result = await apiCall('/cart', {
           method: 'PUT',
-          body: JSON.stringify({ productId, quantity }),
-        });
+          body: JSON.stringify({ sessionId, productId, quantity }),
+        }, sessionId);
 
+        console.log(`[AI Agent] Quantidade atualizada:`, result);
         return {
-          ...result,
+          success: true,
           message: `Quantidade atualizada para ${quantity}.`,
+          data: result.cart,
         };
       }
     } catch (error) {
-      throw new Error(`Erro ao atualizar quantidade do produto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      console.error(`[AI Agent] Erro ao atualizar quantidade:`, error);
+      return {
+        success: false,
+        message: `Erro ao atualizar quantidade do produto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      };
     }
   },
 });
 
 // Tool: Visualizar carrinho
 export const viewCartTool = tool({
-  description: 'Mostra o conteúdo atual do carrinho de compras',
+  description: 'Visualiza o conteúdo atual do carrinho de compras',
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
     try {
-      const cartData: CartData = await apiCall('/cart');
+      const sessionId = generateSessionId();
+      console.log(`[AI Agent] Visualizando carrinho ${sessionId}`);
+      
+      const cartData: CartData = await apiCall('/cart', {
+        method: 'GET',
+      }, sessionId);
+      
+      console.log(`[AI Agent] Carrinho carregado:`, cartData);
       
       if (cartData.items.length === 0) {
         return {
@@ -138,6 +182,7 @@ export const viewCartTool = tool({
         data: cartData,
       };
     } catch (error) {
+      console.error(`[AI Agent] Erro ao carregar carrinho:`, error);
       return {
         success: false,
         message: `Erro ao visualizar carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
@@ -148,20 +193,26 @@ export const viewCartTool = tool({
 
 // Tool: Limpar carrinho
 export const clearCartTool = tool({
-  description: 'Remove todos os produtos do carrinho',
+  description: 'Remove todos os produtos do carrinho de compras',
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
     try {
+      const sessionId = generateSessionId();
+      console.log(`[AI Agent] Limpando carrinho ${sessionId}`);
+      
       const result = await apiCall('/cart/clear', {
         method: 'POST',
-      });
+        body: JSON.stringify({ sessionId }),
+      }, sessionId);
       
+      console.log(`[AI Agent] Carrinho limpo:`, result);
       return {
         success: true,
         message: 'Carrinho limpo com sucesso!',
-        data: result,
+        data: result.cart,
       };
     } catch (error) {
+      console.error(`[AI Agent] Erro ao limpar carrinho:`, error);
       return {
         success: false,
         message: `Erro ao limpar carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,

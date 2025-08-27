@@ -204,9 +204,9 @@ export function Chat() {
     } catch (error) {
       console.error('❌ Erro ao enviar mensagem:', error);
       console.error('❌ Tipo do erro:', typeof error);
-      console.error('❌ Nome do erro:', error?.name);
-      console.error('❌ Mensagem do erro:', error?.message);
-      console.error('❌ Stack do erro:', error?.stack);
+      console.error('❌ Nome do erro:', (error as any)?.name);
+      console.error('❌ Mensagem do erro:', (error as any)?.message);
+      console.error('❌ Stack do erro:', (error as any)?.stack);
       setIsLoading(false);
 
       let errorText = "❌ Não foi possível enviar sua mensagem. Tente novamente.";
