@@ -22,11 +22,6 @@ const navigationInfo = {
       name: 'Contato',
       path: '/contact',
       description: 'Formulário de contato e informações de localização'
-    },
-    {
-      name: 'Chat N8N',
-      path: '/n8n-chat',
-      description: 'Interface de chat inteligente com assistente AI'
     }
   ],
   categories: [
