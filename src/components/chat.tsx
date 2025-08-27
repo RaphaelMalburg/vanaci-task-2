@@ -42,6 +42,7 @@ export function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [sessionId, setSessionId] = useState<string>("");
   const [isListening, setIsListening] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   
   // Hook para reconhecimento de voz
   const {
@@ -70,10 +71,11 @@ export function Chat() {
 
   // Removed n8n status check - using AI Agent now
 
-  // Generate session ID on component mount
+  // Generate session ID on component mount and set client flag
   useEffect(() => {
     const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     setSessionId(newSessionId);
+    setIsClient(true);
   }, []);
 
   // Atualizar input com transcript de voz
@@ -180,7 +182,21 @@ export function Chat() {
               try {
                 const parsed = JSON.parse(data);
                 console.log('Dados parseados:', parsed);
-                if (parsed.content) {
+                
+                if (parsed.type === 'text' && parsed.content) {
+                  // Conteúdo de texto normal
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMessage.id
+                        ? { ...msg, text: msg.text + parsed.content }
+                        : msg
+                    )
+                  );
+                } else if (parsed.type === 'tool_call' && parsed.content) {
+                  // Tool call - não adicionar ao texto, apenas logar
+                  console.log('Tool call executado:', parsed.content);
+                } else if (parsed.content && typeof parsed.content === 'string') {
+                  // Fallback para conteúdo direto
                   setMessages((prev) =>
                     prev.map((msg) =>
                       msg.id === assistantMessage.id
@@ -189,6 +205,7 @@ export function Chat() {
                     )
                   );
                 }
+                
                 if (parsed.type === 'end') {
                   done = true;
                   break;
@@ -301,7 +318,7 @@ export function Chat() {
                       <div className="flex-1">
                         <p className="text-sm leading-relaxed">{message.text}</p>
                         <p className={`text-xs mt-1 transition-colors duration-300 ${message.isUser ? "text-blue-100 dark:text-blue-200" : "text-gray-500 dark:text-gray-400"}`}>
-                          {typeof window !== "undefined"
+                          {isClient
                             ? message.timestamp.toLocaleTimeString([], {
                                 hour: "2-digit",
                                 minute: "2-digit",
