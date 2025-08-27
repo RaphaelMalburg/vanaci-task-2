@@ -151,19 +151,19 @@ export class PharmacyAIAgent {
       console.log('🚀 Iniciando generateText...');
       const result = await streamText({
         model: llmModel,
-        messages: coreMessages,
+        messages: messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
-        maxSteps: 5, // Permite múltiplos passos para continuar após tool calls
-        experimental_continueSteps: true, // Força continuação após tool calls
       });
       
       console.log('✅ GenerateText concluído');
-      console.log('📝 Texto da resposta:', result.text?.substring(0, 100) + '...');
-      console.log('🔧 Tool calls encontrados:', result.toolCalls?.length || 0);
-      
-      if (result.toolCalls && result.toolCalls.length > 0) {
-        result.toolCalls.forEach((tc, index) => {
+      const responseText = await result.text;
+      const toolCalls = await result.toolCalls;
+      console.log('📝 Texto da resposta:', responseText?.substring(0, 100) + '...');
+      console.log('🔧 Tool calls encontrados:', toolCalls?.length || 0);
+
+      if (toolCalls && toolCalls.length > 0) {
+        toolCalls.forEach((tc, index) => {
           console.log(`🛠️ Tool Call ${index} no processMessage:`, {
             toolName: tc.toolName,
             toolCallId: tc.toolCallId,
@@ -176,9 +176,9 @@ export class PharmacyAIAgent {
       // Adicionar resposta do assistente
       const assistantMsg: AgentMessage = {
         role: 'assistant',
-        content: result.text,
+        content: responseText,
         timestamp: new Date(),
-        toolCalls: result.toolCalls,
+        toolCalls: toolCalls,
       };
       session.messages.push(assistantMsg);
       console.log('➕ Resposta do assistente adicionada à sessão');
@@ -190,7 +190,7 @@ export class PharmacyAIAgent {
       }
 
       console.log('✅ ProcessMessage concluído com sucesso');
-      return result.text;
+      return responseText;
     } catch (error) {
       console.error('❌ Erro ao processar mensagem:', error);
       console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível');
@@ -247,8 +247,6 @@ export class PharmacyAIAgent {
         messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
-        maxSteps: 5, // Permite múltiplos passos para continuar após tool calls
-        experimental_continueSteps: true, // Força continuação após tool calls
       });
       console.log('📡 StreamText result obtido:', !!result);
       console.log('📡 Result properties:', Object.keys(result));

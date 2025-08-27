@@ -87,10 +87,10 @@ export async function POST(request: NextRequest) {
               
               if (chunk.type === 'text-delta') {
                 textChunkCount++;
-                console.log(`📝 Chunk de texto ${textChunkCount}:`, chunk.textDelta);
+                console.log(`📝 Chunk de texto ${textChunkCount}:`, chunk.text);
                 const data = JSON.stringify({
                   type: 'text',
-                  content: chunk.textDelta,
+                  content: chunk.text,
                   sessionId: finalSessionId,
                   timestamp: new Date().toISOString(),
                 });
