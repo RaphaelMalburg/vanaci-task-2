@@ -104,14 +104,7 @@ export interface BudgetOptimization {
   suggestions: Product[];
 }
 
-// Configuração do LLM
-export interface LLMConfig {
-  provider: 'openai' | 'google' | 'anthropic' | 'mistral';
-  apiKey: string;
-  model: string;
-  temperature?: number;
-  maxTokens?: number;
-}
+// LLMConfig movido para config/index.ts para evitar conflitos
 
 // Tipos para o agente
 export interface AgentMessage {

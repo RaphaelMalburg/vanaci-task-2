@@ -16,6 +16,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.8",
     "@ai-sdk/google": "^2.0.11",
+    "@ai-sdk/mistral": "^2.0.12",
     "@ai-sdk/openai": "^2.0.22",
     "@langchain/community": "^0.3.53",
     "@langchain/core": "^0.3.72",

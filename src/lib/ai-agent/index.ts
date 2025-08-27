@@ -1,12 +1,13 @@
 import { generateText, streamText, CoreMessage } from 'ai';
-import { getLLMProvider, getLLMConfigFromEnv } from './config/llm';
+import { createLLMModel, validateLLMConfig, LLMConfig as ConfigLLMConfig } from './config';
 import { cartTools } from './actions/cart';
 import { productTools } from './actions/products';
 import { checkoutTools } from './actions/checkout';
 import { navigationTools } from './actions/navigation';
 import { budgetTools } from './actions/budget';
 import { extraTools } from './actions/extras';
-import type { AgentMessage, AgentSession, LLMConfig } from './types';
+import type { AgentMessage, AgentSession } from './types';
+import type { LLMConfig } from './config';
 
 // Combinar todas as tools
 export const allTools = {
@@ -61,11 +62,16 @@ Lembre-se: Você representa a Farmácia Vanaci e deve sempre manter os mais alto
 
 // Classe do Agente AI
 export class PharmacyAIAgent {
-  private llmConfig: LLMConfig;
+  private llmConfig: ConfigLLMConfig;
   private sessions: Map<string, AgentSession> = new Map();
 
-  constructor(llmConfig?: LLMConfig) {
-    this.llmConfig = llmConfig || getLLMConfigFromEnv();
+  constructor(llmConfig?: ConfigLLMConfig) {
+    this.llmConfig = llmConfig || {
+      provider: (process.env.DEFAULT_LLM_PROVIDER as ConfigLLMConfig['provider']) || 'openai',
+      temperature: parseFloat(process.env.LLM_TEMPERATURE || '0.7'),
+      maxTokens: parseInt(process.env.LLM_MAX_TOKENS || '2000')
+    };
+    validateLLMConfig(this.llmConfig.provider);
   }
 
   // Criar ou obter sessão
@@ -117,13 +123,13 @@ export class PharmacyAIAgent {
       ];
 
       // Gerar resposta com tools
-      const llmProvider = getLLMProvider(this.llmConfig);
+      const llmModel = await createLLMModel(this.llmConfig);
       
       const result = await generateText({
-        model: llmProvider,
+        model: llmModel,
         messages,
         tools: allTools,
-        temperature: 0.7,
+        temperature: this.llmConfig.temperature || 0.7,
       });
 
       // Adicionar resposta do assistente
@@ -176,13 +182,13 @@ export class PharmacyAIAgent {
       ];
 
       // Gerar resposta com streaming
-      const llmProvider = getLLMProvider(this.llmConfig);
+      const llmModel = await createLLMModel(this.llmConfig);
       
       const result = streamText({
-        model: llmProvider,
+        model: llmModel,
         messages,
         tools: allTools,
-        temperature: 0.7,
+        temperature: this.llmConfig.temperature || 0.7,
       });
 
       return result;
@@ -210,12 +216,13 @@ export class PharmacyAIAgent {
   }
 
   // Atualizar configuração do LLM
-  updateLLMConfig(newConfig: Partial<LLMConfig>): void {
+  updateLLMConfig(newConfig: Partial<ConfigLLMConfig>): void {
     this.llmConfig = { ...this.llmConfig, ...newConfig };
+    validateLLMConfig(this.llmConfig.provider);
   }
 
   // Obter configuração atual do LLM
-  getLLMConfig(): LLMConfig {
+  getLLMConfig(): ConfigLLMConfig {
     return { ...this.llmConfig };
   }
 }
@@ -224,7 +231,7 @@ export class PharmacyAIAgent {
 let agentInstance: PharmacyAIAgent | null = null;
 
 // Função para obter instância do agente
-export function getPharmacyAgent(config?: LLMConfig): PharmacyAIAgent {
+export function getPharmacyAgent(config?: ConfigLLMConfig): PharmacyAIAgent {
   if (!agentInstance) {
     agentInstance = new PharmacyAIAgent(config);
   }
@@ -236,7 +243,7 @@ export async function processUserMessage(
   sessionId: string,
   message: string,
   context?: { cartId?: string; userId?: string; currentPage?: string },
-  llmConfig?: LLMConfig
+  llmConfig?: ConfigLLMConfig
 ): Promise<string> {
   const agent = getPharmacyAgent(llmConfig);
   return agent.processMessage(sessionId, message, context);
@@ -244,5 +251,5 @@ export async function processUserMessage(
 
 // Exportar types e tools
 export * from './types';
-export * from './config/llm';
+export * from './config';
 export { cartTools, productTools, checkoutTools, navigationTools, budgetTools, extraTools };
