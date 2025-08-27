@@ -4,31 +4,52 @@ import type { NavigationResult } from '../types';
 
 // Tool: Redirecionar para produto
 export const redirectToProductTool = tool({
-  description: 'Redireciona o usuário para a página de um produto específico',
+  description: 'Redireciona o usuário para a página de um produto específico por ID ou nome',
   inputSchema: z.object({
-    productId: z.string().describe('ID do produto'),
+    productIdentifier: z.string().describe('ID ou nome do produto'),
   }),
-  execute: async ({ productId }): Promise<NavigationResult> => {
+  execute: async ({ productIdentifier }): Promise<NavigationResult> => {
     try {
-      // Verificar se o produto existe
-      const response = await fetch(`/api/products/${productId}`);
+      console.log(`[Navigation] Buscando produto: ${productIdentifier}`);
       
-      if (!response.ok) {
+      // Primeiro, tentar buscar por ID direto
+      let response = await fetch(`/api/products/${productIdentifier}`);
+      let product = null;
+      
+      if (response.ok) {
+        product = await response.json();
+        console.log(`[Navigation] Produto encontrado por ID: ${product.name}`);
+      } else {
+        // Se não encontrar por ID, buscar por nome
+        console.log(`[Navigation] Produto não encontrado por ID, buscando por nome...`);
+        const searchResponse = await fetch(`/api/products?search=${encodeURIComponent(productIdentifier)}&limit=1`);
+        
+        if (searchResponse.ok) {
+          const searchResults = await searchResponse.json();
+          if (searchResults.length > 0) {
+            product = searchResults[0];
+            console.log(`[Navigation] Produto encontrado por nome: ${product.name} (ID: ${product.id})`);
+          }
+        }
+      }
+      
+      if (!product) {
+        console.log(`[Navigation] Produto não encontrado: ${productIdentifier}`);
         return {
           success: false,
-          message: `Produto com ID "${productId}" não encontrado.`,
+          message: `Produto "${productIdentifier}" não encontrado. Verifique o nome ou ID do produto.`,
         };
       }
       
-      const product = await response.json();
-      
+      console.log(`[Navigation] Redirecionando para produto: ${product.name} (${product.id})`);
       return {
         success: true,
         message: `Redirecionando para o produto: ${product.name}`,
-        redirectUrl: `/products/${productId}`,
+        redirectUrl: `/products/${product.id}`,
         data: product,
       };
     } catch (error) {
+      console.error(`[Navigation] Erro ao acessar produto:`, error);
       return {
         success: false,
         message: `Erro ao acessar produto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
