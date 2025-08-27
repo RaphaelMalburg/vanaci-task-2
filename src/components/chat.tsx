@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, createContext, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Send, Bot, User, X } from "lucide-react";
+import { MessageCircle, Send, Bot, User, X, Mic, MicOff } from "lucide-react";
+import { useNextjsAudioToTextRecognition } from "nextjs-audio-to-text-recognition";
 
 // Context para controlar o estado do chat
 const ChatContext = createContext<{
@@ -40,6 +41,20 @@ export function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [sessionId, setSessionId] = useState<string>("");
+  const [isListening, setIsListening] = useState(false);
+  
+  // Hook para reconhecimento de voz
+  const {
+    isListening: voiceIsListening,
+    transcript,
+    startListening,
+    stopListening,
+  } = useNextjsAudioToTextRecognition({
+    continuous: true,
+    interimResults: true,
+    lang: 'pt-BR',
+  });
+  
   // Removed n8n status - using AI Agent now
 
 
@@ -60,6 +75,32 @@ export function Chat() {
     const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     setSessionId(newSessionId);
   }, []);
+
+  // Atualizar input com transcript de voz
+  useEffect(() => {
+    if (transcript) {
+      setInputValue(transcript);
+    }
+  }, [transcript]);
+
+  // Funções de controle de voz
+  const handleStartVoice = () => {
+    setIsListening(true);
+    startListening();
+  };
+
+  const handleStopVoice = () => {
+    setIsListening(false);
+    stopListening();
+  };
+
+  const toggleVoiceRecording = () => {
+    if (isListening || voiceIsListening) {
+      handleStopVoice();
+    } else {
+      handleStartVoice();
+    }
+  };
 
   const sendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -282,11 +323,22 @@ export function Chat() {
             <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Digite sua mensagem..."
+              placeholder={isListening ? "Escutando..." : "Digite sua mensagem..."}
               onKeyPress={handleKeyPress}
               disabled={isLoading}
               className="flex-1 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300 h-12"
             />
+            <Button
+              onClick={toggleVoiceRecording}
+              disabled={isLoading}
+              className={`transition-colors duration-300 h-12 px-4 ${
+                isListening || voiceIsListening
+                  ? "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 text-white"
+                  : "bg-gray-600 hover:bg-gray-700 dark:bg-gray-500 dark:hover:bg-gray-600 text-white"
+              }`}
+              title={isListening || voiceIsListening ? "Parar gravação" : "Iniciar gravação de voz"}>
+              {isListening || voiceIsListening ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </Button>
             <Button
               onClick={sendMessage}
               disabled={isLoading || !inputValue.trim()}
@@ -301,7 +353,7 @@ export function Chat() {
               Este assistente fornece informações gerais. Consulte sempre um farmacêutico para orientações específicas.
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              🤖 Assistente AI • Experimente: &quot;Busque dipirona&quot; ou &quot;Adicione ao carrinho&quot;
+              🤖 Assistente AI com suporte a voz • Experimente: &quot;Busque dipirona&quot; ou &quot;Adicione ao carrinho&quot;
             </p>
           </div>
         </div>
