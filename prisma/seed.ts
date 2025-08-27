@@ -507,7 +507,7 @@ async function main() {
   })
   
   console.log('\n📊 Produtos por categoria:')
-  categories.forEach(cat => {
+  categories.forEach((cat: { category: string; _count: { category: number } }) => {
     console.log(`   ${cat.category}: ${cat._count.category} produtos`)
   })
 }
