@@ -160,18 +160,18 @@ export class PharmacyAIAgent {
     context?: { cartId?: string; userId?: string; currentPage?: string }
   ) {
     try {
-      console.log('🤖 PharmacyAIAgent.streamMessage iniciado');
-      console.log('🆔 Session ID:', sessionId);
+      console.log('🎯 StreamMessage iniciado para sessão:', sessionId);
       console.log('💬 Mensagem do usuário:', userMessage);
-      console.log('📋 Contexto adicional:', context);
+      console.log('🔧 Contexto fornecido:', context);
       
       const session = this.getSession(sessionId);
+      console.log('📋 Sessão obtida, mensagens existentes:', session.messages.length);
       
       // Atualizar contexto se fornecido
       if (context) {
         session.context = { ...session.context, ...context };
+        console.log('🔄 Contexto atualizado:', session.context);
       }
-      console.log('🔄 Contexto da sessão atualizado');
 
       // Adicionar mensagem do usuário
       const userMsg: AgentMessage = {
@@ -180,21 +180,22 @@ export class PharmacyAIAgent {
         timestamp: new Date(),
       };
       session.messages.push(userMsg);
-      console.log('💾 Mensagem do usuário adicionada à sessão');
+      console.log('➕ Mensagem do usuário adicionada à sessão');
 
       // Preparar mensagens para o LLM
       const messages: CoreMessage[] = [
         { role: 'system', content: SYSTEM_PROMPT },
         ...this.convertMessages(session.messages),
       ];
-      console.log('📝 Total de mensagens preparadas:', messages.length);
-      console.log('🔧 Tools disponíveis:', Object.keys(allTools).length);
+      console.log('📨 Mensagens preparadas para LLM:', messages.length);
+      console.log('📨 Última mensagem:', messages[messages.length - 1]);
 
       // Gerar resposta com streaming
-      console.log('⚙️ Criando modelo LLM...');
       const llmModel = await createLLMModel(this.llmConfig);
-      console.log('✅ Modelo LLM criado');
-      
+      console.log('🤖 Modelo LLM criado:', !!llmModel);
+      console.log('🔧 Tools disponíveis:', Object.keys(allTools));
+      console.log('🌡️ Temperatura configurada:', this.llmConfig.temperature || 0.7);
+
       console.log('🚀 Iniciando streamText...');
       const result = streamText({
         model: llmModel,
@@ -203,10 +204,31 @@ export class PharmacyAIAgent {
         temperature: this.llmConfig.temperature || 0.7,
       });
       console.log('📡 StreamText result obtido:', !!result);
+      console.log('📡 Result properties:', Object.keys(result));
+      
+      // Log das propriedades do resultado
+      if (result.toolCalls) {
+        console.log('🔧 Tool calls promise detectado no resultado');
+        try {
+          const toolCallsResolved = await result.toolCalls;
+          console.log('🔧 Tool calls resolvidos:', toolCallsResolved?.length || 0);
+          if (toolCallsResolved && toolCallsResolved.length > 0) {
+            toolCallsResolved.forEach((tc, index) => {
+                console.log(`🛠️ Tool Call ${index} no streamMessage:`, {
+                  toolName: tc.toolName,
+                  toolCallId: tc.toolCallId
+                });
+              });
+          }
+        } catch (toolError) {
+          console.error('❌ Erro ao resolver tool calls:', toolError);
+        }
+      }
 
       return result;
     } catch (error) {
-      console.error('Erro ao processar mensagem com streaming:', error);
+      console.error('❌ Erro ao processar mensagem com streaming:', error);
+      console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível');
       throw error;
     }
   }

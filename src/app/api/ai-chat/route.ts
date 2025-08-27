@@ -54,49 +54,93 @@ export async function POST(request: NextRequest) {
       const stream = new ReadableStream({
         async start(controller) {
           try {
-            console.log('🔄 Iniciando stream controller...');
-            let chunkCount = 0;
-            for await (const chunk of streamResult.textStream) {
-              chunkCount++;
-              console.log(`📝 Chunk ${chunkCount}:`, chunk);
-              const data = JSON.stringify({ 
-                type: 'text', 
-                content: chunk,
-                sessionId: finalSessionId 
-              });
-              console.log(`📤 Enviando chunk ${chunkCount}:`, data);
-              controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
-            }
-            console.log(`✅ Total de chunks enviados: ${chunkCount}`);
-            
-            // Enviar tool calls se houver
-            const toolCalls = await streamResult.toolCalls;
-            console.log('🔧 Tool calls:', toolCalls?.length || 0);
-            if (toolCalls && toolCalls.length > 0) {
-              for (const toolCall of toolCalls) {
-                console.log('🛠️ Enviando tool call:', toolCall);
-                const data = JSON.stringify({ 
-                  type: 'tool_call', 
-                  content: toolCall,
-                  sessionId: finalSessionId 
-                });
-                controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
+            console.log('🚀 Iniciando stream para sessão:', finalSessionId);
+            console.log('📡 Stream result obtido:', !!streamResult);
+            console.log('📡 Stream result keys:', Object.keys(streamResult));
+
+            // Log detalhado do resultado
+            if (streamResult.toolCalls) {
+              console.log('🔧 Tool calls promise detectado no resultado inicial');
+              try {
+                const toolCallsResolved = await streamResult.toolCalls;
+                console.log('🔧 Tool calls no resultado inicial:', toolCallsResolved?.length || 0);
+                if (toolCallsResolved && toolCallsResolved.length > 0) {
+                   toolCallsResolved.forEach((tc, index) => {
+                     console.log(`🛠️ Tool Call ${index}:`, {
+                       toolName: tc.toolName,
+                       toolCallId: tc.toolCallId
+                     });
+                   });
+                 }
+              } catch (toolError) {
+                console.error('❌ Erro ao resolver tool calls iniciais:', toolError);
               }
             }
-            
+
+            let textChunkCount = 0;
+            let toolCallCount = 0;
+
+            for await (const chunk of streamResult.textStream) {
+              textChunkCount++;
+              console.log(`📝 Chunk de texto ${textChunkCount}:`, chunk);
+              const data = JSON.stringify({
+                type: 'text',
+                content: chunk,
+                sessionId: finalSessionId,
+                timestamp: new Date().toISOString(),
+              });
+              controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
+            }
+
+            console.log(`📊 Total de chunks de texto processados: ${textChunkCount}`);
+
+            // Processar tool calls se existirem
+            const toolCalls = await streamResult.toolCalls;
+            if (toolCalls && toolCalls.length > 0) {
+              console.log('🔧 Processando tool calls:', toolCalls.length);
+              for (const toolCall of toolCalls) {
+                toolCallCount++;
+                console.log(`🛠️ Processando tool call ${toolCallCount}:`, {
+                    toolName: toolCall.toolName,
+                    toolCallId: toolCall.toolCallId
+                  });
+                
+                try {
+                  const toolData = JSON.stringify({
+                    type: 'tool_call',
+                    toolCall,
+                    sessionId: finalSessionId,
+                    timestamp: new Date().toISOString(),
+                  });
+                  console.log(`📤 Enviando tool call data:`, toolData.substring(0, 200) + '...');
+                  controller.enqueue(new TextEncoder().encode(`data: ${toolData}\n\n`));
+                  console.log(`✅ Tool call ${toolCallCount} enviado com sucesso`);
+                } catch (toolError) {
+                  console.error(`❌ Erro ao processar tool call ${toolCallCount}:`, toolError);
+                }
+              }
+            } else {
+              console.log('ℹ️ Nenhum tool call encontrado no resultado');
+            }
+
+            console.log(`📊 Total de tool calls processados: ${toolCallCount}`);
+
             // Finalizar stream
-            console.log('🏁 Finalizando stream...');
-            const endData = JSON.stringify({ 
-              type: 'end', 
-              sessionId: finalSessionId 
+            console.log('🏁 Finalizando stream');
+            const endData = JSON.stringify({
+              type: 'end',
+              sessionId: finalSessionId,
+              timestamp: new Date().toISOString(),
             });
             controller.enqueue(new TextEncoder().encode(`data: ${endData}\n\n`));
             controller.close();
             console.log('✅ Stream finalizado com sucesso');
           } catch (error) {
-            console.error('❌ Erro no streaming:', error);
-            const errorData = JSON.stringify({ 
-              type: 'error', 
+            console.error('❌ Erro durante streaming:', error);
+            console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível');
+            const errorData = JSON.stringify({
+              type: 'error',
+              error: 'Erro interno do servidor',
               content: 'Erro interno do servidor',
               sessionId: finalSessionId 
             });
