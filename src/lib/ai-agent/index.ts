@@ -160,12 +160,18 @@ export class PharmacyAIAgent {
     context?: { cartId?: string; userId?: string; currentPage?: string }
   ) {
     try {
+      console.log('🤖 PharmacyAIAgent.streamMessage iniciado');
+      console.log('🆔 Session ID:', sessionId);
+      console.log('💬 Mensagem do usuário:', userMessage);
+      console.log('📋 Contexto adicional:', context);
+      
       const session = this.getSession(sessionId);
       
       // Atualizar contexto se fornecido
       if (context) {
         session.context = { ...session.context, ...context };
       }
+      console.log('🔄 Contexto da sessão atualizado');
 
       // Adicionar mensagem do usuário
       const userMsg: AgentMessage = {
@@ -174,22 +180,29 @@ export class PharmacyAIAgent {
         timestamp: new Date(),
       };
       session.messages.push(userMsg);
+      console.log('💾 Mensagem do usuário adicionada à sessão');
 
       // Preparar mensagens para o LLM
       const messages: CoreMessage[] = [
         { role: 'system', content: SYSTEM_PROMPT },
         ...this.convertMessages(session.messages),
       ];
+      console.log('📝 Total de mensagens preparadas:', messages.length);
+      console.log('🔧 Tools disponíveis:', Object.keys(allTools).length);
 
       // Gerar resposta com streaming
+      console.log('⚙️ Criando modelo LLM...');
       const llmModel = await createLLMModel(this.llmConfig);
+      console.log('✅ Modelo LLM criado');
       
+      console.log('🚀 Iniciando streamText...');
       const result = streamText({
         model: llmModel,
         messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
       });
+      console.log('📡 StreamText result obtido:', !!result);
 
       return result;
     } catch (error) {

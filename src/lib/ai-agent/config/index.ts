@@ -30,35 +30,57 @@ const DEFAULT_CONFIG: LLMConfig = {
  * Cria uma instância do modelo LLM baseado na configuração
  */
 export async function createLLMModel(config: Partial<LLMConfig> = {}) {
+  console.log('🔧 createLLMModel: Iniciando criação do modelo');
+  console.log('📋 Configuração recebida:', config);
+  
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
   const modelName = finalConfig.model || DEFAULT_MODELS[finalConfig.provider];
+  
+  console.log('⚙️ Configuração final:', finalConfig);
+  console.log('🏷️ Nome do modelo:', modelName);
+  console.log('🔑 Provider selecionado:', finalConfig.provider);
 
   switch (finalConfig.provider) {
     case "openai":
+      console.log('🔍 Verificando OPENAI_API_KEY...');
       if (!process.env.OPENAI_API_KEY) {
+        console.log('❌ OPENAI_API_KEY não encontrada');
         throw new Error("OPENAI_API_KEY não configurada");
       }
+      console.log('✅ Criando modelo OpenAI:', modelName);
       return openai(modelName);
 
     case "google":
+      console.log('🔍 Verificando GOOGLE_GENERATIVE_AI_API_KEY...');
       if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+        console.log('❌ GOOGLE_GENERATIVE_AI_API_KEY não encontrada');
         throw new Error("GOOGLE_GENERATIVE_AI_API_KEY não configurada");
       }
+      console.log('✅ Criando modelo Google:', modelName);
       return google(modelName);
 
     case "anthropic":
+      console.log('🔍 Verificando ANTHROPIC_API_KEY...');
       if (!process.env.ANTHROPIC_API_KEY) {
+        console.log('❌ ANTHROPIC_API_KEY não encontrada');
         throw new Error("ANTHROPIC_API_KEY não configurada");
       }
+      console.log('✅ Criando modelo Anthropic:', modelName);
       return anthropic(modelName);
 
     case "mistral":
+      console.log('🔍 Verificando MISTRAL_API_KEY...');
       if (!process.env.MISTRAL_API_KEY) {
+        console.log('❌ MISTRAL_API_KEY não encontrada');
         throw new Error("MISTRAL_API_KEY não configurada");
       }
-      return mistral(modelName);
+      console.log('✅ Criando modelo Mistral:', modelName);
+      const model = mistral(modelName);
+      console.log('🎯 Modelo Mistral criado com sucesso');
+      return model;
 
     default:
+      console.log('❌ Provider não suportado:', finalConfig.provider);
       throw new Error(`Provedor LLM não suportado: ${finalConfig.provider}`);
   }
 }

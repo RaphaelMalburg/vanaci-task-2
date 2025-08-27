@@ -118,6 +118,11 @@ export function Chat() {
     setIsLoading(true);
 
     try {
+      console.log('📤 Enviando mensagem:', currentInput);
+      console.log('📤 Dados do request:', { sessionId, message: currentInput, streaming: true });
+      console.log('📤 URL da API:', '/api/ai-chat');
+      console.log('📤 URL completa:', window.location.origin + '/api/ai-chat');
+      console.log('📤 Iniciando fetch...');
       const response = await fetch('/api/ai-chat', {
         method: 'POST',
         headers: {
@@ -126,12 +131,14 @@ export function Chat() {
         body: JSON.stringify({
           message: currentInput,
           sessionId: sessionId,
+          streaming: true,
           chatHistory: messages.slice(-10).map((msg) => ({
             role: msg.isUser ? 'user' : 'assistant',
             content: msg.text,
           })),
         }),
       });
+      console.log('Resposta recebida:', response.status, response.headers.get('content-type'));
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -165,12 +172,14 @@ export function Chat() {
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = line.slice(6);
+              console.log('Dados recebidos:', data);
               if (data === '[DONE]') {
                 done = true;
                 break;
               }
               try {
                 const parsed = JSON.parse(data);
+                console.log('Dados parseados:', parsed);
                 if (parsed.content) {
                   setMessages((prev) =>
                     prev.map((msg) =>
@@ -180,8 +189,12 @@ export function Chat() {
                     )
                   );
                 }
+                if (parsed.type === 'end') {
+                  done = true;
+                  break;
+                }
               } catch (e) {
-                // Ignore parsing errors for partial chunks
+                console.log('Erro ao parsear dados:', e, 'Dados:', data);
               }
             }
           }
@@ -189,15 +202,21 @@ export function Chat() {
       }
 
     } catch (error) {
-      console.error('Erro ao enviar mensagem:', error);
+      console.error('❌ Erro ao enviar mensagem:', error);
+      console.error('❌ Tipo do erro:', typeof error);
+      console.error('❌ Nome do erro:', error?.name);
+      console.error('❌ Mensagem do erro:', error?.message);
+      console.error('❌ Stack do erro:', error?.stack);
       setIsLoading(false);
 
       let errorText = "❌ Não foi possível enviar sua mensagem. Tente novamente.";
 
       if (error instanceof TypeError && error.message.includes("fetch")) {
         errorText = "❌ Não foi possível conectar ao assistente. Verifique sua conexão.";
+        console.error('❌ Erro de fetch detectado');
       } else if (error instanceof DOMException && error.name === "TimeoutError") {
         errorText = "⏱️ Timeout ao enviar mensagem. Tente novamente.";
+        console.error('❌ Timeout detectado');
       } else if (error instanceof Error && error.message.includes("HTTP")) {
         errorText = `❌ Erro do servidor: ${error.message}`;
       }
