@@ -139,7 +139,10 @@ export const contactPharmacistTool = tool({
     query: z.string().describe('Dúvida ou pergunta para o farmacêutico'),
     urgency: z.enum(['baixa', 'media', 'alta']).default('media').describe('Nível de urgência da consulta'),
   }),
-  execute: async ({ query, urgency }) => {
+  execute: async ({ query, urgency }: {
+    query: string;
+    urgency: 'baixa' | 'media' | 'alta';
+  }) => {
     try {
       const result = await apiCall('/pharmacy/consult', {
         method: 'POST',

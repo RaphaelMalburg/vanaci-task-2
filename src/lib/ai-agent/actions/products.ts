@@ -27,7 +27,11 @@ export const searchProductsTool = tool({
     category: z.string().optional().describe('Filtrar por categoria específica'),
     limit: z.number().min(1).max(50).default(10).describe('Número máximo de resultados'),
   }),
-  execute: async ({ query, category, limit }) => {
+  execute: async ({ query, category, limit }: {
+    query: string;
+    category?: string;
+    limit: number;
+  }) => {
     try {
       const searchParams = new URLSearchParams({
         search: query,
@@ -69,7 +73,9 @@ export const getProductDetailsTool = tool({
   inputSchema: z.object({
     productId: z.string().describe('ID do produto'),
   }),
-  execute: async ({ productId }) => {
+  execute: async ({ productId }: {
+    productId: string;
+  }) => {
     try {
       const product: Product = await apiCall(`/products/${productId}`);
       
@@ -139,7 +145,10 @@ export const listRecommendedProductsTool = tool({
     symptomOrNeed: z.string().describe('Sintoma ou necessidade do usuário (ex: "dor de cabeça", "vitaminas", "gripe")'),
     limit: z.number().min(1).max(20).default(5).describe('Número máximo de recomendações'),
   }),
-  execute: async ({ symptomOrNeed, limit }) => {
+  execute: async ({ symptomOrNeed, limit }: {
+    symptomOrNeed: string;
+    limit: number;
+  }) => {
     try {
       // Buscar produtos que contenham o sintoma/necessidade na descrição ou sintomas
       const products: Product[] = await apiCall(`/products?limit=1000`);

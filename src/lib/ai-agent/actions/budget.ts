@@ -28,7 +28,12 @@ export const suggestProductsWithinBudgetTool = tool({
     symptomOrNeed: z.string().optional().describe('Sintoma ou necessidade específica (opcional)'),
     limit: z.number().min(1).max(20).default(10).describe('Número máximo de sugestões'),
   }),
-  execute: async ({ budgetAmount, category, symptomOrNeed, limit }) => {
+  execute: async ({ budgetAmount, category, symptomOrNeed, limit }: {
+    budgetAmount: number;
+    category?: string;
+    symptomOrNeed?: string;
+    limit: number;
+  }) => {
     // Buscar todos os produtos
     let products: Product[] = await apiCall('/products?limit=1000');
     
@@ -106,7 +111,10 @@ export const optimizeCartForBudgetTool = tool({
     budgetAmount: z.number().min(0).describe('Valor máximo do orçamento em reais'),
     prioritizeEssentials: z.boolean().default(true).describe('Priorizar itens essenciais (medicamentos)'),
   }),
-  execute: async ({ budgetAmount, prioritizeEssentials }) => {
+  execute: async ({ budgetAmount, prioritizeEssentials }: {
+    budgetAmount: number;
+    prioritizeEssentials: boolean;
+  }) => {
     // Obter carrinho atual
     const cartData = await apiCall('/cart');
     
@@ -245,7 +253,10 @@ export const comparePricesTool = tool({
     productName: z.string().describe('Nome ou termo do produto para comparar'),
     maxResults: z.number().min(1).max(10).default(5).describe('Número máximo de produtos para comparar'),
   }),
-  execute: async ({ productName, maxResults }) => {
+  execute: async ({ productName, maxResults }: {
+    productName: string;
+    maxResults: number;
+  }) => {
     try {
       const products: Product[] = await apiCall('/products?limit=1000');
       
@@ -305,7 +316,10 @@ export const compareProductPricesTool = tool({
     productId: z.string().describe('ID do produto para comparar'),
     maxPrice: z.number().optional().describe('Preço máximo para filtrar alternativas'),
   }),
-  execute: async ({ productId, maxPrice }) => {
+  execute: async ({ productId, maxPrice }: {
+    productId: string;
+    maxPrice?: number;
+  }) => {
     // Buscar produto específico
     const product: Product = await apiCall(`/products/${productId}`);
     

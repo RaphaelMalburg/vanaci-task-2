@@ -26,7 +26,10 @@ export const addToCartTool = tool({
     productId: z.string().describe('ID do produto a ser adicionado'),
     quantity: z.number().min(1).describe('Quantidade do produto'),
   }),
-  execute: async ({ productId, quantity }) => {
+  execute: async ({ productId, quantity }: {
+    productId: string;
+    quantity: number;
+  }) => {
     try {
       const result = await apiCall('/cart/add', {
         method: 'POST',
@@ -49,7 +52,9 @@ export const removeFromCartTool = tool({
   inputSchema: z.object({
     productId: z.string().describe('ID do produto a ser removido'),
   }),
-  execute: async ({ productId }) => {
+  execute: async ({ productId }: {
+    productId: string;
+  }) => {
     try {
       const result = await apiCall('/cart/remove', {
         method: 'DELETE',
@@ -73,7 +78,10 @@ export const updateCartQuantityTool = tool({
     productId: z.string().describe('ID do produto'),
     quantity: z.number().min(0).describe('Nova quantidade (0 para remover)'),
   }),
-  execute: async ({ productId, quantity }) => {
+  execute: async ({ productId, quantity }: {
+    productId: string;
+    quantity: number;
+  }) => {
     try {
       if (quantity === 0) {
         // Se quantidade for 0, remover o item

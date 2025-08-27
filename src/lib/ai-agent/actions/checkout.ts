@@ -56,7 +56,9 @@ export const applyDiscountCodeTool = tool({
   inputSchema: z.object({
     code: z.string().describe('Código de desconto a ser aplicado'),
   }),
-  execute: async ({ code }) => {
+  execute: async ({ code }: {
+    code: string;
+  }) => {
     try {
       const result = await apiCall('/checkout/discount', {
         method: 'POST',
@@ -79,7 +81,9 @@ export const calculateShippingTool = tool({
   inputSchema: z.object({
     zipCode: z.string().describe('CEP para cálculo do frete (formato: 12345-678 ou 12345678)'),
   }),
-  execute: async ({ zipCode }) => {
+  execute: async ({ zipCode }: {
+    zipCode: string;
+  }) => {
     try {
       const result = await apiCall('/checkout/shipping', {
         method: 'POST',
@@ -103,7 +107,10 @@ export const setPaymentMethodTool = tool({
     method: z.enum(['credit', 'debit', 'pix', 'boleto']).describe('Método de pagamento'),
     installments: z.number().min(1).max(12).optional().describe('Número de parcelas (apenas para cartão de crédito)'),
   }),
-  execute: async ({ method, installments }) => {
+  execute: async ({ method, installments }: {
+    method: 'credit' | 'debit' | 'pix' | 'boleto';
+    installments?: number;
+  }) => {
     try {
       const result = await apiCall('/checkout/payment', {
         method: 'POST',
@@ -128,7 +135,11 @@ export const placeOrderTool = tool({
     shippingZipCode: z.string().describe('CEP para entrega'),
     discountCode: z.string().optional().describe('Código de desconto (opcional)'),
   }),
-  execute: async ({ paymentMethod, shippingZipCode, discountCode }) => {
+  execute: async ({ paymentMethod, shippingZipCode, discountCode }: {
+    paymentMethod: 'credit' | 'debit' | 'pix' | 'boleto';
+    shippingZipCode: string;
+    discountCode?: string;
+  }) => {
     try {
       const result = await apiCall('/checkout/finalize', {
         method: 'POST',
