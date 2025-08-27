@@ -12,8 +12,13 @@ export const redirectToProductTool = tool({
     try {
       console.log(`[Navigation] Buscando produto: ${productIdentifier}`);
       
+      // Usar URL absoluta para funcionar no contexto do servidor
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://your-domain.com' 
+        : 'http://localhost:3007';
+      
       // Primeiro, tentar buscar por ID direto
-      let response = await fetch(`/api/products/${productIdentifier}`);
+      let response = await fetch(`${baseUrl}/api/products/${productIdentifier}`);
       let product = null;
       
       if (response.ok) {
@@ -22,7 +27,7 @@ export const redirectToProductTool = tool({
       } else {
         // Se não encontrar por ID, buscar por nome
         console.log(`[Navigation] Produto não encontrado por ID, buscando por nome...`);
-        const searchResponse = await fetch(`/api/products?search=${encodeURIComponent(productIdentifier)}&limit=1`);
+        const searchResponse = await fetch(`${baseUrl}/api/products?search=${encodeURIComponent(productIdentifier)}&limit=1`);
         
         if (searchResponse.ok) {
           const searchResults = await searchResponse.json();
