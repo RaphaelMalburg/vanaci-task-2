@@ -16,7 +16,15 @@ async function apiCall(endpoint: string, options: RequestInit = {}, sessionId?: 
     ? 'https://your-domain.com' 
     : 'http://localhost:3007';
   
-  const response = await fetch(`${baseUrl}/api${endpoint}`, {
+  const fullUrl = `${baseUrl}/api${endpoint}`;
+  console.log(`🌐 [Cart Tool] Fazendo chamada para: ${fullUrl}`);
+  console.log(`📋 [Cart Tool] Opções da requisição:`, {
+    method: options.method || 'GET',
+    headers: options.headers,
+    body: options.body
+  });
+  
+  const response = await fetch(fullUrl, {
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -24,12 +32,21 @@ async function apiCall(endpoint: string, options: RequestInit = {}, sessionId?: 
     ...options,
   });
   
+  console.log(`📡 [Cart Tool] Status da resposta: ${response.status} ${response.statusText}`);
+  
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`❌ [Cart Tool] Erro na API:`, {
+      status: response.status,
+      statusText: response.statusText,
+      errorText: errorText
+    });
     throw new Error(`API Error: ${response.statusText} - ${errorText}`);
   }
   
-  return response.json();
+  const result = await response.json();
+  console.log(`✅ [Cart Tool] Resposta da API:`, result);
+  return result;
 }
 
 // Tool: Adicionar produto ao carrinho
@@ -43,8 +60,12 @@ export const addToCartTool = tool({
     productId: string;
     quantity: number;
   }) => {
+    console.log(`🛒 [Add to Cart Tool] INICIANDO execução`);
+    console.log(`📦 [Add to Cart Tool] Parâmetros recebidos:`, { productId, quantity });
+    
     try {
       const sessionId = generateSessionId();
+      console.log(`🔑 [Add to Cart Tool] SessionId gerado: ${sessionId}`);
       console.log(`[AI Agent] Adicionando produto ${productId} (qty: ${quantity}) ao carrinho ${sessionId}`);
       
       const result = await apiCall('/cart', {
@@ -52,18 +73,23 @@ export const addToCartTool = tool({
         body: JSON.stringify({ sessionId, productId, quantity }),
       }, sessionId);
 
-      console.log(`[AI Agent] Produto adicionado com sucesso:`, result);
-      return {
+      console.log(`✅ [Add to Cart Tool] Produto adicionado com sucesso:`, result);
+      const response = {
         success: true,
         message: `Produto adicionado ao carrinho com sucesso! Quantidade: ${quantity}`,
         data: result.cart,
       };
+      console.log(`📤 [Add to Cart Tool] Retornando resposta:`, response);
+      return response;
     } catch (error) {
-      console.error(`[AI Agent] Erro ao adicionar produto:`, error);
-      return {
+      console.error(`❌ [Add to Cart Tool] Erro ao adicionar produto:`, error);
+      console.error(`🔍 [Add to Cart Tool] Stack trace:`, error instanceof Error ? error.stack : 'N/A');
+      const errorResponse = {
         success: false,
         message: `Erro ao adicionar produto ao carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
       };
+      console.log(`📤 [Add to Cart Tool] Retornando erro:`, errorResponse);
+      return errorResponse;
     }
   },
 });
@@ -159,15 +185,19 @@ export const viewCartTool = tool({
   description: 'Visualiza o conteúdo atual do carrinho de compras',
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
+    console.log(`👁️ [View Cart Tool] INICIANDO execução`);
+    
     try {
       const sessionId = generateSessionId();
+      console.log(`🔑 [View Cart Tool] SessionId gerado: ${sessionId}`);
       console.log(`[AI Agent] Visualizando carrinho ${sessionId}`);
       
       const cartData: CartData = await apiCall('/cart', {
         method: 'GET',
       }, sessionId);
       
-      console.log(`[AI Agent] Carrinho carregado:`, cartData);
+      console.log(`✅ [View Cart Tool] Carrinho carregado:`, cartData);
+      console.log(`📊 [View Cart Tool] Total de itens: ${cartData.items.length}`);
       
       if (cartData.items.length === 0) {
         return {

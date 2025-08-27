@@ -4,11 +4,15 @@ import { CartItem, CartData, cartStorage, getOrCreateCart, saveCart } from '@/li
 
 // GET - Obter carrinho por session ID
 export async function GET(request: NextRequest) {
+  console.log(`🛒 [Cart API GET] INICIANDO requisição`);
+  
   try {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId')
+    console.log(`🔑 [Cart API GET] SessionId recebido: ${sessionId}`);
 
     if (!sessionId) {
+      console.log(`❌ [Cart API GET] SessionId não fornecido`);
       return NextResponse.json(
         { error: 'Session ID é obrigatório' },
         { status: 400 }
@@ -16,10 +20,12 @@ export async function GET(request: NextRequest) {
     }
 
     const cart = getOrCreateCart(sessionId)
+    console.log(`✅ [Cart API GET] Carrinho obtido:`, cart);
 
     return NextResponse.json(cart)
   } catch (error) {
-    console.error('Erro ao buscar carrinho:', error)
+    console.error('❌ [Cart API GET] Erro ao buscar carrinho:', error)
+    console.error('🔍 [Cart API GET] Stack trace:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -29,11 +35,15 @@ export async function GET(request: NextRequest) {
 
 // POST - Adicionar item ao carrinho
 export async function POST(request: NextRequest) {
+  console.log(`🛒 [Cart API POST] INICIANDO requisição`);
+  
   try {
     const body = await request.json()
     const { sessionId, productId, quantity = 1 } = body
+    console.log(`📦 [Cart API POST] Dados recebidos:`, { sessionId, productId, quantity });
 
     if (!sessionId || !productId) {
+      console.log(`❌ [Cart API POST] Dados obrigatórios não fornecidos`);
       return NextResponse.json(
         { error: 'Session ID e Product ID são obrigatórios' },
         { status: 400 }
@@ -91,13 +101,17 @@ export async function POST(request: NextRequest) {
 
     // Salvar carrinho
     saveCart(cart)
+    console.log(`💾 [Cart API POST] Carrinho salvo com sucesso`);
 
-    return NextResponse.json({
+    const response = {
       message: 'Item adicionado ao carrinho',
       cart
-    })
+    };
+    console.log(`✅ [Cart API POST] Resposta de sucesso:`, response);
+    return NextResponse.json(response)
   } catch (error) {
-    console.error('Erro ao adicionar item ao carrinho:', error)
+    console.error('❌ [Cart API POST] Erro ao adicionar item ao carrinho:', error)
+    console.error('🔍 [Cart API POST] Stack trace:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

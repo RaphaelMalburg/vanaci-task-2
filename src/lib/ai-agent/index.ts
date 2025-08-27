@@ -101,11 +101,17 @@ export class PharmacyAIAgent {
     context?: { cartId?: string; userId?: string; currentPage?: string }
   ): Promise<string> {
     try {
+      console.log('🎯 ProcessMessage iniciado para sessão:', sessionId);
+      console.log('💬 Mensagem do usuário:', userMessage);
+      console.log('🔧 Contexto fornecido:', context);
+      
       const session = this.getSession(sessionId);
+      console.log('📋 Sessão obtida, mensagens existentes:', session.messages.length);
       
       // Atualizar contexto se fornecido
       if (context) {
         session.context = { ...session.context, ...context };
+        console.log('🔄 Contexto atualizado:', session.context);
       }
 
       // Adicionar mensagem do usuário
@@ -115,22 +121,44 @@ export class PharmacyAIAgent {
         timestamp: new Date(),
       };
       session.messages.push(userMsg);
+      console.log('➕ Mensagem do usuário adicionada à sessão');
 
       // Preparar mensagens para o LLM
       const messages: CoreMessage[] = [
         { role: 'system', content: SYSTEM_PROMPT },
         ...this.convertMessages(session.messages),
       ];
+      console.log('📨 Mensagens preparadas para LLM:', messages.length);
+      console.log('📨 Última mensagem:', messages[messages.length - 1]);
 
       // Gerar resposta com tools
       const llmModel = await createLLMModel(this.llmConfig);
+      console.log('🤖 Modelo LLM criado:', !!llmModel);
+      console.log('🔧 Tools disponíveis:', Object.keys(allTools));
+      console.log('🌡️ Temperatura configurada:', this.llmConfig.temperature || 0.7);
       
+      console.log('🚀 Iniciando generateText...');
       const result = await generateText({
         model: llmModel,
         messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
       });
+      
+      console.log('✅ GenerateText concluído');
+      console.log('📝 Texto da resposta:', result.text?.substring(0, 100) + '...');
+      console.log('🔧 Tool calls encontrados:', result.toolCalls?.length || 0);
+      
+      if (result.toolCalls && result.toolCalls.length > 0) {
+        result.toolCalls.forEach((tc, index) => {
+          console.log(`🛠️ Tool Call ${index} no processMessage:`, {
+            toolName: tc.toolName,
+            toolCallId: tc.toolCallId,
+            // args não está disponível no tipo, mas podemos logar outros detalhes
+            type: typeof tc
+          });
+        });
+      }
 
       // Adicionar resposta do assistente
       const assistantMsg: AgentMessage = {
@@ -140,15 +168,19 @@ export class PharmacyAIAgent {
         toolCalls: result.toolCalls,
       };
       session.messages.push(assistantMsg);
+      console.log('➕ Resposta do assistente adicionada à sessão');
 
       // Limitar histórico de mensagens (manter últimas 20)
       if (session.messages.length > 20) {
         session.messages = session.messages.slice(-20);
+        console.log('🗂️ Histórico limitado a 20 mensagens');
       }
 
+      console.log('✅ ProcessMessage concluído com sucesso');
       return result.text;
     } catch (error) {
-      console.error('Erro ao processar mensagem:', error);
+      console.error('❌ Erro ao processar mensagem:', error);
+      console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível');
       return 'Desculpe, ocorreu um erro interno. Tente novamente em alguns instantes ou entre em contato conosco pelo telefone (11) 1234-5678.';
     }
   }
