@@ -181,6 +181,48 @@ Quero 1000 unidades de dipirona
 ```
 **Resultado esperado:** Aviso de estoque limitado
 
+### 9. Testes de Descrições Detalhadas
+
+#### Teste 9.1 - Verificar descrição detalhada
+```
+Quero ver os detalhes da Vitamina C
+```
+**Resultado esperado:** Navegação para página com descrição completa e detalhada
+
+#### Teste 9.2 - Comparar produtos similares
+```
+Quero comparar dipirona e paracetamol para dor de cabeça
+```
+**Resultado esperado:** Informações detalhadas sobre ambos produtos
+
+#### Teste 9.3 - Informações de dosagem
+```
+Como devo tomar o Omeprazol 20mg?
+```
+**Resultado esperado:** Informações sobre dosagem e modo de uso
+
+### 10. Testes de Performance e Logs
+
+#### Teste 10.1 - Verificar logs do agente
+```
+Adicione vitamina C no carrinho
+```
+**Resultado esperado:** Logs detalhados no console do navegador
+
+#### Teste 10.2 - SessionID consistente
+```
+1. "Olá"
+2. "Adicione dipirona"
+3. "Mostre meu carrinho"
+```
+**Resultado esperado:** Mesmo sessionID mantido durante toda a conversa
+
+#### Teste 10.3 - Tempo de resposta
+```
+Busque todos os produtos para dor
+```
+**Resultado esperado:** Resposta em menos de 3 segundos
+
 ## 📊 Critérios de Avaliação
 
 ### ✅ Funcionalidades que DEVEM funcionar:
@@ -217,7 +259,7 @@ Quero 1000 unidades de dipirona
 5. **Testes de validação** (8): Casos extremos
 
 ### Ambiente de Teste:
-- **URL:** http://localhost:3008
+- **URL:** http://localhost:3007
 - **Console:** Aberto (F12) para ver logs
 - **Carrinho:** Limpo antes de cada teste
 - **Sessão:** Nova para cada bateria de testes
