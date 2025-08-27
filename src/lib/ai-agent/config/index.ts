@@ -86,6 +86,40 @@ export async function createLLMModel(config: Partial<LLMConfig> = {}) {
 }
 
 /**
+ * Cria modelo com fallback automático para outros provedores
+ */
+export async function createLLMModelWithFallback(config: Partial<LLMConfig> = {}) {
+  console.log('🔄 createLLMModelWithFallback: Iniciando criação com fallback');
+  
+  const availableProviders = getAvailableProviders();
+  const primaryProvider = config.provider || DEFAULT_CONFIG.provider;
+  
+  // Tenta o provider primário primeiro
+  if (availableProviders.includes(primaryProvider)) {
+    try {
+      console.log(`🎯 Tentando provider primário: ${primaryProvider}`);
+      return await createLLMModel({ ...config, provider: primaryProvider });
+    } catch (error) {
+      console.log(`⚠️ Falha no provider ${primaryProvider}:`, error);
+    }
+  }
+  
+  // Tenta outros providers disponíveis como fallback
+  for (const provider of availableProviders) {
+    if (provider !== primaryProvider) {
+      try {
+        console.log(`🔄 Tentando fallback para: ${provider}`);
+        return await createLLMModel({ ...config, provider });
+      } catch (error) {
+        console.log(`⚠️ Falha no fallback ${provider}:`, error);
+      }
+    }
+  }
+  
+  throw new Error('❌ Nenhum provider LLM disponível. Verifique as chaves de API.');
+}
+
+/**
  * Verifica se as chaves de API necessárias estão configuradas
  */
 export function validateLLMConfig(provider?: LLMConfig["provider"]) {

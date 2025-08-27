@@ -1,5 +1,5 @@
 import { generateText, streamText, CoreMessage } from 'ai';
-import { createLLMModel, validateLLMConfig, LLMConfig as ConfigLLMConfig } from './config';
+import { createLLMModel, createLLMModelWithFallback, validateLLMConfig, LLMConfig as ConfigLLMConfig } from './config';
 import { cartTools } from './actions/cart';
 import { productTools } from './actions/products';
 import { checkoutTools } from './actions/checkout';
@@ -142,9 +142,9 @@ export class PharmacyAIAgent {
       console.log('📨 Mensagens preparadas para LLM:', messages.length);
       console.log('📨 Última mensagem:', messages[messages.length - 1]);
 
-      // Gerar resposta com tools
-      const llmModel = await createLLMModel(this.llmConfig);
-      console.log('🤖 Modelo LLM criado:', !!llmModel);
+      // Gerar resposta com tools (usando fallback)
+      const llmModel = await createLLMModelWithFallback(this.llmConfig);
+      console.log('🤖 Modelo LLM criado com fallback:', !!llmModel);
       console.log('🔧 Tools disponíveis:', Object.keys(allTools));
       console.log('🌡️ Temperatura configurada:', this.llmConfig.temperature || 0.7);
       
@@ -235,9 +235,9 @@ export class PharmacyAIAgent {
       console.log('📨 Mensagens preparadas para LLM:', messages.length);
       console.log('📨 Última mensagem:', messages[messages.length - 1]);
 
-      // Gerar resposta com streaming
-      const llmModel = await createLLMModel(this.llmConfig);
-      console.log('🤖 Modelo LLM criado:', !!llmModel);
+      // Gerar resposta com streaming (usando fallback)
+      const llmModel = await createLLMModelWithFallback(this.llmConfig);
+      console.log('🤖 Modelo LLM criado com fallback:', !!llmModel);
       console.log('🔧 Tools disponíveis:', Object.keys(allTools));
       console.log('🌡️ Temperatura configurada:', this.llmConfig.temperature || 0.7);
 
