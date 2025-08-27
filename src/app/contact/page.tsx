@@ -276,8 +276,8 @@ export default function Contact() {
                     </h4>
                     <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">
                       Rua da Saúde, 123<br />
-                      Centro Médico<br />
-                      São Paulo, SP 01234-567
+                      Centro Histórico<br />
+                      1200-109 Lisboa, Portugal
                     </p>
                   </div>
                   
@@ -286,7 +286,7 @@ export default function Contact() {
                       <Phone className="w-4 h-4" />
                       Telefone
                     </h4>
-                    <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">(11) 9999-8888</p>
+                    <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">+351 21 123 4567</p>
                   </div>
                   
                   <div>
@@ -294,7 +294,7 @@ export default function Contact() {
                       <Mail className="w-4 h-4" />
                       Email
                     </h4>
-                    <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">contato@farmaciavanaci.com.br</p>
+                    <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">contacto@farmacialusitana.pt</p>
                   </div>
                 </div>
               </CardContent>
@@ -359,8 +359,8 @@ export default function Contact() {
               <CardContent>
                 <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-8 text-center transition-colors duration-300">
                   <MapPin className="w-12 h-12 text-blue-500 dark:text-blue-400 mx-auto mb-4 transition-colors duration-300" />
-                  <p className="text-gray-600 dark:text-gray-300 mb-2 transition-colors duration-300">Farmácia Vanaci</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">Rua da Saúde, 123 - Centro Médico</p>
+                  <p className="text-gray-600 dark:text-gray-300 mb-2 transition-colors duration-300">Farmácia Lusitana</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">Rua da Saúde, 123 - Centro Histórico</p>
                   <Button variant="outline" className="mt-4" asChild>
                     <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer">
                       Ver no Google Maps

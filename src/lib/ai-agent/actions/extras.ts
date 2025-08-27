@@ -26,8 +26,8 @@ export const showStoreHoursTool = tool({
   execute: async (): Promise<ToolResult> => {
     const storeInfo: StoreInfo = {
       hours: 'Segunda a Sexta: 8h às 22h\nSábado: 8h às 20h\nDomingo: 9h às 18h',
-      phone: '(11) 1234-5678',
-      address: 'Rua das Farmácias, 123 - Centro, São Paulo - SP',
+      phone: '+351 21 123 4567',
+      address: 'Rua da Saúde, 123 - Centro Histórico, Lisboa - Portugal',
     };
     
     const currentHour = new Date().getHours();
@@ -58,7 +58,7 @@ export const showStoreHoursTool = tool({
     
     const status = isOpen ? '🟢 ABERTA AGORA' : `🔴 FECHADA - ${nextOpenTime}`;
     
-    const message = `**Farmácia Vanaci** ${status}\n\n**Horários:**\n${storeInfo.hours}\n\n**Contato:**\n📞 ${storeInfo.phone}\n📍 ${storeInfo.address}`;
+    const message = `**Farmácia Lusitana** ${status}\n\n**Horários:**\n${storeInfo.hours}\n\n**Contacto:**\n📞 ${storeInfo.phone}\n📍 ${storeInfo.address}`;
     
     return {
       success: true,
@@ -90,8 +90,8 @@ export const showPromotionsTool = tool({
       },
       {
         id: 'promo3',
-        title: '🚚 Frete Grátis',
-        description: 'Frete grátis em compras acima de R$ 100',
+        title: '🚚 Portes Grátis',
+        description: 'Portes grátis em compras acima de € 50',
         discount: 0,
         validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias
       },

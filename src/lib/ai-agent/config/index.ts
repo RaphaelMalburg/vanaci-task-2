@@ -1,6 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { google } from "@ai-sdk/google";
 import { anthropic } from "@ai-sdk/anthropic";
+import { mistral } from "@ai-sdk/mistral";
 
 // Tipos para configuração
 export interface LLMConfig {
@@ -55,15 +56,7 @@ export async function createLLMModel(config: Partial<LLMConfig> = {}) {
       if (!process.env.MISTRAL_API_KEY) {
         throw new Error("MISTRAL_API_KEY não configurada");
       }
-      // Nota: Para usar Mistral, você precisa instalar @ai-sdk/mistral
-      // npm install @ai-sdk/mistral
-      try {
-        // Usar eval para evitar erro de build se o pacote não estiver instalado
-        const mistralModule = await eval('import("@ai-sdk/mistral")');
-        return mistralModule.mistral(modelName);
-      } catch {
-        throw new Error("Para usar Mistral");
-      }
+      return mistral(modelName);
 
     default:
       throw new Error(`Provedor LLM não suportado: ${finalConfig.provider}`);

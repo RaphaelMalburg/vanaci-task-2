@@ -11,10 +11,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center fade-in">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Bem-vindo à Farmácia Vanaci
+              Bem-vindo à Farmácia Lusitana
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100">
-              Seu parceiro de confiança em saúde, oferecendo medicamentos de qualidade e cuidado profissional
+              A sua farmácia de confiança em Portugal, oferecendo medicamentos de qualidade e cuidado profissional
             </p>
             <Link href="/products">
               <Button size="lg" variant="secondary" className="text-lg px-8 py-3">
@@ -54,10 +54,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Por que Escolher Nossa Farmácia?
+              Porquê Escolher a Nossa Farmácia?
             </h2>
             <p className="text-lg text-gray-600">
-              Estamos comprometidos em fornecer serviços de saúde excepcionais para nossa comunidade
+              Estamos empenhados em fornecer serviços de saúde excepcionais para a nossa comunidade
             </p>
           </div>
           
@@ -68,7 +68,7 @@ export default function Home() {
                   💊 Produtos de Qualidade
                 </CardTitle>
                 <CardDescription>
-                  Estocamos apenas medicamentos da mais alta qualidade de fabricantes confiáveis
+                  Temos em stock apenas medicamentos da mais alta qualidade de fabricantes de confiança
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -79,7 +79,7 @@ export default function Home() {
                   👨‍⚕️ Consultoria Especializada
                 </CardTitle>
                 <CardDescription>
-                  Nossos farmacêuticos qualificados estão sempre prontos para fornecer orientação profissional
+                  Os nossos farmacêuticos qualificados estão sempre prontos para fornecer orientação profissional
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -90,7 +90,7 @@ export default function Home() {
                   🚀 Serviço Conveniente
                 </CardTitle>
                 <CardDescription>
-                  Atendimento rápido e confiável com horários convenientes para melhor atendê-lo
+                  Atendimento rápido e de confiança com horários convenientes para melhor o servir
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -106,7 +106,7 @@ export default function Home() {
               Produtos em Destaque
             </h2>
             <p className="text-lg text-gray-600">
-              Confira alguns dos nossos produtos mais procurados
+              Veja alguns dos nossos produtos mais procurados
             </p>
           </div>
           
@@ -121,7 +121,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-green-600">R$ 8,90</span>
+                  <span className="text-2xl font-bold text-green-600">€ 4,50</span>
                   <Button size="sm">Ver Detalhes</Button>
                 </div>
               </CardContent>
@@ -137,7 +137,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-green-600">R$ 15,50</span>
+                  <span className="text-2xl font-bold text-green-600">€ 7,80</span>
                   <Button size="sm">Ver Detalhes</Button>
                 </div>
               </CardContent>
@@ -153,7 +153,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-green-600">R$ 6,75</span>
+                  <span className="text-2xl font-bold text-green-600">€ 3,40</span>
                   <Button size="sm">Ver Detalhes</Button>
                 </div>
               </CardContent>
@@ -175,10 +175,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              O que Nossos Clientes Dizem
+              O que os Nossos Clientes Dizem
             </h2>
             <p className="text-lg text-gray-600">
-              Depoimentos reais de clientes satisfeitos
+              Testemunhos reais de clientes satisfeitos
             </p>
           </div>
           
@@ -195,7 +195,7 @@ export default function Home() {
                   </div>
                 </div>
                 <CardDescription className="text-gray-700 italic">
-                  &quot;Excelente atendimento e produtos de qualidade. A equipe é muito atenciosa e sempre me ajuda a encontrar o que preciso.&quot;
+                  &quot;Excelente atendimento e produtos de qualidade. A equipa é muito atenciosa e sempre me ajuda a encontrar o que preciso.&quot;
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -212,7 +212,7 @@ export default function Home() {
                   </div>
                 </div>
                 <CardDescription className="text-gray-700 italic">
-                  &quot;Preços justos e entrega rápida. Recomendo para todos que buscam uma farmácia confiável e com bom atendimento.&quot;
+                  &quot;Preços justos e entrega rápida. Recomendo a todos que procuram uma farmácia de confiança e com bom atendimento.&quot;
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -229,7 +229,7 @@ export default function Home() {
                   </div>
                 </div>
                 <CardDescription className="text-gray-700 italic">
-                  &quot;O chat online é muito útil! Consigo tirar dúvidas rapidamente e receber orientações profissionais a qualquer hora.&quot;
+                  &quot;O chat online é muito útil! Consigo esclarecer dúvidas rapidamente e receber orientações profissionais a qualquer hora.&quot;
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -241,10 +241,10 @@ export default function Home() {
       <section className="py-16 bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-700 dark:to-blue-900 text-white transition-colors duration-300">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">
-            Precisa de Ajuda? Fale Conosco!
+            Precisa de Ajuda? Fale Connosco!
           </h2>
           <p className="text-xl mb-8 text-blue-100">
-            Nossa equipe está pronta para atendê-lo. Use nosso chat online ou visite nossa loja.
+            A nossa equipa está pronta para o atender. Use o nosso chat online ou visite a nossa loja.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/contact">

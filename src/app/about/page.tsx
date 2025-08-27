@@ -188,10 +188,10 @@ export default function About() {
               Visite-nos Hoje
             </h3>
             <div className="text-gray-700 dark:text-gray-300 transition-colors duration-300">
-              <p className="mb-2">📍 Rua da Saúde, 123 - Centro Médico</p>
-              <p className="mb-2">📞 Telefone: (11) 9999-8888</p>
+              <p className="mb-2">📍 Rua da Saúde, 123 - Centro Histórico, Lisboa</p>
+              <p className="mb-2">📞 Telefone: +351 21 123 4567</p>
               <p className="mb-2">⏰ Horário: Segunda a Sábado 8:00 - 21:00</p>
-              <p>🚚 Delivery disponível em toda a região</p>
+              <p>🚚 Entrega disponível em toda a região</p>
             </div>
           </div>
         </div>
