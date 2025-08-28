@@ -154,7 +154,7 @@ export class PharmacyAIAgent {
       console.log('🔑 SessionId definido no contexto:', sessionId);
       
       console.log('🚀 Iniciando generateText...');
-      const result = await streamText({
+      const result = await generateText({
         model: llmModel,
         messages: messages,
         tools: allTools,
@@ -162,8 +162,8 @@ export class PharmacyAIAgent {
       });
       
       console.log('✅ GenerateText concluído');
-      const responseText = await result.text;
-      const toolCalls = await result.toolCalls;
+      const responseText = result.text;
+      const toolCalls = result.toolCalls;
       console.log('📝 Texto da resposta:', responseText?.substring(0, 100) + '...');
       console.log('🔧 Tool calls encontrados:', toolCalls?.length || 0);
 
