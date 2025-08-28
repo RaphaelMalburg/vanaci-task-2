@@ -208,7 +208,8 @@ export const viewCartTool = tool({
       const sessionId = getSessionId();
       console.log(`[AI Agent] Visualizando carrinho ${sessionId}`);
       
-      const cartData: CartData = await apiCall('/cart', {
+      // Adicionar sessionId como query parameter
+      const cartData: CartData = await apiCall(`/cart?sessionId=${encodeURIComponent(sessionId)}`, {
         method: 'GET',
       }, sessionId);
       
@@ -251,23 +252,18 @@ export const clearCartTool = tool({
       const sessionId = getSessionId();
       console.log(`[AI Agent] Limpando carrinho ${sessionId}`);
       
-      const result = await apiCall('/cart/clear', {
-        method: 'POST',
+      const result = await apiCall('/cart', {
+        method: 'DELETE',
         body: JSON.stringify({ sessionId }),
       }, sessionId);
-      
-      console.log(`[AI Agent] Carrinho limpo:`, result);
+
       return {
         success: true,
-        message: 'Carrinho limpo com sucesso!',
-        data: result.cart,
+        message: 'Carrinho limpo com sucesso! 🧹',
+        data: result,
       };
     } catch (error) {
-      console.error(`[AI Agent] Erro ao limpar carrinho:`, error);
-      return {
-        success: false,
-        message: `Erro ao limpar carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
-      };
+      throw new Error(`Erro ao limpar carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   },
 });

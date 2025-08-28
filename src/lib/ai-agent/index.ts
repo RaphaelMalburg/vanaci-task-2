@@ -62,6 +62,14 @@ const SYSTEM_PROMPT = `Você é um assistente virtual especializado da Farmácia
 - Se uma tool falhar, explique o problema e ofereça alternativas
 - **Após executar qualquer tool, OBRIGATORIAMENTE continue a conversa explicando os resultados**
 
+**IMPORTANTE - Uso Correto de IDs de Produtos:**
+- Quando usar search_products, SEMPRE extraia o ID correto do produto dos resultados
+- Para add_to_cart, use APENAS o productId (string) retornado pela busca, NUNCA o nome do produto
+- Exemplo: se search_products retorna "Dipirona 500mg - € 5.99 (ID: prod_123)", use "prod_123" no add_to_cart
+- SEMPRE verifique se o produto foi encontrado antes de tentar adicionar ao carrinho
+- EXECUTE MÚLTIPLAS TOOLS EM SEQUÊNCIA: primeiro search_products, depois add_to_cart com o ID encontrado
+- NÃO pare após apenas uma tool call - continue executando as ferramentas necessárias para completar a tarefa
+
 **REGRA CRÍTICA ABSOLUTA:** 
 APÓS EXECUTAR QUALQUER TOOL CALL, você DEVE IMEDIATAMENTE continuar gerando texto explicando:
 1. O que foi executado
@@ -164,16 +172,27 @@ export class PharmacyAIAgent {
       console.log('✅ GenerateText concluído');
       const responseText = result.text;
       const toolCalls = result.toolCalls;
+      const toolResults = result.toolResults;
       console.log('📝 Texto da resposta:', responseText?.substring(0, 100) + '...');
       console.log('🔧 Tool calls encontrados:', toolCalls?.length || 0);
+      console.log('🔧 Tool results encontrados:', toolResults?.length || 0);
 
       if (toolCalls && toolCalls.length > 0) {
         toolCalls.forEach((tc, index) => {
           console.log(`🛠️ Tool Call ${index} no processMessage:`, {
             toolName: tc.toolName,
             toolCallId: tc.toolCallId,
-            // args não está disponível no tipo, mas podemos logar outros detalhes
+            args: JSON.stringify(tc, null, 2),
             type: typeof tc
+          });
+        });
+      }
+
+      if (toolResults && toolResults.length > 0) {
+        toolResults.forEach((tr, index) => {
+          console.log(`🔧 Tool Result ${index}:`, {
+            toolCallId: tr.toolCallId,
+            result: JSON.stringify(tr, null, 2)
           });
         });
       }

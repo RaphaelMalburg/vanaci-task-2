@@ -374,22 +374,25 @@ export default function Home() {
           
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <div className="text-2xl mb-2">⏰</div>
-              <div className="font-semibold text-white mb-1">Horário Estendido</div>
-              <div className="text-blue-100 text-sm">Segunda a Sexta: 8h às 22h</div>
-            </div>
-            
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <div className="text-2xl mb-2">🚀</div>
-              <div className="font-semibold text-white mb-1">Entrega Rápida</div>
-              <div className="text-blue-100 text-sm">Delivery em até 2 horas</div>
-            </div>
-            
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <div className="text-2xl mb-2">🎯</div>
-              <div className="font-semibold text-white mb-1">Atendimento 24/7</div>
-              <div className="text-blue-100 text-sm">Chat online sempre disponível</div>
-            </div>
+               <div className="text-2xl mb-2">⏰</div>
+               <div className="font-semibold text-white mb-1">Horário Estendido</div>
+               <div className="text-blue-100 text-sm">Segunda a Sexta: 8h às 22h</div>
+               <div className="text-blue-100 text-xs mt-1">📍 Lisboa, Portugal</div>
+             </div>
+             
+             <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+               <div className="text-2xl mb-2">🚀</div>
+               <div className="font-semibold text-white mb-1">Entrega Rápida</div>
+               <div className="text-blue-100 text-sm">Delivery em até 2 horas</div>
+               <div className="text-blue-100 text-xs mt-1">📞 +351 21 123 4567</div>
+             </div>
+             
+             <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+               <div className="text-2xl mb-2">🎯</div>
+               <div className="font-semibold text-white mb-1">Atendimento 24/7</div>
+               <div className="text-blue-100 text-sm">Chat online sempre disponível</div>
+               <div className="text-blue-100 text-xs mt-1">✉️ contato@farmaciavanaci.pt</div>
+             </div>
           </div>
         </div>
       </section>
