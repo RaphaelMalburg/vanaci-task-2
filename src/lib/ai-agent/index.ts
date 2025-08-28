@@ -9,6 +9,7 @@ import { navigationTools } from './actions/navigation';
 import { budgetTools } from './actions/budget';
 import { extraTools } from './actions/extras';
 import { logger } from '@/lib/logger';
+import { SessionService } from '@/lib/services/session.service';
 import type { AgentMessage, AgentSession } from './types';
 import type { LLMConfig } from './config';
 
@@ -84,7 +85,7 @@ Lembre-se: Você representa a Farmácia Vanaci e deve sempre manter os mais alto
 // Classe do Agente AI
 export class PharmacyAIAgent {
   private llmConfig: ConfigLLMConfig;
-  private sessions: Map<string, AgentSession> = new Map();
+  private sessionService: SessionService;
 
   constructor(llmConfig?: ConfigLLMConfig) {
     this.llmConfig = llmConfig || {
@@ -93,18 +94,16 @@ export class PharmacyAIAgent {
       maxTokens: parseInt(process.env.LLM_MAX_TOKENS || '2000')
     };
     validateLLMConfig(this.llmConfig.provider);
+    this.sessionService = SessionService.getInstance();
   }
 
   // Criar ou obter sessão
-  private getSession(sessionId: string): AgentSession {
-    if (!this.sessions.has(sessionId)) {
-      this.sessions.set(sessionId, {
-        id: sessionId,
-        messages: [],
-        context: {},
-      });
+  private async getSession(sessionId: string): Promise<AgentSession> {
+    let session = await this.sessionService.getSession(sessionId);
+    if (!session) {
+      session = await this.sessionService.createSession(sessionId);
     }
-    return this.sessions.get(sessionId)!;
+    return session;
   }
 
   // Converter mensagens para formato CoreMessage
@@ -134,13 +133,13 @@ export class PharmacyAIAgent {
         }
       }
       
-      const session = this.getSession(sessionId);
+      const session = await this.getSession(sessionId);
       logger.debug('Sessão obtida', { sessionId, existingMessages: session.messages.length });
       
       // Atualizar contexto se fornecido
       if (context) {
-        session.context = { ...session.context, ...context };
-        console.log('🔄 Contexto atualizado:', session.context);
+        await this.sessionService.updateSessionContext(sessionId, { ...session.context, ...context });
+        console.log('🔄 Contexto atualizado:', context);
       }
 
       // Adicionar mensagem do usuário
@@ -149,6 +148,7 @@ export class PharmacyAIAgent {
         content: processedMessage,
         timestamp: new Date(),
       };
+      await this.sessionService.addMessage(sessionId, userMsg);
       session.messages.push(userMsg);
       console.log('➕ Mensagem do usuário adicionada à sessão');
 
@@ -264,6 +264,7 @@ export class PharmacyAIAgent {
         timestamp: new Date(),
         toolCalls: toolCalls,
       };
+      await this.sessionService.addMessage(sessionId, assistantMsg);
       session.messages.push(assistantMsg);
       console.log('➕ Resposta do assistente adicionada à sessão');
 
@@ -303,13 +304,13 @@ export class PharmacyAIAgent {
         }
       }
       
-      const session = this.getSession(sessionId);
+      const session = await this.getSession(sessionId);
       console.log('📋 Sessão obtida, mensagens existentes:', session.messages.length);
       
       // Atualizar contexto se fornecido
       if (context) {
-        session.context = { ...session.context, ...context };
-        console.log('🔄 Contexto atualizado:', session.context);
+        await this.sessionService.updateSessionContext(sessionId, { ...session.context, ...context });
+        console.log('🔄 Contexto atualizado:', context);
       }
 
       // Adicionar mensagem do usuário
@@ -318,6 +319,7 @@ export class PharmacyAIAgent {
         content: processedMessage,
         timestamp: new Date(),
       };
+      await this.sessionService.addMessage(sessionId, userMsg);
       session.messages.push(userMsg);
       console.log('➕ Mensagem do usuário adicionada à sessão');
 
@@ -418,19 +420,19 @@ export class PharmacyAIAgent {
   }
 
   // Obter histórico da sessão
-  getSessionHistory(sessionId: string): AgentMessage[] {
-    const session = this.sessions.get(sessionId);
+  async getSessionHistory(sessionId: string): Promise<AgentMessage[]> {
+    const session = await this.sessionService.getSession(sessionId);
     return session ? [...session.messages] : [];
   }
 
   // Limpar sessão
-  clearSession(sessionId: string): void {
-    this.sessions.delete(sessionId);
+  async clearSession(sessionId: string): Promise<void> {
+    await this.sessionService.deleteSession(sessionId);
   }
 
   // Obter contexto da sessão
-  getSessionContext(sessionId: string) {
-    const session = this.sessions.get(sessionId);
+  async getSessionContext(sessionId: string): Promise<Record<string, any>> {
+    const session = await this.sessionService.getSession(sessionId);
     return session ? { ...session.context } : {};
   }
 
