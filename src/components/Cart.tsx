@@ -35,7 +35,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // Melhor sincronização: usar dados do carrinho como fonte principal
-  const cartItems = cart.items.map(cartItem => {
+  const cartItems = (cart.items || []).map(cartItem => {
     const product = products.find(p => p.id === cartItem.id);
     if (product) {
       return { product, quantity: cartItem.quantity };
