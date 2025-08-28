@@ -8,6 +8,7 @@ import { checkoutTools } from './actions/checkout';
 import { navigationTools } from './actions/navigation';
 import { budgetTools } from './actions/budget';
 import { extraTools } from './actions/extras';
+import { logger } from '@/lib/logger';
 import type { AgentMessage, AgentSession } from './types';
 import type { LLMConfig } from './config';
 
@@ -121,9 +122,7 @@ export class PharmacyAIAgent {
     context?: { cartId?: string; userId?: string; currentPage?: string }
   ): Promise<string> {
     try {
-      console.log('🎯 ProcessMessage iniciado para sessão:', sessionId);
-      console.log('💬 Mensagem original do usuário:', userMessage);
-      console.log('🔧 Contexto fornecido:', context);
+      logger.info('ProcessMessage iniciado', { sessionId, messageLength: userMessage.length, context });
       
       // Reescrever mensagem se habilitado
       let processedMessage = userMessage;
@@ -131,12 +130,12 @@ export class PharmacyAIAgent {
         const rewriteResult = await conditionalRewriteMessage(userMessage, this.llmConfig);
         processedMessage = rewriteResult.message;
         if (rewriteResult.wasRewritten) {
-          console.log('✏️ Mensagem reescrita:', processedMessage);
+          logger.debug('Mensagem reescrita', { original: userMessage.substring(0, 50), rewritten: processedMessage.substring(0, 50) });
         }
       }
       
       const session = this.getSession(sessionId);
-      console.log('📋 Sessão obtida, mensagens existentes:', session.messages.length);
+      logger.debug('Sessão obtida', { sessionId, existingMessages: session.messages.length });
       
       // Atualizar contexto se fornecido
       if (context) {

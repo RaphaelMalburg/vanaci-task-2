@@ -1,28 +1,8 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import { ProductService } from '@/lib/services/product.service';
+import { logger } from '@/lib/logger';
 import type { ToolResult, Product, Category, SearchResult } from '../types';
-
-// Função auxiliar para fazer chamadas à API
-async function apiCall(endpoint: string, options: RequestInit = {}) {
-  // Usar URL absoluta para funcionar no contexto do servidor
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? 'https://your-domain.com' 
-    : 'http://localhost:3007';
-  
-  const response = await fetch(`${baseUrl}/api${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.statusText}`);
-  }
-  
-  return response.json();
-}
 
 // Tool: Buscar produtos
 export const searchProductsTool = tool({
@@ -37,17 +17,17 @@ export const searchProductsTool = tool({
     category?: string;
     limit: number;
   }) => {
+    logger.info('Buscando produtos', { query, category, limit })
+    
     try {
-      const searchParams = new URLSearchParams({
+      const productService = ProductService.getInstance()
+      const products = await productService.getAllProducts({
         search: query,
-        limit: limit.toString(),
-      });
+        category,
+        limit
+      })
       
-      if (category) {
-        searchParams.append('category', category);
-      }
-      
-      const products: Product[] = await apiCall(`/products?${searchParams.toString()}`);
+      logger.info('Produtos encontrados', { count: products.length })
       
       if (products.length === 0) {
         return {
@@ -67,6 +47,7 @@ export const searchProductsTool = tool({
         data: { products, total: products.length, query },
       };
     } catch (error) {
+      logger.error('Erro ao buscar produtos', { query, error: error instanceof Error ? error.message : error })
       throw new Error(`Erro ao buscar produtos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   },
@@ -81,28 +62,33 @@ export const getProductDetailsTool = tool({
   execute: async ({ productId }: {
     productId: string;
   }) => {
+    logger.info('Buscando detalhes do produto', { productId })
+    
     try {
-      const product: Product = await apiCall(`/products/${productId}`);
+      const productService = ProductService.getInstance()
+      const product = await productService.getProductById(productId)
       
-      const details = [
-        `**${product.name}**`,
-        `Preço: R$ ${product.price.toFixed(2)}`,
-        `Categoria: ${product.category}`,
-        `Estoque: ${product.stock} unidades`,
-        `Descrição: ${product.description}`,
-      ];
-      
-      if (product.symptoms && product.symptoms.length > 0) {
-        details.push(`Indicado para: ${product.symptoms.join(', ')}`);
+      if (!product) {
+        logger.warn('Produto não encontrado', { productId })
+        return {
+          success: false,
+          message: `Produto com ID ${productId} não encontrado.`,
+        }
       }
+      
+      logger.info('Detalhes do produto obtidos', { productId, name: product.name })
       
       return {
         success: true,
-        message: details.join('\n'),
+        message: `Produto: ${product.name}\nPreço: R$ ${product.price.toFixed(2)}\nDescrição: ${product.description || 'Sem descrição'}\nCategoria: ${product.category || 'Sem categoria'}`,
         data: product,
       };
     } catch (error) {
-      throw new Error(`Erro ao obter detalhes do produto: ${error instanceof Error ? error.message : 'Produto não encontrado'}`);
+      logger.error('Erro ao buscar detalhes do produto', { productId, error: error instanceof Error ? error.message : error })
+      return {
+        success: false,
+        message: `Produto não encontrado ou erro ao buscar detalhes: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      };
     }
   },
 });
@@ -112,13 +98,16 @@ export const listCategoriesTool = tool({
   description: 'Lista todas as categorias de produtos disponíveis',
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
+    logger.info('Listando categorias de produtos')
+    
     try {
-      // Como não temos endpoint específico para categorias, vamos extrair das produtos
-      const products: Product[] = await apiCall('/products?limit=1000');
+      const productService = ProductService.getInstance()
+      const products = await productService.getAllProducts({ limit: 1000 })
       
-      const categories = [...new Set(products.map(p => p.category))]
-        .filter(Boolean)
-        .sort();
+      // Extrair categorias únicas dos produtos
+      const categories = [...new Set(products.map(p => p.category).filter(Boolean))]
+      
+      logger.info('Categorias encontradas', { count: categories.length })
       
       if (categories.length === 0) {
         return {
@@ -138,6 +127,7 @@ export const listCategoriesTool = tool({
         data: { categories },
       };
     } catch (error) {
+      logger.error('Erro ao listar categorias', { error: error instanceof Error ? error.message : error })
       throw new Error(`Erro ao listar categorias: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   },
@@ -154,45 +144,33 @@ export const listRecommendedProductsTool = tool({
     symptomOrNeed: string;
     limit: number;
   }) => {
+    logger.info('Buscando produtos recomendados', { symptomOrNeed, limit })
+    
     try {
-      // Buscar produtos que contenham o sintoma/necessidade na descrição ou sintomas
-      const products: Product[] = await apiCall(`/products?limit=1000`);
+      const productService = ProductService.getInstance()
+      const products = await productService.getAllProducts({ search: symptomOrNeed, limit })
       
-      const searchTerm = symptomOrNeed.toLowerCase();
+      logger.info('Produtos recomendados encontrados', { count: products.length })
       
-      const recommendedProducts = products
-        .filter(product => {
-          const nameMatch = product.name.toLowerCase().includes(searchTerm);
-          const descMatch = product.description.toLowerCase().includes(searchTerm);
-          const symptomsMatch = product.symptoms?.some(symptom => 
-            symptom.toLowerCase().includes(searchTerm)
-          );
-          const needsMatch = product.needs?.some(need => 
-            need.toLowerCase().includes(searchTerm)
-          );
-          
-          return nameMatch || descMatch || symptomsMatch || needsMatch;
-        })
-        .slice(0, limit);
-      
-      if (recommendedProducts.length === 0) {
+      if (products.length === 0) {
         return {
           success: true,
-          message: `Nenhum produto recomendado encontrado para "${symptomOrNeed}". Tente buscar por termos mais gerais.`,
+          message: `Não encontrei produtos específicos para "${symptomOrNeed}". Recomendo consultar um farmacêutico ou médico para orientação adequada.`,
           data: { products: [], symptomOrNeed },
         };
       }
       
-      const productsList = recommendedProducts
-        .map(product => `- ${product.name} - € ${product.price.toFixed(2)} (ID: ${product.id})\n  ${product.description.substring(0, 100)}...`)
-        .join('\n\n');
+      const productsList = products
+        .map(product => `• ${product.name} - R$ ${product.price.toFixed(2)} (ID: ${product.id})`)
+        .join('\n');
       
       return {
         success: true,
-        message: `Produtos recomendados para "${symptomOrNeed}":\n\n${productsList}`,
-        data: { products: recommendedProducts, symptomOrNeed },
+        message: `Produtos recomendados para "${symptomOrNeed}":\n\n${productsList}\n\n⚠️ Importante: Consulte sempre um profissional de saúde antes de usar medicamentos.`,
+        data: { products, symptomOrNeed },
       };
     } catch (error) {
+      logger.error('Erro ao buscar recomendações', { symptomOrNeed, error: error instanceof Error ? error.message : error })
       throw new Error(`Erro ao buscar recomendações: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   },
@@ -205,36 +183,38 @@ export const getPromotionalProductsTool = tool({
     limit: z.number().min(1).max(20).default(10).describe('Número máximo de produtos'),
   }),
   execute: async ({ limit }) => {
+    logger.info('Buscando produtos promocionais', { limit })
+    
     try {
-      const products: Product[] = await apiCall(`/products?limit=${limit * 2}`);
+      const productService = ProductService.getInstance()
+      const products = await productService.getAllProducts({ limit: limit * 2 })
       
-      // Simular produtos em promoção (produtos com preço menor que R$ 50 ou que contenham "desconto" na descrição)
+      // Simular produtos em promoção (ordenar por preço e pegar os mais baratos)
       const promotionalProducts = products
-        .filter(product => 
-          product.price < 50 || 
-          product.description.toLowerCase().includes('desconto') ||
-          product.description.toLowerCase().includes('promoção')
-        )
-        .slice(0, limit);
+        .sort((a, b) => a.price - b.price)
+        .slice(0, limit)
+      
+      logger.info('Produtos promocionais encontrados', { count: promotionalProducts.length })
       
       if (promotionalProducts.length === 0) {
         return {
           success: true,
-          message: 'Nenhum produto em promoção no momento.',
+          message: 'Não há produtos em promoção no momento.',
           data: { products: [] },
         };
       }
       
       const productsList = promotionalProducts
-        .map(product => `- ${product.name} - R$ ${product.price.toFixed(2)} (ID: ${product.id})`)
+        .map(product => `• ${product.name} - R$ ${product.price.toFixed(2)} (ID: ${product.id})`)
         .join('\n');
       
       return {
         success: true,
-        message: `Produtos em promoção:\n${productsList}`,
+        message: `🏷️ Produtos em destaque (${promotionalProducts.length}):\n\n${productsList}`,
         data: { products: promotionalProducts },
       };
     } catch (error) {
+      logger.error('Erro ao buscar produtos promocionais', { error: error instanceof Error ? error.message : error })
       throw new Error(`Erro ao buscar promoções: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   },

@@ -2,10 +2,23 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { getGlobalContext } from '../context';
 import type { ToolResult, CartData, CartItem } from '../types';
+import { CartService, Cart } from '@/lib/services/cart.service';
+import { logger } from '@/lib/logger';
 
 // Função auxiliar para gerar sessionId (fallback)
 function generateSessionId(): string {
   return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// Função para sincronizar carrinho com localStorage
+function syncWithLocalStorage(cart: Cart): void {
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cart', JSON.stringify(cart))
+    }
+  } catch (error) {
+    logger.warn('Erro ao sincronizar carrinho com localStorage', { error })
+  }
 }
 
 // Função para obter sessionId do contexto ou gerar um novo
@@ -25,48 +38,7 @@ function getSessionId(): string {
   return fallbackSessionId;
 }
 
-// Função auxiliar para sincronizar com localStorage
-function syncWithLocalStorage(cartData: any) {
-  if (typeof window !== 'undefined') {
-    try {
-      const localStorageKey = 'cart-storage';
-      const existingData = localStorage.getItem(localStorageKey);
-      
-      let localCart = {
-        state: {
-          items: [],
-          total: 0,
-          itemCount: 0
-        },
-        version: 0
-      };
-      
-      if (existingData) {
-        localCart = JSON.parse(existingData);
-      }
-      
-      // Atualizar localStorage com dados do backend
-      localCart.state = {
-        items: cartData.items || [],
-        total: cartData.total || 0,
-        itemCount: cartData.itemCount || 0
-      };
-      
-      localStorage.setItem(localStorageKey, JSON.stringify(localCart));
-      console.log(`💾 [Cart Tool] LocalStorage sincronizado:`, localCart.state);
-      
-      // Disparar evento para notificar componentes React
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: localStorageKey,
-        newValue: JSON.stringify(localCart),
-        storageArea: localStorage
-      }));
-      
-    } catch (error) {
-      console.error(`❌ [Cart Tool] Erro ao sincronizar localStorage:`, error);
-    }
-  }
-}
+// Função duplicada removida - usando a versão existente acima
 
 // Função auxiliar para fazer chamadas à API
 async function apiCall(endpoint: string, options: RequestInit = {}, sessionId?: string) {
@@ -127,49 +99,34 @@ export const addToCartTool = tool({
     productId: string;
     quantity: number;
   }) => {
-    console.log(`🛒 [CART DEBUG] addToCartTool executado com productId: ${productId}, quantity: ${quantity}`);
-    console.log(`🛒 [DEBUG] === INICIANDO addToCartTool ===`);
-    console.log(`🛒 [DEBUG] Parâmetros recebidos:`, { productId, quantity });
-    console.log(`🛒 [DEBUG] Tipo do productId: ${typeof productId}`);
-    console.log(`🛒 [DEBUG] Tipo da quantity: ${typeof quantity}`);
+    logger.info('Adicionando produto ao carrinho', { productId, quantity });
     
     try {
-      console.log(`🔑 [DEBUG] Obtendo session ID...`);
       const sessionId = getSessionId();
-      console.log(`🔑 [DEBUG] Session ID obtido: ${sessionId}`);
+      const cartService = CartService.getInstance();
+      const cart = await cartService.addItem(productId, quantity, sessionId);
       
-      const requestBody = { sessionId, productId, quantity };
-      console.log(`📤 [DEBUG] Request body:`, JSON.stringify(requestBody, null, 2));
+      // Sincronizar com localStorage
+      syncWithLocalStorage(cart);
       
-      console.log(`🌐 [CART DEBUG] Fazendo requisição POST para /api/cart`);
-      console.log(`🌐 [DEBUG] Fazendo chamada para API...`);
-      const result = await apiCall('/cart', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-      }, sessionId);
-
-      console.log(`📡 [CART DEBUG] Resposta da API: status success`);
-      console.log(`✅ [CART DEBUG] Produto adicionado com sucesso:`, result);
-      console.log(`✅ [DEBUG] Resposta da API:`, JSON.stringify(result, null, 2));
-      const response = {
+      logger.info('Produto adicionado com sucesso', { 
+        productId, 
+        quantity, 
+        totalItems: cart.itemCount, 
+        total: cart.total 
+      });
+      
+      return {
         success: true,
         message: `Produto adicionado ao carrinho com sucesso! Quantidade: ${quantity}`,
-        data: result.cart,
+        data: cart,
       };
-      console.log(`🎉 [DEBUG] Resultado final:`, JSON.stringify(response, null, 2));
-      console.log(`🛒 [DEBUG] === FIM addToCartTool (SUCESSO) ===`);
-      return response;
     } catch (error) {
-      console.log(`💥 [CART DEBUG] Erro ao adicionar produto:`, error);
-      console.error(`❌ [DEBUG] Erro ao adicionar produto:`, error);
-      console.error(`❌ [DEBUG] Stack trace:`, error instanceof Error ? error.stack : 'Sem stack trace');
-      const errorResponse = {
+      logger.error('Erro ao adicionar produto ao carrinho', { productId, quantity, error: error instanceof Error ? error.message : error });
+      return {
         success: false,
         message: `Erro ao adicionar produto ao carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
       };
-      console.log(`💥 [DEBUG] Resultado de erro:`, JSON.stringify(errorResponse, null, 2));
-      console.log(`🛒 [DEBUG] === FIM addToCartTool (ERRO) ===`);
-      return errorResponse;
     }
   },
 });
@@ -183,24 +140,25 @@ export const removeFromCartTool = tool({
   execute: async ({ productId }: {
     productId: string;
   }) => {
-    console.log(`🗑️ [CART DEBUG] removeFromCartTool executado com productId: ${productId}`);
+    logger.info('Removendo produto do carrinho', { productId });
+    
     try {
       const sessionId = getSessionId();
-      console.log(`[AI Agent] Removendo produto ${productId} do carrinho ${sessionId}`);
+      const cartService = CartService.getInstance();
+      const cart = await cartService.removeItem(productId, sessionId);
       
-      const result = await apiCall('/cart/remove', {
-        method: 'DELETE',
-        body: JSON.stringify({ sessionId, productId }),
-      }, sessionId);
-
-      console.log(`[AI Agent] Produto removido com sucesso:`, result);
+      // Sincronizar com localStorage
+      syncWithLocalStorage(cart);
+      
+      logger.info('Produto removido com sucesso', { productId, totalItems: cart.itemCount });
+      
       return {
         success: true,
         message: 'Produto removido do carrinho com sucesso!',
-        data: result.cart,
+        data: cart,
       };
     } catch (error) {
-      console.error(`[AI Agent] Erro ao remover produto:`, error);
+      logger.error('Erro ao remover produto do carrinho', { productId, error: error instanceof Error ? error.message : error });
       return {
         success: false,
         message: `Erro ao remover produto do carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
@@ -220,40 +178,43 @@ export const updateCartQuantityTool = tool({
     productId: string;
     quantity: number;
   }) => {
-    console.log(`📝 [CART DEBUG] updateCartQuantityTool executado com productId: ${productId}, quantity: ${quantity}`);
+    logger.info('Atualizando quantidade do produto', { productId, quantity });
+    
     try {
       const sessionId = getSessionId();
-      console.log(`[AI Agent] Atualizando quantidade do produto ${productId} para ${quantity} no carrinho ${sessionId}`);
+      const cartService = CartService.getInstance();
       
       if (quantity === 0) {
         // Se quantidade for 0, remover o item
-        const result = await apiCall('/cart/remove', {
-          method: 'DELETE',
-          body: JSON.stringify({ sessionId, productId }),
-        }, sessionId);
-
-        console.log(`[AI Agent] Produto removido (qty=0):`, result);
+        const cart = await cartService.removeItem(productId, sessionId);
+        
+        // Sincronizar com localStorage
+        syncWithLocalStorage(cart);
+        
+        logger.info('Produto removido (quantidade 0)', { productId, totalItems: cart.itemCount });
+        
         return {
           success: true,
           message: 'Produto removido do carrinho.',
-          data: result.cart,
+          data: cart,
         };
       } else {
         // Atualizar quantidade
-        const result = await apiCall('/cart', {
-          method: 'PUT',
-          body: JSON.stringify({ sessionId, productId, quantity }),
-        }, sessionId);
-
-        console.log(`[AI Agent] Quantidade atualizada:`, result);
+        const cart = await cartService.updateQuantity(productId, quantity, sessionId);
+        
+        // Sincronizar com localStorage
+        syncWithLocalStorage(cart);
+        
+        logger.info('Quantidade atualizada com sucesso', { productId, quantity, totalItems: cart.itemCount });
+        
         return {
           success: true,
           message: `Quantidade atualizada para ${quantity}.`,
-          data: result.cart,
+          data: cart,
         };
       }
     } catch (error) {
-      console.error(`[AI Agent] Erro ao atualizar quantidade:`, error);
+      logger.error('Erro ao atualizar quantidade do produto', { productId, quantity, error: error instanceof Error ? error.message : error });
       return {
         success: false,
         message: `Erro ao atualizar quantidade do produto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
@@ -267,40 +228,37 @@ export const viewCartTool = tool({
   description: 'Visualiza o conteúdo atual do carrinho de compras',
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
-    console.log(`👀 [CART DEBUG] viewCartTool executado`);
-    console.log(`👁️ [View Cart Tool] INICIANDO execução`);
+    logger.info('Visualizando carrinho');
     
     try {
       const sessionId = getSessionId();
-      console.log(`[AI Agent] Visualizando carrinho ${sessionId}`);
+      const cartService = CartService.getInstance();
+      const cart = await cartService.getCart(sessionId);
       
-      // Adicionar sessionId como query parameter
-      const cartData: CartData = await apiCall(`/cart?sessionId=${encodeURIComponent(sessionId)}`, {
-        method: 'GET',
-      }, sessionId);
+      // Sincronizar com localStorage
+      syncWithLocalStorage(cart);
       
-      console.log(`✅ [View Cart Tool] Carrinho carregado:`, cartData);
-      console.log(`📊 [View Cart Tool] Total de itens: ${cartData.items.length}`);
+      logger.info('Carrinho obtido com sucesso', { totalItems: cart.itemCount, total: cart.total });
       
-      if (cartData.items.length === 0) {
+      if (cart.items.length === 0) {
         return {
           success: true,
           message: 'Seu carrinho está vazio.',
-          data: cartData,
+          data: cart,
         };
       }
       
-      const itemsList = cartData.items
+      const itemsList = cart.items
         .map(item => `- ${item.name} (${item.quantity}x) - R$ ${(item.price * item.quantity).toFixed(2)}`)
         .join('\n');
       
       return {
         success: true,
-        message: `Carrinho (${cartData.itemCount} itens):\n${itemsList}\n\nTotal: R$ ${cartData.total.toFixed(2)}`,
-        data: cartData,
+        message: `Carrinho (${cart.itemCount} itens):\n${itemsList}\n\nTotal: R$ ${cart.total.toFixed(2)}`,
+        data: cart,
       };
     } catch (error) {
-      console.error(`[AI Agent] Erro ao carregar carrinho:`, error);
+      logger.error('Erro ao visualizar carrinho', { error: error instanceof Error ? error.message : error });
       return {
         success: false,
         message: `Erro ao visualizar carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
@@ -314,23 +272,29 @@ export const clearCartTool = tool({
   description: 'Remove todos os produtos do carrinho de compras',
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
-    console.log(`🧹 [CART DEBUG] clearCartTool executado`);
+    logger.info('Limpando carrinho');
+    
     try {
       const sessionId = getSessionId();
-      console.log(`[AI Agent] Limpando carrinho ${sessionId}`);
+      const cartService = CartService.getInstance();
+      const cart = await cartService.clearCart(sessionId);
       
-      const result = await apiCall('/cart', {
-        method: 'DELETE',
-        body: JSON.stringify({ sessionId }),
-      }, sessionId);
-
+      // Sincronizar com localStorage
+      syncWithLocalStorage(cart);
+      
+      logger.info('Carrinho limpo com sucesso');
+      
       return {
         success: true,
         message: 'Carrinho limpo com sucesso! 🧹',
-        data: result,
+        data: cart,
       };
     } catch (error) {
-      throw new Error(`Erro ao limpar carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      logger.error('Erro ao limpar carrinho', { error: error instanceof Error ? error.message : error });
+      return {
+        success: false,
+        message: `Erro ao limpar carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+      };
     }
   },
 });
