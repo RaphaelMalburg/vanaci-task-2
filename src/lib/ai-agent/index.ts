@@ -1,4 +1,4 @@
-import { generateText, streamText, CoreMessage } from 'ai';
+import { generateText, streamText, CoreMessage, stepCountIs } from 'ai';
 import { setContextVariable } from '@langchain/core/context';
 import { createLLMModel, createLLMModelWithFallback, validateLLMConfig, LLMConfig as ConfigLLMConfig } from './config';
 import { cartTools } from './actions/cart';
@@ -167,6 +167,7 @@ export class PharmacyAIAgent {
         messages: messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
+        stopWhen: stepCountIs(5), // Permite até 5 steps para múltiplas tool calls em sequência
       });
       
       console.log('✅ GenerateText concluído');
@@ -275,6 +276,7 @@ export class PharmacyAIAgent {
         messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
+        stopWhen: stepCountIs(5), // Permite até 5 steps para múltiplas tool calls em sequência
       });
       console.log('📡 StreamText result obtido:', !!result);
       console.log('📡 Result properties:', Object.keys(result));
