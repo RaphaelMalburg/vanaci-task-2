@@ -89,12 +89,14 @@ export async function POST(request: NextRequest) {
               console.log(`🔄 Processando chunk ${chunkIndex} do fullStream:`, {
                 type: chunk.type,
                 hasText: chunk.type === 'text-delta' ? !!chunk.text : false,
-                hasToolCall: chunk.type === 'tool-call' ? !!chunk.toolName : false
+                hasToolCall: chunk.type === 'tool-call' ? !!chunk.toolName : false,
+                chunkData: chunk.type === 'text-delta' ? chunk.text?.substring(0, 50) + '...' : 'N/A'
               });
               
               if (chunk.type === 'text-delta') {
                 textChunkCount++;
-                console.log(`📝 Chunk de texto ${textChunkCount}:`, chunk.text);
+                console.log(`📝 Chunk de texto ${textChunkCount} (${chunk.text?.length || 0} chars):`, chunk.text);
+                console.log(`📤 Enviando chunk de texto para cliente...`);
                 const data = JSON.stringify({
                   type: 'text',
                   content: chunk.text,
@@ -102,18 +104,24 @@ export async function POST(request: NextRequest) {
                   timestamp: new Date().toISOString(),
                 });
                 controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
+                console.log(`✅ Chunk de texto ${textChunkCount} enviado com sucesso`);
               } else if (chunk.type === 'tool-call') {
                 toolCallCount++;
                 hasProcessedToolCalls = true;
                 console.log(`🛠️ Processando tool call ${toolCallCount}:`, {
                     toolName: chunk.toolName,
-                    toolCallId: chunk.toolCallId
+                    toolCallId: chunk.toolCallId,
+                    args: chunk.input,
+                    argsKeys: Object.keys(chunk.input || {})
                   });
                 
                 try {
                   const toolData = JSON.stringify({
                     type: 'tool_call',
-                    toolCall: chunk,
+                    toolCall: {
+                      ...chunk,
+                      args: chunk.input
+                    },
                     sessionId: finalSessionId,
                     timestamp: new Date().toISOString(),
                   });
@@ -125,6 +133,8 @@ export async function POST(request: NextRequest) {
                 }
               } else if (chunk.type === 'tool-result') {
                 console.log(`🔧 Tool result recebido para ${chunk.toolCallId}`);
+              } else {
+                console.log(`❓ Chunk tipo desconhecido:`, chunk.type, chunk);
               }
             }
 

@@ -278,12 +278,18 @@ export class PharmacyAIAgent {
       console.log('🔑 SessionId e contexto definidos no contexto global:', sessionId);
 
       console.log('🚀 Iniciando streamText...');
+      console.log('🔧 Configuração do streamText:', {
+        model: llmModel.modelId || 'unknown',
+        toolsCount: Object.keys(allTools).length,
+        temperature: this.llmConfig.temperature || 0.7,
+        messagesCount: messages.length
+      });
+      
       const result = streamText({
         model: llmModel,
         messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
-        stopWhen: stepCountIs(5), // Permite até 5 steps para múltiplas tool calls em sequência
       });
       console.log('📡 StreamText result obtido:', !!result);
       console.log('📡 Result properties:', Object.keys(result));
