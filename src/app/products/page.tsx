@@ -73,6 +73,10 @@ export default function Products() {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const filteredAndSortedProducts = useMemo(() => {
+    if (!products || products.length === 0) {
+      return [];
+    }
+    
     const filtered = products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (product.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
