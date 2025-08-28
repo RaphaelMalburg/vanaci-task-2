@@ -60,6 +60,9 @@ export default function Products() {
 
   // Extrair categorias únicas dos produtos
   const categories = useMemo(() => {
+    if (!products || products.length === 0) {
+      return ['Todos'];
+    }
     const uniqueCategories = [...new Set(products.map(p => p.category))];
     return ['Todos', ...uniqueCategories.sort()];
   }, [products]);
