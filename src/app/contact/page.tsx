@@ -294,7 +294,7 @@ export default function Contact() {
                       <Mail className="w-4 h-4" />
                       Email
                     </h4>
-                    <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">contacto@farmacialusitana.pt</p>
+                    <p className="text-gray-600 dark:text-gray-300 transition-colors duration-300">contato@farmaciavanaci.pt</p>
                   </div>
                 </div>
               </CardContent>
@@ -340,7 +340,7 @@ export default function Contact() {
                   Para emergências fora do horário comercial:
                 </p>
                 <div className="space-y-2">
-                  <p className="font-medium text-red-600 dark:text-red-400 transition-colors duration-300">📞 Linha de Emergência: (11) 9999-0000</p>
+                  <p className="font-medium text-red-600 dark:text-red-400 transition-colors duration-300">📞 Linha de Emergência: +351 21 808 2424</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">
                     Disponível 24/7 para necessidades urgentes de medicamentos
                   </p>

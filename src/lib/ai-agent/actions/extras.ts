@@ -30,7 +30,7 @@ export const showStoreHoursTool = tool({
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
     const storeInfo: StoreInfo = {
-      hours: 'Segunda a Sexta: 8h às 22h\nSábado: 8h às 20h\nDomingo: 9h às 18h',
+      hours: 'Segunda a Sexta: 8h às 21h\nSábado: 9h às 19h\nDomingo: 10h às 18h',
       phone: '+351 21 123 4567',
       address: 'Rua da Saúde, 123 - Centro Histórico, Lisboa - Portugal',
     };
@@ -43,27 +43,27 @@ export const showStoreHoursTool = tool({
     
     if (currentDay >= 1 && currentDay <= 5) {
       // Segunda a sexta
-      isOpen = currentHour >= 8 && currentHour < 22;
+      isOpen = currentHour >= 8 && currentHour < 21;
       if (!isOpen) {
         nextOpenTime = currentHour < 8 ? 'Abre às 8h' : 'Abre amanhã às 8h';
       }
     } else if (currentDay === 6) {
       // Sábado
-      isOpen = currentHour >= 8 && currentHour < 20;
+      isOpen = currentHour >= 9 && currentHour < 19;
       if (!isOpen) {
-        nextOpenTime = currentHour < 8 ? 'Abre às 8h' : 'Abre domingo às 9h';
+        nextOpenTime = currentHour < 9 ? 'Abre às 9h' : 'Abre domingo às 10h';
       }
     } else {
       // Domingo
-      isOpen = currentHour >= 9 && currentHour < 18;
+      isOpen = currentHour >= 10 && currentHour < 18;
       if (!isOpen) {
-        nextOpenTime = currentHour < 9 ? 'Abre às 9h' : 'Abre segunda às 8h';
+        nextOpenTime = currentHour < 10 ? 'Abre às 10h' : 'Abre segunda às 8h';
       }
     }
     
     const status = isOpen ? '🟢 ABERTA AGORA' : `🔴 FECHADA - ${nextOpenTime}`;
     
-    const message = `**Farmácia Lusitana** ${status}\n\n**Horários:**\n${storeInfo.hours}\n\n**Contacto:**\n📞 ${storeInfo.phone}\n📍 ${storeInfo.address}`;
+    const message = `**Farmácia Vanaci** ${status}\n\n**Horários:**\n${storeInfo.hours}\n\n**Contacto:**\n📞 ${storeInfo.phone}\n📍 ${storeInfo.address}`;
     
     return {
       success: true,
