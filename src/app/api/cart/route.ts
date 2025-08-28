@@ -35,15 +35,28 @@ export async function GET(request: NextRequest) {
 
 // POST - Adicionar item ao carrinho
 export async function POST(request: NextRequest) {
-  console.log(`🛒 [Cart API POST] INICIANDO requisição`);
+  console.log(`🛒 [DEBUG] === INICIANDO Cart API POST ===`);
+  console.log(`🛒 [DEBUG] Request URL: ${request.url}`);
+  console.log(`🛒 [DEBUG] Request method: ${request.method}`);
+  console.log(`🛒 [DEBUG] Request headers:`, Object.fromEntries(request.headers.entries()));
   
   try {
+    console.log(`📥 [DEBUG] Parseando body da requisição...`);
     const body = await request.json()
+    console.log(`📦 [DEBUG] Body completo recebido:`, JSON.stringify(body, null, 2));
+    
     const { sessionId, productId, quantity = 1 } = body
-    console.log(`📦 [Cart API POST] Dados recebidos:`, { sessionId, productId, quantity });
+    console.log(`📦 [DEBUG] Dados extraídos:`, { sessionId, productId, quantity });
+    console.log(`📦 [DEBUG] Tipos dos dados:`, { 
+      sessionId: typeof sessionId, 
+      productId: typeof productId, 
+      quantity: typeof quantity 
+    });
 
     if (!sessionId || !productId) {
-      console.log(`❌ [Cart API POST] Dados obrigatórios não fornecidos`);
+      console.log(`❌ [DEBUG] Validação falhou - dados obrigatórios não fornecidos`);
+      console.log(`❌ [DEBUG] sessionId presente: ${!!sessionId}`);
+      console.log(`❌ [DEBUG] productId presente: ${!!productId}`);
       return NextResponse.json(
         { error: 'Session ID e Product ID são obrigatórios' },
         { status: 400 }
@@ -51,18 +64,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar produto no banco
+    console.log(`🔍 [DEBUG] Buscando produto no banco com ID: ${productId}`);
     const product = await prisma.product.findUnique({
       where: { id: productId }
     })
+    console.log(`🔍 [DEBUG] Produto encontrado:`, product ? JSON.stringify(product, null, 2) : 'null');
 
     if (!product) {
+      console.log(`❌ [DEBUG] Produto não encontrado no banco`);
       return NextResponse.json(
         { error: 'Produto não encontrado' },
         { status: 404 }
       )
     }
 
+    console.log(`📊 [DEBUG] Verificando estoque: ${product.stock} >= ${quantity}`);
     if (product.stock < quantity) {
+      console.log(`❌ [DEBUG] Estoque insuficiente: ${product.stock} < ${quantity}`);
       return NextResponse.json(
         { error: 'Estoque insuficiente' },
         { status: 400 }
@@ -70,16 +88,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Obter carrinho atual
+    console.log(`🛒 [DEBUG] Obtendo carrinho atual para sessionId: ${sessionId}`);
     let cart: CartData = getOrCreateCart(sessionId)
+    console.log(`🛒 [DEBUG] Carrinho atual:`, JSON.stringify(cart, null, 2));
 
     // Verificar se item já existe no carrinho
+    console.log(`🔍 [DEBUG] Verificando se produto já existe no carrinho...`);
     const existingItemIndex = cart.items.findIndex(item => item.id === productId)
+    console.log(`🔍 [DEBUG] Índice do item existente: ${existingItemIndex}`);
     
     if (existingItemIndex >= 0) {
+      console.log(`🔄 [DEBUG] Item já existe no carrinho - atualizando quantidade`);
+      console.log(`🔄 [DEBUG] Quantidade atual: ${cart.items[existingItemIndex].quantity}`);
       // Atualizar quantidade
       const newQuantity = cart.items[existingItemIndex].quantity + quantity
+      console.log(`🔄 [DEBUG] Nova quantidade calculada: ${newQuantity}`);
       
       if (newQuantity > product.stock) {
+        console.log(`❌ [DEBUG] Nova quantidade excede estoque: ${newQuantity} > ${product.stock}`);
         return NextResponse.json(
           { error: 'Quantidade excede estoque disponível' },
           { status: 400 }
@@ -87,27 +113,35 @@ export async function POST(request: NextRequest) {
       }
       
       cart.items[existingItemIndex].quantity = newQuantity
+      console.log(`✅ [DEBUG] Quantidade atualizada para: ${newQuantity}`);
     } else {
-      // Adicionar novo item
-      cart.items.push({
+      console.log(`➕ [DEBUG] Adicionando novo item ao carrinho`);
+      const newItem = {
         id: product.id,
         name: product.name,
         price: product.price,
         imagePath: product.imagePath,
         category: product.category,
         quantity
-      })
+      };
+      console.log(`➕ [DEBUG] Novo item:`, JSON.stringify(newItem, null, 2));
+      // Adicionar novo item
+      cart.items.push(newItem)
+      console.log(`✅ [DEBUG] Item adicionado. Total de itens no carrinho: ${cart.items.length}`);
     }
 
+    console.log(`🛒 [DEBUG] Carrinho antes de salvar:`, JSON.stringify(cart, null, 2));
     // Salvar carrinho
+    console.log(`💾 [DEBUG] Salvando carrinho...`);
     saveCart(cart)
-    console.log(`💾 [Cart API POST] Carrinho salvo com sucesso`);
+    console.log(`💾 [DEBUG] Carrinho salvo com sucesso`);
 
     const response = {
       message: 'Item adicionado ao carrinho',
       cart
     };
-    console.log(`✅ [Cart API POST] Resposta de sucesso:`, response);
+    console.log(`✅ [DEBUG] Resposta final:`, JSON.stringify(response, null, 2));
+    console.log(`🛒 [DEBUG] === FIM Cart API POST (SUCESSO) ===`);
     return NextResponse.json(response)
   } catch (error) {
     console.error('❌ [Cart API POST] Erro ao adicionar item ao carrinho:', error)

@@ -127,34 +127,43 @@ export const addToCartTool = tool({
     productId: string;
     quantity: number;
   }) => {
-    console.log(`🛒 [Add to Cart Tool] INICIANDO execução`);
-    console.log(`📦 [Add to Cart Tool] Parâmetros recebidos:`, { productId, quantity });
+    console.log(`🛒 [DEBUG] === INICIANDO addToCartTool ===`);
+    console.log(`🛒 [DEBUG] Parâmetros recebidos:`, { productId, quantity });
+    console.log(`🛒 [DEBUG] Tipo do productId: ${typeof productId}`);
+    console.log(`🛒 [DEBUG] Tipo da quantity: ${typeof quantity}`);
     
     try {
+      console.log(`🔑 [DEBUG] Obtendo session ID...`);
       const sessionId = getSessionId();
-      console.log(`[AI Agent] Adicionando produto ${productId} (qty: ${quantity}) ao carrinho ${sessionId}`);
+      console.log(`🔑 [DEBUG] Session ID obtido: ${sessionId}`);
       
+      const requestBody = { sessionId, productId, quantity };
+      console.log(`📤 [DEBUG] Request body:`, JSON.stringify(requestBody, null, 2));
+      
+      console.log(`🌐 [DEBUG] Fazendo chamada para API...`);
       const result = await apiCall('/cart', {
         method: 'POST',
-        body: JSON.stringify({ sessionId, productId, quantity }),
+        body: JSON.stringify(requestBody),
       }, sessionId);
 
-      console.log(`✅ [Add to Cart Tool] Produto adicionado com sucesso:`, result);
+      console.log(`✅ [DEBUG] Resposta da API:`, JSON.stringify(result, null, 2));
       const response = {
         success: true,
         message: `Produto adicionado ao carrinho com sucesso! Quantidade: ${quantity}`,
         data: result.cart,
       };
-      console.log(`📤 [Add to Cart Tool] Retornando resposta:`, response);
+      console.log(`🎉 [DEBUG] Resultado final:`, JSON.stringify(response, null, 2));
+      console.log(`🛒 [DEBUG] === FIM addToCartTool (SUCESSO) ===`);
       return response;
     } catch (error) {
-      console.error(`❌ [Add to Cart Tool] Erro ao adicionar produto:`, error);
-      console.error(`🔍 [Add to Cart Tool] Stack trace:`, error instanceof Error ? error.stack : 'N/A');
+      console.error(`❌ [DEBUG] Erro ao adicionar produto:`, error);
+      console.error(`❌ [DEBUG] Stack trace:`, error instanceof Error ? error.stack : 'Sem stack trace');
       const errorResponse = {
         success: false,
         message: `Erro ao adicionar produto ao carrinho: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
       };
-      console.log(`📤 [Add to Cart Tool] Retornando erro:`, errorResponse);
+      console.log(`💥 [DEBUG] Resultado de erro:`, JSON.stringify(errorResponse, null, 2));
+      console.log(`🛒 [DEBUG] === FIM addToCartTool (ERRO) ===`);
       return errorResponse;
     }
   },
@@ -317,6 +326,60 @@ export const clearCartTool = tool({
   },
 });
 
+// Tool: Buscar produtos
+export const searchProductsTool = tool({
+  description: 'Busca produtos no catálogo',
+  inputSchema: z.object({
+    query: z.string().describe('Termo de busca para encontrar produtos'),
+  }),
+  execute: async ({ query }: { query: string }) => {
+    console.log(`🔍 [DEBUG] === INICIANDO searchProductsTool ===`);
+    console.log(`🔍 [DEBUG] Parâmetros recebidos:`, { query });
+    console.log(`🔍 [DEBUG] Tipo da query: ${typeof query}`);
+    console.log(`🔍 [DEBUG] Query length: ${query?.length || 0}`);
+    
+    try {
+      console.log(`🔑 [DEBUG] Obtendo session ID...`);
+      const sessionId = getSessionId();
+      console.log(`🔑 [DEBUG] Session ID obtido: ${sessionId}`);
+      
+      const encodedQuery = encodeURIComponent(query);
+      const endpoint = `/products/search?q=${encodedQuery}`;
+      console.log(`🌐 [DEBUG] Endpoint construído: ${endpoint}`);
+      console.log(`🌐 [DEBUG] Query encoded: ${encodedQuery}`);
+      
+      console.log(`📡 [DEBUG] Fazendo chamada para API...`);
+      const result = await apiCall(endpoint, {
+        method: 'GET',
+      }, sessionId);
+      
+      console.log(`📥 [DEBUG] Resposta da API:`, JSON.stringify(result, null, 2));
+      console.log(`📊 [DEBUG] Número de produtos encontrados: ${result.products?.length || 0}`);
+      
+      const response = {
+        success: true,
+        message: `Encontrados ${result.products?.length || 0} produtos para "${query}"`,
+        data: result.products || [],
+      };
+      console.log(`🎉 [DEBUG] Resultado final:`, JSON.stringify(response, null, 2));
+      console.log(`🔍 [DEBUG] === FIM searchProductsTool (SUCESSO) ===`);
+      return response;
+    } catch (error) {
+      console.error(`❌ [DEBUG] Erro na busca:`, error);
+      console.error(`❌ [DEBUG] Stack trace:`, error instanceof Error ? error.stack : 'Sem stack trace');
+      
+      const errorResponse = {
+        success: false,
+        message: `Erro ao buscar produtos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+        data: [],
+      };
+      console.log(`💥 [DEBUG] Resultado de erro:`, JSON.stringify(errorResponse, null, 2));
+      console.log(`🔍 [DEBUG] === FIM searchProductsTool (ERRO) ===`);
+      return errorResponse;
+    }
+  },
+});
+
 // Exportar todas as tools do carrinho
 export const cartTools = {
   add_to_cart: addToCartTool,
@@ -324,4 +387,5 @@ export const cartTools = {
   update_cart_quantity: updateCartQuantityTool,
   view_cart: viewCartTool,
   clear_cart: clearCartTool,
+  search_products: searchProductsTool,
 };

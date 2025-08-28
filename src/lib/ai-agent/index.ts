@@ -213,6 +213,51 @@ export class PharmacyAIAgent {
         });
       }
 
+      // Processar tool calls se existirem
+      if (result.toolCalls && result.toolCalls.length > 0) {
+        console.log('🔧 [DEBUG] Tool calls detectados:', result.toolCalls.length);
+        console.log('🔧 [DEBUG] Tool calls completos:', JSON.stringify(result.toolCalls, null, 2));
+        
+        for (const toolCall of result.toolCalls) {
+          console.log(`🛠️ [DEBUG] Executando tool: ${toolCall.toolName}` );
+          console.log(`🆔 [DEBUG] Tool Call ID: ${toolCall.toolCallId}`);
+          
+          try {
+            console.log(`⏳ [DEBUG] Iniciando execução da tool ${toolCall.toolName}...`);
+            const tool = allTools[toolCall.toolName as keyof typeof allTools];
+            if (!tool || !tool.execute) {
+              throw new Error(`Tool ${toolCall.toolName} não encontrada ou não executável`);
+            }
+            const toolResult = await (tool.execute as any)((toolCall as any).args);
+            console.log(`✅ [DEBUG] Tool ${toolCall.toolName} executado com sucesso:`);
+            console.log(`📊 [DEBUG] Resultado completo:`, JSON.stringify(toolResult, null, 2));
+            
+            // Adicionar resultado da tool à sessão
+            session.messages.push({
+              role: 'assistant',
+              content: `Tool ${toolCall.toolName}: ${JSON.stringify(toolResult)}`,
+              timestamp: new Date(),
+            } as AgentMessage);
+            console.log(`💾 [DEBUG] Resultado da tool ${toolCall.toolName} adicionado à sessão`);
+          } catch (error) {
+            console.error(`❌ [DEBUG] Erro ao executar tool ${toolCall.toolName}:`, error);
+            console.error(`❌ [DEBUG] Stack trace:`, error instanceof Error ? error.stack : 'Sem stack trace');
+            
+            // Adicionar erro da tool à sessão
+            session.messages.push({
+              role: 'assistant',
+              content: `Tool ${toolCall.toolName} Error: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+              timestamp: new Date(),
+            } as AgentMessage);
+            console.log(`💾 [DEBUG] Erro da tool ${toolCall.toolName} adicionado à sessão`);
+          }
+        }
+        console.log(`🏁 [DEBUG] Processamento de ${result.toolCalls.length} tool calls concluído`);
+      } else {
+        console.log('🔧 [DEBUG] Nenhuma tool call detectada no resultado');
+        console.log('🔧 [DEBUG] Resultado completo:', JSON.stringify(result, null, 2));
+      }
+
       // Adicionar resposta do assistente
       const assistantMsg: AgentMessage = {
         role: 'assistant',
@@ -317,24 +362,53 @@ export class PharmacyAIAgent {
       console.log('📡 StreamText result obtido:', !!result);
       console.log('📡 Result properties:', Object.keys(result));
       
-      // Log das propriedades do resultado
-      if (result.toolCalls) {
-        console.log('🔧 Tool calls promise detectado no resultado');
-        try {
-          const toolCallsResolved = await result.toolCalls;
-          console.log('🔧 Tool calls resolvidos:', toolCallsResolved?.length || 0);
-          if (toolCallsResolved && toolCallsResolved.length > 0) {
-            toolCallsResolved.forEach((tc, index) => {
-                console.log(`🛠️ Tool Call ${index} no streamMessage:`, {
-                  toolName: tc.toolName,
-                  toolCallId: tc.toolCallId
-                });
-              });
+      // Processar tool calls do resultado
+      console.log('🔄 [DEBUG] Iniciando processamento do stream...');
+      for await (const part of result.fullStream) {
+        console.log(`🔄 [DEBUG] Stream part type: ${part.type}`);
+        
+        if (part.type === 'tool-call') {
+          console.log(`🛠️ [DEBUG] Stream Tool call detectado: ${part.toolName}`);
+          console.log(`📋 [DEBUG] Stream Args completos:`, JSON.stringify((part as any).args, null, 2));
+          console.log(`🆔 [DEBUG] Stream Tool Call ID: ${part.toolCallId}`);
+          
+          try {
+            console.log(`⏳ [DEBUG] Iniciando execução da stream tool ${part.toolName}...`);
+            const tool = allTools[part.toolName as keyof typeof allTools];
+            if (!tool || !tool.execute) {
+              throw new Error(`Tool ${part.toolName} não encontrada ou não executável`);
+            }
+            const toolResult = await (tool.execute as any)((part as any).args);
+            console.log(`✅ [DEBUG] Stream Tool ${part.toolName} executado com sucesso:`);
+            console.log(`📊 [DEBUG] Stream Resultado completo:`, JSON.stringify(toolResult, null, 2));
+            
+            // Adicionar resultado da tool à sessão
+            session.messages.push({
+              role: 'assistant',
+              content: `Tool ${part.toolName}: ${JSON.stringify(toolResult)}`,
+              timestamp: new Date(),
+            } as AgentMessage);
+            console.log(`💾 [DEBUG] Stream Resultado da tool ${part.toolName} adicionado à sessão`);
+          } catch (error) {
+            console.error(`❌ [DEBUG] Erro na stream tool ${part.toolName}:`, error);
+            console.error(`❌ [DEBUG] Stream Stack trace:`, error instanceof Error ? error.stack : 'Sem stack trace');
+            
+            // Adicionar erro da tool à sessão
+            session.messages.push({
+              role: 'assistant',
+              content: `Tool ${part.toolName} Error: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+              timestamp: new Date(),
+            } as AgentMessage);
+            console.log(`💾 [DEBUG] Stream Erro da tool ${part.toolName} adicionado à sessão`);
           }
-        } catch (toolError) {
-          console.error('❌ Erro ao resolver tool calls:', toolError);
+        } else if (part.type === 'text-delta') {
+          console.log(`📝 [DEBUG] Stream text delta recebido`);
+        } else {
+          console.log(`🔄 [DEBUG] Stream part type não reconhecido: ${part.type}`);
         }
       }
+      console.log('🏁 [DEBUG] Processamento do stream concluído');
+      console.log(`📊 [DEBUG] Total de mensagens na sessão: ${session.messages.length}`);
 
       return result;
     } catch (error) {
