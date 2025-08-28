@@ -327,7 +327,7 @@ export const searchProductsTool = tool({
       }, sessionId);
       
       console.log(`📥 [DEBUG] Resposta da API:`, JSON.stringify(result, null, 2));
-      console.log(`📊 [DEBUG] Número de produtos encontrados: ${result.products?.length || 0}`);
+      // Produtos encontrados para o carrinho
       
       const response = {
         success: true,

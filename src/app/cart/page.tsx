@@ -34,7 +34,7 @@ export default function CartPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        console.log('[Cart Debug] Buscando produtos para a página do carrinho');
+        // Buscar produtos para a página do carrinho
         const response = await fetch('/api/products');
         if (!response.ok) throw new Error('Falha ao buscar produtos');
         const data = await response.json();
