@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
     console.log('📝 Mensagem:', message);
     console.log('🔄 Streaming habilitado:', streaming);
 
-    // Configuração do LLM
+    // Configuração do LLM - usando Google Gemini como padrão
     const finalLlmConfig = llmConfig || {
-      provider: 'mistral' as const,
+      provider: 'google' as const,
       temperature: 0.7,
       maxTokens: 2000,
     };
@@ -82,8 +82,15 @@ export async function POST(request: NextRequest) {
             let hasProcessedToolCalls = false;
 
             // Processar stream completo incluindo texto após tool calls
+            console.log('🌊 Iniciando iteração do fullStream...');
+            let chunkIndex = 0;
             for await (const chunk of streamResult.fullStream) {
-              console.log('🔄 Processando chunk do fullStream:', chunk.type);
+              chunkIndex++;
+              console.log(`🔄 Processando chunk ${chunkIndex} do fullStream:`, {
+                type: chunk.type,
+                hasText: chunk.type === 'text-delta' ? !!chunk.text : false,
+                hasToolCall: chunk.type === 'tool-call' ? !!chunk.toolName : false
+              });
               
               if (chunk.type === 'text-delta') {
                 textChunkCount++;
@@ -124,6 +131,13 @@ export async function POST(request: NextRequest) {
             console.log(`📊 Total de chunks de texto processados: ${textChunkCount}`);
             console.log(`📊 Total de tool calls processados: ${toolCallCount}`);
             console.log(`🔧 Tool calls foram processados: ${hasProcessedToolCalls}`);
+            console.log(`📊 Total de chunks processados: ${chunkIndex}`);
+            
+            // Detectar stream vazio
+            if (chunkIndex === 0) {
+              console.log('⚠️ PROBLEMA DETECTADO: Stream está completamente vazio!');
+              console.log('⚠️ Isso indica um problema com o modelo LLM ou configuração');
+            }
 
             // Solução híbrida: Se tool calls foram processados mas nenhum texto foi gerado,
             // força uma segunda chamada ao modelo para gerar resposta textual

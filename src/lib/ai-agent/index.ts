@@ -1,4 +1,5 @@
 import { generateText, streamText, CoreMessage } from 'ai';
+import { setContextVariable } from '@langchain/core/context';
 import { createLLMModel, createLLMModelWithFallback, validateLLMConfig, LLMConfig as ConfigLLMConfig } from './config';
 import { cartTools } from './actions/cart';
 import { productTools } from './actions/products';
@@ -148,6 +149,10 @@ export class PharmacyAIAgent {
       console.log('🔧 Tools disponíveis:', Object.keys(allTools));
       console.log('🌡️ Temperatura configurada:', this.llmConfig.temperature || 0.7);
       
+      // Definir sessionId no contexto para as tools
+      setContextVariable('sessionId', sessionId);
+      console.log('🔑 SessionId definido no contexto:', sessionId);
+      
       console.log('🚀 Iniciando generateText...');
       const result = await streamText({
         model: llmModel,
@@ -240,6 +245,10 @@ export class PharmacyAIAgent {
       console.log('🤖 Modelo LLM criado com fallback:', !!llmModel);
       console.log('🔧 Tools disponíveis:', Object.keys(allTools));
       console.log('🌡️ Temperatura configurada:', this.llmConfig.temperature || 0.7);
+
+      // Definir sessionId no contexto para as tools
+      setContextVariable('sessionId', sessionId);
+      console.log('🔑 SessionId definido no contexto:', sessionId);
 
       console.log('🚀 Iniciando streamText...');
       const result = streamText({

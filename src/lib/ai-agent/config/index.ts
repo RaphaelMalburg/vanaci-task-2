@@ -14,7 +14,7 @@ export interface LLMConfig {
 // Configurações padrão dos modelos
 const DEFAULT_MODELS = {
   openai: process.env.OPENAI_MODEL || "gpt-4-turbo-preview",
-  google: process.env.GOOGLE_MODEL || "gemini-pro",
+  google: process.env.GEMINI_MODEL || "gemini-1.5-flash",
   anthropic: process.env.ANTHROPIC_MODEL || "claude-3-sonnet-20240229",
   mistral: process.env.MISTRAL_MODEL || "mistral-large-latest",
 };
@@ -51,10 +51,10 @@ export async function createLLMModel(config: Partial<LLMConfig> = {}) {
       return openai(modelName);
 
     case "google":
-      console.log('🔍 Verificando GOOGLE_GENERATIVE_AI_API_KEY...');
-      if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-        console.log('❌ GOOGLE_GENERATIVE_AI_API_KEY não encontrada');
-        throw new Error("GOOGLE_GENERATIVE_AI_API_KEY não configurada");
+      console.log('🔍 Verificando GOOGLE_API_KEY...');
+      if (!process.env.GOOGLE_API_KEY) {
+        console.log('❌ GOOGLE_API_KEY não encontrada');
+        throw new Error("GOOGLE_API_KEY não configurada");
       }
       console.log('✅ Criando modelo Google:', modelName);
       return google(modelName);
@@ -127,7 +127,7 @@ export function validateLLMConfig(provider?: LLMConfig["provider"]) {
 
   const requiredKeys = {
     openai: "OPENAI_API_KEY",
-    google: "GOOGLE_GENERATIVE_AI_API_KEY",
+    google: "GOOGLE_API_KEY",
     anthropic: "ANTHROPIC_API_KEY",
     mistral: "MISTRAL_API_KEY",
   };
@@ -147,7 +147,7 @@ export function getAvailableProviders(): LLMConfig["provider"][] {
   const providers: LLMConfig["provider"][] = [];
 
   if (process.env.OPENAI_API_KEY) providers.push("openai");
-  if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) providers.push("google");
+  if (process.env.GOOGLE_API_KEY) providers.push("google");
   if (process.env.ANTHROPIC_API_KEY) providers.push("anthropic");
   if (process.env.MISTRAL_API_KEY) providers.push("mistral");
 

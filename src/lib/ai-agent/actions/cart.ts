@@ -1,10 +1,28 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import { getContextVariable } from '@langchain/core/context';
 import type { ToolResult, CartData, CartItem } from '../types';
 
-// Função auxiliar para gerar sessionId
+// Função auxiliar para gerar sessionId (fallback)
 function generateSessionId(): string {
   return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// Função para obter sessionId do contexto ou gerar um novo
+function getSessionId(): string {
+  try {
+    const sessionId = getContextVariable('sessionId');
+    if (sessionId && typeof sessionId === 'string') {
+      console.log(`🔑 [Cart Tool] SessionId obtido do contexto: ${sessionId}`);
+      return sessionId;
+    }
+  } catch (error) {
+    console.warn(`⚠️ [Cart Tool] Erro ao obter sessionId do contexto:`, error);
+  }
+  
+  const fallbackSessionId = generateSessionId();
+  console.log(`🔑 [Cart Tool] Usando sessionId fallback: ${fallbackSessionId}`);
+  return fallbackSessionId;
 }
 
 // Função auxiliar para fazer chamadas à API
@@ -64,8 +82,7 @@ export const addToCartTool = tool({
     console.log(`📦 [Add to Cart Tool] Parâmetros recebidos:`, { productId, quantity });
     
     try {
-      const sessionId = generateSessionId();
-      console.log(`🔑 [Add to Cart Tool] SessionId gerado: ${sessionId}`);
+      const sessionId = getSessionId();
       console.log(`[AI Agent] Adicionando produto ${productId} (qty: ${quantity}) ao carrinho ${sessionId}`);
       
       const result = await apiCall('/cart', {
@@ -104,7 +121,7 @@ export const removeFromCartTool = tool({
     productId: string;
   }) => {
     try {
-      const sessionId = generateSessionId();
+      const sessionId = getSessionId();
       console.log(`[AI Agent] Removendo produto ${productId} do carrinho ${sessionId}`);
       
       const result = await apiCall('/cart/remove', {
@@ -140,7 +157,7 @@ export const updateCartQuantityTool = tool({
     quantity: number;
   }) => {
     try {
-      const sessionId = generateSessionId();
+      const sessionId = getSessionId();
       console.log(`[AI Agent] Atualizando quantidade do produto ${productId} para ${quantity} no carrinho ${sessionId}`);
       
       if (quantity === 0) {
@@ -188,8 +205,7 @@ export const viewCartTool = tool({
     console.log(`👁️ [View Cart Tool] INICIANDO execução`);
     
     try {
-      const sessionId = generateSessionId();
-      console.log(`🔑 [View Cart Tool] SessionId gerado: ${sessionId}`);
+      const sessionId = getSessionId();
       console.log(`[AI Agent] Visualizando carrinho ${sessionId}`);
       
       const cartData: CartData = await apiCall('/cart', {
@@ -232,7 +248,7 @@ export const clearCartTool = tool({
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
     try {
-      const sessionId = generateSessionId();
+      const sessionId = getSessionId();
       console.log(`[AI Agent] Limpando carrinho ${sessionId}`);
       
       const result = await apiCall('/cart/clear', {
