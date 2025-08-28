@@ -16,25 +16,25 @@ export default function Home() {
             <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-blue-100 text-sm font-medium mb-6 border border-white/20">
               Sua farmácia de confiança há mais de 15 anos
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 text-foreground leading-tight">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white leading-tight">
               Farmácia Vanaci
               <br />
-              <span className="text-4xl md:text-6xl text-primary">
+              <span className="text-4xl md:text-6xl text-blue-100">
                 Cuidando da Sua Saúde
               </span>
             </h1>
             
-            <p className="text-xl md:text-2xl mb-12 text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl mb-12 text-blue-50 max-w-4xl mx-auto leading-relaxed">
               Medicamentos de qualidade, atendimento especializado e a confiança que você merece. 
               <br className="hidden md:block" />Sua saúde é nossa prioridade há mais de 15 anos.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
                 <Link href="/products">
-                  <Button size="lg" className="glass-button text-lg px-8 py-4 font-semibold">
+                  <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50 text-lg px-8 py-4 font-semibold shadow-lg border-0">
                     Explorar Produtos
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="glass-button-outline text-lg px-8 py-4 font-semibold">
+                <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-blue-700 text-lg px-8 py-4 font-semibold">
                   Falar com Farmacêutico
                 </Button>
               </div>
@@ -152,7 +152,7 @@ export default function Home() {
             <div className="inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-full text-green-700 dark:text-green-300 text-sm font-medium mb-6">
               Mais Procurados
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 via-green-800 to-blue-800 dark:from-white dark:via-green-200 dark:to-blue-200 bg-clip-text text-transparent mb-6">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
               Produtos em Destaque
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
@@ -175,7 +175,7 @@ export default function Home() {
               <CardContent>
                 <div className="flex justify-between items-center">
                   <div>
-                    <span className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">€ 4,50</span>
+                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">€ 4,50</span>
                     <p className="text-sm text-gray-500 dark:text-gray-400">por unidade</p>
                   </div>
                   <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg group-hover:scale-105 transition-transform duration-300">
@@ -199,7 +199,7 @@ export default function Home() {
               <CardContent>
                 <div className="flex justify-between items-center">
                   <div>
-                    <span className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">€ 7,80</span>
+                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">€ 7,80</span>
                     <p className="text-sm text-gray-500 dark:text-gray-400">por frasco</p>
                   </div>
                   <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg group-hover:scale-105 transition-transform duration-300">
@@ -223,7 +223,7 @@ export default function Home() {
               <CardContent>
                 <div className="flex justify-between items-center">
                   <div>
-                    <span className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">€ 3,40</span>
+                    <span className="text-3xl font-bold text-green-600 dark:text-green-400">€ 3,40</span>
                     <p className="text-sm text-gray-500 dark:text-gray-400">por caixa</p>
                   </div>
                   <Button className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 shadow-lg group-hover:scale-105 transition-transform duration-300">
@@ -251,12 +251,10 @@ export default function Home() {
             <div className="inline-flex items-center px-4 py-2 bg-blue-100 dark:bg-blue-900/50 rounded-full text-blue-700 dark:text-blue-300 text-sm font-medium mb-6">
               Depoimentos
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent">
-                O Que Dizem Nossos
-              </span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900 dark:text-white">
+              O Que Dizem Nossos
               <br />
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+              <span className="text-blue-600 dark:text-blue-400">
                 Clientes
               </span>
             </h2>
