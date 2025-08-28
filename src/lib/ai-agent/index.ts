@@ -1,5 +1,5 @@
 import { generateText, streamText, CoreMessage, stepCountIs } from 'ai';
-import { setContextVariable } from '@langchain/core/context';
+import { setGlobalContext, updateGlobalContext } from './context';
 import { createLLMModel, createLLMModelWithFallback, validateLLMConfig, LLMConfig as ConfigLLMConfig } from './config';
 import { cartTools } from './actions/cart';
 import { productTools } from './actions/products';
@@ -154,9 +154,14 @@ export class PharmacyAIAgent {
       console.log('🔧 Tools disponíveis:', Object.keys(allTools));
       console.log('🌡️ Temperatura configurada:', this.llmConfig.temperature || 0.7);
       
-      // Definir sessionId no contexto para as tools
-      setContextVariable('sessionId', sessionId);
-      console.log('🔑 SessionId definido no contexto:', sessionId);
+      // Definir sessionId no contexto global para as tools
+      setGlobalContext('sessionId', sessionId);
+      if (context) {
+        if (context.cartId) setGlobalContext('cartId', context.cartId);
+        if (context.userId) setGlobalContext('userId', context.userId);
+        if (context.currentPage) setGlobalContext('currentPage', context.currentPage);
+      }
+      console.log('🔑 SessionId e contexto definidos no contexto global:', sessionId);
       
       console.log('🚀 Iniciando generateText...');
       const result = await generateText({
@@ -263,9 +268,14 @@ export class PharmacyAIAgent {
       console.log('🔧 Tools disponíveis:', Object.keys(allTools));
       console.log('🌡️ Temperatura configurada:', this.llmConfig.temperature || 0.7);
 
-      // Definir sessionId no contexto para as tools
-      setContextVariable('sessionId', sessionId);
-      console.log('🔑 SessionId definido no contexto:', sessionId);
+      // Definir sessionId no contexto global para as tools
+      setGlobalContext('sessionId', sessionId);
+      if (context) {
+        if (context.cartId) setGlobalContext('cartId', context.cartId);
+        if (context.userId) setGlobalContext('userId', context.userId);
+        if (context.currentPage) setGlobalContext('currentPage', context.currentPage);
+      }
+      console.log('🔑 SessionId e contexto definidos no contexto global:', sessionId);
 
       console.log('🚀 Iniciando streamText...');
       const result = streamText({

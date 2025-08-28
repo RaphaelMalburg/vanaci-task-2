@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { getContextVariable } from '@langchain/core/context';
+import { getGlobalContext } from '../context';
 import type { ToolResult, CartData, CartItem } from '../types';
 
 // Função auxiliar para gerar sessionId (fallback)
@@ -11,7 +11,7 @@ function generateSessionId(): string {
 // Função para obter sessionId do contexto ou gerar um novo
 function getSessionId(): string {
   try {
-    const sessionId = getContextVariable('sessionId');
+    const sessionId = getGlobalContext('sessionId');
     if (sessionId && typeof sessionId === 'string') {
       console.log(`🔑 [Cart Tool] SessionId obtido do contexto: ${sessionId}`);
       return sessionId;
