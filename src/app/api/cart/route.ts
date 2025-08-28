@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Adicionar item ao carrinho
 export async function POST(request: NextRequest) {
+  console.log(`🌐 [API DEBUG] POST /api/cart - Requisição recebida`);
   console.log(`🛒 [DEBUG] === INICIANDO Cart API POST ===`);
   console.log(`🛒 [DEBUG] Request URL: ${request.url}`);
   console.log(`🛒 [DEBUG] Request method: ${request.method}`);
@@ -43,6 +44,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log(`📥 [DEBUG] Parseando body da requisição...`);
     const body = await request.json()
+    console.log(`📋 [API DEBUG] Body da requisição:`, body);
     console.log(`📦 [DEBUG] Body completo recebido:`, JSON.stringify(body, null, 2));
     
     const { sessionId, productId, quantity = 1 } = body
@@ -141,9 +143,11 @@ export async function POST(request: NextRequest) {
       cart
     };
     console.log(`✅ [DEBUG] Resposta final:`, JSON.stringify(response, null, 2));
+    console.log(`✅ [API DEBUG] POST /api/cart - Sucesso, retornando carrinho:`, cart);
     console.log(`🛒 [DEBUG] === FIM Cart API POST (SUCESSO) ===`);
     return NextResponse.json(response)
   } catch (error) {
+    console.error('❌ [API DEBUG] Erro ao adicionar produto ao carrinho:', error)
     console.error('❌ [Cart API POST] Erro ao adicionar item ao carrinho:', error)
     console.error('🔍 [Cart API POST] Stack trace:', error instanceof Error ? error.stack : 'N/A');
     return NextResponse.json(

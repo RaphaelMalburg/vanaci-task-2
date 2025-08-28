@@ -127,6 +127,7 @@ export const addToCartTool = tool({
     productId: string;
     quantity: number;
   }) => {
+    console.log(`🛒 [CART DEBUG] addToCartTool executado com productId: ${productId}, quantity: ${quantity}`);
     console.log(`🛒 [DEBUG] === INICIANDO addToCartTool ===`);
     console.log(`🛒 [DEBUG] Parâmetros recebidos:`, { productId, quantity });
     console.log(`🛒 [DEBUG] Tipo do productId: ${typeof productId}`);
@@ -140,12 +141,15 @@ export const addToCartTool = tool({
       const requestBody = { sessionId, productId, quantity };
       console.log(`📤 [DEBUG] Request body:`, JSON.stringify(requestBody, null, 2));
       
+      console.log(`🌐 [CART DEBUG] Fazendo requisição POST para /api/cart`);
       console.log(`🌐 [DEBUG] Fazendo chamada para API...`);
       const result = await apiCall('/cart', {
         method: 'POST',
         body: JSON.stringify(requestBody),
       }, sessionId);
 
+      console.log(`📡 [CART DEBUG] Resposta da API: status success`);
+      console.log(`✅ [CART DEBUG] Produto adicionado com sucesso:`, result);
       console.log(`✅ [DEBUG] Resposta da API:`, JSON.stringify(result, null, 2));
       const response = {
         success: true,
@@ -156,6 +160,7 @@ export const addToCartTool = tool({
       console.log(`🛒 [DEBUG] === FIM addToCartTool (SUCESSO) ===`);
       return response;
     } catch (error) {
+      console.log(`💥 [CART DEBUG] Erro ao adicionar produto:`, error);
       console.error(`❌ [DEBUG] Erro ao adicionar produto:`, error);
       console.error(`❌ [DEBUG] Stack trace:`, error instanceof Error ? error.stack : 'Sem stack trace');
       const errorResponse = {
@@ -178,6 +183,7 @@ export const removeFromCartTool = tool({
   execute: async ({ productId }: {
     productId: string;
   }) => {
+    console.log(`🗑️ [CART DEBUG] removeFromCartTool executado com productId: ${productId}`);
     try {
       const sessionId = getSessionId();
       console.log(`[AI Agent] Removendo produto ${productId} do carrinho ${sessionId}`);
@@ -214,6 +220,7 @@ export const updateCartQuantityTool = tool({
     productId: string;
     quantity: number;
   }) => {
+    console.log(`📝 [CART DEBUG] updateCartQuantityTool executado com productId: ${productId}, quantity: ${quantity}`);
     try {
       const sessionId = getSessionId();
       console.log(`[AI Agent] Atualizando quantidade do produto ${productId} para ${quantity} no carrinho ${sessionId}`);
@@ -260,6 +267,7 @@ export const viewCartTool = tool({
   description: 'Visualiza o conteúdo atual do carrinho de compras',
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
+    console.log(`👀 [CART DEBUG] viewCartTool executado`);
     console.log(`👁️ [View Cart Tool] INICIANDO execução`);
     
     try {
@@ -306,6 +314,7 @@ export const clearCartTool = tool({
   description: 'Remove todos os produtos do carrinho de compras',
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
+    console.log(`🧹 [CART DEBUG] clearCartTool executado`);
     try {
       const sessionId = getSessionId();
       console.log(`[AI Agent] Limpando carrinho ${sessionId}`);

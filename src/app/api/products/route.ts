@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 export async function GET(request: Request) {
   console.log(`🔍 [DEBUG] === INICIANDO Products API GET ===`);
   console.log(`🔍 [DEBUG] Request URL: ${request.url}`);
+  console.log(`🌐 [API DEBUG] GET /api/products - Requisição recebida`);
   
   try {
     const { searchParams } = new URL(request.url)
@@ -54,10 +55,12 @@ export async function GET(request: Request) {
 
     const response = { products };
     console.log(`✅ [DEBUG] Resposta final:`, JSON.stringify(response, null, 2));
+    console.log(`✅ [API DEBUG] GET /api/products - Sucesso, retornando ${products.length} produtos`);
     console.log(`🔍 [DEBUG] === FIM Products API GET (SUCESSO) ===`);
     return NextResponse.json(response)
   } catch (error) {
     console.error('❌ [DEBUG] Erro ao buscar produtos:', error)
+    console.error('❌ [API DEBUG] Erro ao buscar produtos:', error);
     console.error('❌ [DEBUG] Stack trace:', error instanceof Error ? error.stack : 'Sem stack trace');
     console.log(`🔍 [DEBUG] === FIM Products API GET (ERRO) ===`);
     return NextResponse.json(
