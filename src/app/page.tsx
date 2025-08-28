@@ -14,24 +14,30 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-blue-100 text-sm font-medium mb-6 border border-white/20">
-              ✨ Sua farmácia de confiança há mais de 15 anos
+              Sua farmácia de confiança há mais de 15 anos
             </div>
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-blue-100 bg-clip-text text-transparent leading-tight">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 text-foreground leading-tight">
               Farmácia Vanaci
+              <br />
+              <span className="text-4xl md:text-6xl text-primary">
+                Cuidando da Sua Saúde
+              </span>
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto leading-relaxed">
-              Cuidando da sua saúde com excelência, oferecendo medicamentos de qualidade e atendimento personalizado para toda a família
+            
+            <p className="text-xl md:text-2xl mb-12 text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+              Medicamentos de qualidade, atendimento especializado e a confiança que você merece. 
+              <br className="hidden md:block" />Sua saúde é nossa prioridade há mais de 15 anos.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/products">
-                <Button size="lg" variant="secondary" className="text-lg px-8 py-4 bg-white text-blue-700 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold">
-                  🛒 Explorar Produtos
+                <Link href="/products">
+                  <Button size="lg" className="glass-button text-lg px-8 py-4 font-semibold">
+                    Explorar Produtos
+                  </Button>
+                </Link>
+                <Button size="lg" variant="outline" className="glass-button-outline text-lg px-8 py-4 font-semibold">
+                  Falar com Farmacêutico
                 </Button>
-              </Link>
-              <Button size="lg" variant="outline" className="text-lg px-8 py-4 border-white/30 text-white hover:bg-white/10 backdrop-blur-sm transition-all duration-300">
-                💬 Falar com Farmacêutico
-              </Button>
-            </div>
+              </div>
           </div>
         </div>
         
@@ -41,31 +47,31 @@ export default function Home() {
       </section>
 
       {/* Statistics Section */}
-      <section className="py-20 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-y border-gray-200/50 dark:border-gray-700/50">
+      <section className="py-20 glass-bg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center group">
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
-                <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">15+</div>
-                <div className="text-gray-600 dark:text-gray-300 font-medium">Anos de Experiência</div>
+              <div className="glass-card rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl font-bold text-primary mb-2">15+</div>
+                <div className="text-muted-foreground font-medium">Anos de Experiência</div>
               </div>
             </div>
             <div className="text-center group">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
-                <div className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">10k+</div>
-                <div className="text-gray-600 dark:text-gray-300 font-medium">Clientes Satisfeitos</div>
+              <div className="glass-card rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl font-bold text-primary mb-2">10k+</div>
+                <div className="text-muted-foreground font-medium">Clientes Satisfeitos</div>
               </div>
             </div>
             <div className="text-center group">
-              <div className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/30 dark:to-violet-900/30 rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
-                <div className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent mb-2">500+</div>
-                <div className="text-gray-600 dark:text-gray-300 font-medium">Produtos Disponíveis</div>
+              <div className="glass-card rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl font-bold text-primary mb-2">500+</div>
+                <div className="text-muted-foreground font-medium">Produtos Disponíveis</div>
               </div>
             </div>
             <div className="text-center group">
-              <div className="bg-gradient-to-br from-orange-50 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
-                <div className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent mb-2">24/7</div>
-                <div className="text-gray-600 dark:text-gray-300 font-medium">Suporte Online</div>
+              <div className="glass-card rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl font-bold text-primary mb-2">24/7</div>
+                <div className="text-muted-foreground font-medium">Suporte Online</div>
               </div>
             </div>
           </div>
@@ -73,58 +79,64 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50 dark:from-gray-900 dark:via-blue-900/20 dark:to-indigo-900/20">
+      <section className="py-20 glass-bg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-700 dark:text-blue-300 text-sm font-medium mb-6">
-              ⭐ Nossos Diferenciais
+            <div className="glass-card inline-flex items-center px-6 py-3 text-primary text-sm font-medium mb-6">
+              Nossos Diferenciais
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent mb-6">
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
               Por que Escolher a Farmácia Vanaci?
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
               Comprometidos em oferecer excelência em saúde com atendimento humanizado e produtos de qualidade superior
             </p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+            <Card className="glass-card group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
               <CardHeader className="text-center pb-8">
-                <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-2xl">💊</span>
+                <div className="w-16 h-16 mx-auto mb-6 bg-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-8 h-8 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                <CardTitle className="text-xl font-bold text-foreground mb-3">
                   Produtos de Qualidade Premium
                 </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                <CardDescription className="text-muted-foreground leading-relaxed">
                   Medicamentos rigorosamente selecionados de laboratórios certificados, garantindo eficácia e segurança para sua saúde
                 </CardDescription>
               </CardHeader>
             </Card>
             
-            <Card className="group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+            <Card className="glass-card group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
               <CardHeader className="text-center pb-8">
-                <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-2xl">👨‍⚕️</span>
+                <div className="w-16 h-16 mx-auto mb-6 bg-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-8 h-8 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+                  </svg>
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                <CardTitle className="text-xl font-bold text-foreground mb-3">
                   Consultoria Farmacêutica Especializada
                 </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                <CardDescription className="text-muted-foreground leading-relaxed">
                   Farmacêuticos experientes e qualificados prontos para orientar sobre medicamentos e cuidados com a saúde
                 </CardDescription>
               </CardHeader>
             </Card>
             
-            <Card className="group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+            <Card className="glass-card group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
               <CardHeader className="text-center pb-8">
-                <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                  <span className="text-2xl">🚀</span>
+                <div className="w-16 h-16 mx-auto mb-6 bg-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-8 h-8 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                  </svg>
                 </div>
-                <CardTitle className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                <CardTitle className="text-xl font-bold text-foreground mb-3">
                   Atendimento Ágil e Conveniente
                 </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                <CardDescription className="text-muted-foreground leading-relaxed">
                   Horários estendidos, chat online 24/7 e atendimento personalizado para sua comodidade e bem-estar
                 </CardDescription>
               </CardHeader>
@@ -138,7 +150,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-full text-green-700 dark:text-green-300 text-sm font-medium mb-6">
-              🏆 Mais Procurados
+              Mais Procurados
             </div>
             <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 via-green-800 to-blue-800 dark:from-white dark:via-green-200 dark:to-blue-200 bg-clip-text text-transparent mb-6">
               Produtos em Destaque
@@ -154,7 +166,7 @@ export default function Home() {
               <CardHeader className="relative">
                 <div className="flex justify-between items-start mb-4">
                   <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Paracetamol 500mg</CardTitle>
-                  <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white border-0 shadow-lg">🔥 Mais Vendido</Badge>
+                  <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white border-0 shadow-lg">Mais Vendido</Badge>
                 </div>
                 <CardDescription className="text-gray-600 dark:text-gray-300 mb-6">
                   Analgésico e antitérmico de ação rápida
@@ -167,7 +179,7 @@ export default function Home() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">por unidade</p>
                   </div>
                   <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg group-hover:scale-105 transition-transform duration-300">
-                    🛒 Adicionar
+                    Adicionar
                   </Button>
                 </div>
               </CardContent>
@@ -178,7 +190,7 @@ export default function Home() {
               <CardHeader className="relative">
                 <div className="flex justify-between items-start mb-4">
                   <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Vitamina C 1g</CardTitle>
-                  <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-lg">💰 Promoção</Badge>
+                  <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white border-0 shadow-lg">Promoção</Badge>
                 </div>
                 <CardDescription className="text-gray-600 dark:text-gray-300 mb-6">
                   Suplemento vitamínico para imunidade
@@ -191,7 +203,7 @@ export default function Home() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">por frasco</p>
                   </div>
                   <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg group-hover:scale-105 transition-transform duration-300">
-                    🛒 Adicionar
+                    Adicionar
                   </Button>
                 </div>
               </CardContent>
@@ -202,7 +214,7 @@ export default function Home() {
               <CardHeader className="relative">
                 <div className="flex justify-between items-start mb-4">
                   <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Dipirona 500mg</CardTitle>
-                  <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-lg">✅ Disponível</Badge>
+                  <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 shadow-lg">Disponível</Badge>
                 </div>
                 <CardDescription className="text-gray-600 dark:text-gray-300 mb-6">
                   Analgésico e antitérmico eficaz
@@ -215,7 +227,7 @@ export default function Home() {
                     <p className="text-sm text-gray-500 dark:text-gray-400">por caixa</p>
                   </div>
                   <Button className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 shadow-lg group-hover:scale-105 transition-transform duration-300">
-                    🛒 Adicionar
+                    Adicionar
                   </Button>
                 </div>
               </CardContent>
@@ -225,7 +237,7 @@ export default function Home() {
           <div className="text-center mt-12">
             <Link href="/products">
               <Button size="lg" className="px-10 py-4 text-lg bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 font-semibold">
-                🔍 Explorar Todos os Produtos
+                Explorar Todos os Produtos
               </Button>
             </Link>
           </div>
@@ -237,7 +249,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex items-center px-4 py-2 bg-blue-100 dark:bg-blue-900/50 rounded-full text-blue-700 dark:text-blue-300 text-sm font-medium mb-6">
-              💬 Depoimentos
+              Depoimentos
             </div>
             <h2 className="text-4xl md:text-5xl font-bold mb-6">
               <span className="bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent">
@@ -258,7 +270,7 @@ export default function Home() {
               <div className="flex items-center mb-6">
                 <div className="flex text-yellow-400 text-lg">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className="animate-pulse" style={{animationDelay: `${i * 100}ms`}}>⭐</span>
+                    <span key={i} className="animate-pulse" style={{animationDelay: `${i * 100}ms`}}>★</span>
                   ))}
                 </div>
                 <span className="ml-3 text-sm font-medium text-gray-500 dark:text-gray-400">5.0</span>
@@ -272,7 +284,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white text-lg">Maria Rosa</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Cliente há 5 anos • ⭐ VIP</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Cliente há 5 anos • VIP</p>
                 </div>
               </div>
             </Card>
@@ -281,7 +293,7 @@ export default function Home() {
               <div className="flex items-center mb-6">
                 <div className="flex text-yellow-400 text-lg">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className="animate-pulse" style={{animationDelay: `${i * 100}ms`}}>⭐</span>
+                    <span key={i} className="animate-pulse" style={{animationDelay: `${i * 100}ms`}}>★</span>
                   ))}
                 </div>
                 <span className="ml-3 text-sm font-medium text-gray-500 dark:text-gray-400">5.0</span>
@@ -295,7 +307,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white text-lg">João Silva</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Cliente há 3 anos • 🚀 Delivery</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Cliente há 3 anos • Delivery</p>
                 </div>
               </div>
             </Card>
@@ -304,7 +316,7 @@ export default function Home() {
               <div className="flex items-center mb-6">
                 <div className="flex text-yellow-400 text-lg">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className="animate-pulse" style={{animationDelay: `${i * 100}ms`}}>⭐</span>
+                    <span key={i} className="animate-pulse" style={{animationDelay: `${i * 100}ms`}}>★</span>
                   ))}
                 </div>
                 <span className="ml-3 text-sm font-medium text-gray-500 dark:text-gray-400">5.0</span>
@@ -318,7 +330,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white text-lg">Ana Santos</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Cliente há 2 anos • 💬 Chat Ativo</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Cliente há 2 anos • Chat Ativo</p>
                 </div>
               </div>
             </Card>
@@ -326,9 +338,7 @@ export default function Home() {
           
           <div className="text-center mt-12">
             <div className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-medium shadow-lg">
-              <span className="mr-2">⭐</span>
               4.9/5 baseado em 1,247+ avaliações
-              <span className="ml-2">🎯</span>
             </div>
           </div>
         </div>
@@ -343,7 +353,7 @@ export default function Home() {
         
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-blue-100 text-sm font-medium mb-8 border border-white/20">
-            💬 Atendimento Personalizado
+            Atendimento Personalizado
           </div>
           
           <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent leading-tight">
@@ -359,39 +369,33 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
             <Link href="/contact">
               <Button size="lg" className="px-10 py-4 text-lg bg-white text-blue-700 hover:bg-blue-50 shadow-xl hover:shadow-2xl transition-all duration-300 font-semibold group">
-                <span className="mr-2">📞</span>
                 Entre em Contato
                 <span className="ml-2 group-hover:translate-x-1 transition-transform duration-300">→</span>
               </Button>
             </Link>
             
             <Button size="lg" className="px-10 py-4 text-lg border-2 border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 font-semibold group">
-              <span className="mr-2">💬</span>
               Iniciar Chat Online
-              <span className="ml-2 group-hover:scale-110 transition-transform duration-300">✨</span>
             </Button>
           </div>
           
           <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-               <div className="text-2xl mb-2">⏰</div>
                <div className="font-semibold text-white mb-1">Horário Estendido</div>
                <div className="text-blue-100 text-sm">Segunda a Sexta: 8h às 22h</div>
-               <div className="text-blue-100 text-xs mt-1">📍 Lisboa, Portugal</div>
+               <div className="text-blue-100 text-xs mt-1">Lisboa, Portugal</div>
              </div>
              
              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-               <div className="text-2xl mb-2">🚀</div>
                <div className="font-semibold text-white mb-1">Entrega Rápida</div>
                <div className="text-blue-100 text-sm">Delivery em até 2 horas</div>
-               <div className="text-blue-100 text-xs mt-1">📞 +351 21 123 4567</div>
+               <div className="text-blue-100 text-xs mt-1">+351 21 123 4567</div>
              </div>
              
              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-               <div className="text-2xl mb-2">🎯</div>
                <div className="font-semibold text-white mb-1">Atendimento 24/7</div>
                <div className="text-blue-100 text-sm">Chat online sempre disponível</div>
-               <div className="text-blue-100 text-xs mt-1">✉️ contato@farmaciavanaci.pt</div>
+               <div className="text-blue-100 text-xs mt-1">contato@farmaciavanaci.pt</div>
              </div>
           </div>
         </div>

@@ -25,6 +25,49 @@ function getSessionId(): string {
   return fallbackSessionId;
 }
 
+// Função auxiliar para sincronizar com localStorage
+function syncWithLocalStorage(cartData: any) {
+  if (typeof window !== 'undefined') {
+    try {
+      const localStorageKey = 'cart-storage';
+      const existingData = localStorage.getItem(localStorageKey);
+      
+      let localCart = {
+        state: {
+          items: [],
+          total: 0,
+          itemCount: 0
+        },
+        version: 0
+      };
+      
+      if (existingData) {
+        localCart = JSON.parse(existingData);
+      }
+      
+      // Atualizar localStorage com dados do backend
+      localCart.state = {
+        items: cartData.items || [],
+        total: cartData.total || 0,
+        itemCount: cartData.itemCount || 0
+      };
+      
+      localStorage.setItem(localStorageKey, JSON.stringify(localCart));
+      console.log(`💾 [Cart Tool] LocalStorage sincronizado:`, localCart.state);
+      
+      // Disparar evento para notificar componentes React
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: localStorageKey,
+        newValue: JSON.stringify(localCart),
+        storageArea: localStorage
+      }));
+      
+    } catch (error) {
+      console.error(`❌ [Cart Tool] Erro ao sincronizar localStorage:`, error);
+    }
+  }
+}
+
 // Função auxiliar para fazer chamadas à API
 async function apiCall(endpoint: string, options: RequestInit = {}, sessionId?: string) {
   const defaultSessionId = sessionId || generateSessionId();
@@ -64,6 +107,12 @@ async function apiCall(endpoint: string, options: RequestInit = {}, sessionId?: 
   
   const result = await response.json();
   console.log(`✅ [Cart Tool] Resposta da API:`, result);
+  
+  // Sincronizar com localStorage após operações bem-sucedidas
+  if (result.cart) {
+    syncWithLocalStorage(result.cart);
+  }
+  
   return result;
 }
 
