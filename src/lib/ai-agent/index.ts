@@ -1,6 +1,7 @@
 import { generateText, streamText, CoreMessage, stepCountIs } from 'ai';
 import { setGlobalContext, updateGlobalContext } from './context';
 import { createLLMModel, createLLMModelWithFallback, validateLLMConfig, LLMConfig as ConfigLLMConfig } from './config';
+import { conditionalRewriteMessage } from './message-rewriter';
 import { cartTools } from './actions/cart';
 import { productTools } from './actions/products';
 import { checkoutTools } from './actions/checkout';
@@ -61,6 +62,8 @@ const SYSTEM_PROMPT = `Você é um assistente virtual especializado da Farmácia
 - **EXECUTE MÚLTIPLAS TOOLS EM SEQUÊNCIA: primeiro search_products, depois add_to_cart com o ID encontrado**
 - **NÃO pare após apenas uma tool call - continue executando as ferramentas necessárias para completar a tarefa**
 - **NUNCA apenas responda com texto quando uma ação específica foi solicitada - USE AS TOOLS**
+- **IMPORTANTE: Quando o usuário pedir para adicionar produtos, você DEVE executar AMBAS as tools: search_products E add_to_cart**
+- **Se search_products encontrar produtos, você DEVE imediatamente usar add_to_cart para cada produto solicitado**
 - Após usar tools, responda de forma natural sobre o resultado final
 
 **IMPORTANTE - Uso Correto de IDs de Produtos:**
@@ -119,8 +122,18 @@ export class PharmacyAIAgent {
   ): Promise<string> {
     try {
       console.log('🎯 ProcessMessage iniciado para sessão:', sessionId);
-      console.log('💬 Mensagem do usuário:', userMessage);
+      console.log('💬 Mensagem original do usuário:', userMessage);
       console.log('🔧 Contexto fornecido:', context);
+      
+      // Reescrever mensagem se habilitado
+      let processedMessage = userMessage;
+      if (this.llmConfig.enableMessageRewriter) {
+        const rewriteResult = await conditionalRewriteMessage(userMessage, this.llmConfig);
+        processedMessage = rewriteResult.message;
+        if (rewriteResult.wasRewritten) {
+          console.log('✏️ Mensagem reescrita:', processedMessage);
+        }
+      }
       
       const session = this.getSession(sessionId);
       console.log('📋 Sessão obtida, mensagens existentes:', session.messages.length);
@@ -134,7 +147,7 @@ export class PharmacyAIAgent {
       // Adicionar mensagem do usuário
       const userMsg: AgentMessage = {
         role: 'user',
-        content: userMessage,
+        content: processedMessage,
         timestamp: new Date(),
       };
       session.messages.push(userMsg);
@@ -233,8 +246,18 @@ export class PharmacyAIAgent {
   ) {
     try {
       console.log('🎯 StreamMessage iniciado para sessão:', sessionId);
-      console.log('💬 Mensagem do usuário:', userMessage);
+      console.log('💬 Mensagem original do usuário:', userMessage);
       console.log('🔧 Contexto fornecido:', context);
+      
+      // Reescrever mensagem se habilitado
+      let processedMessage = userMessage;
+      if (this.llmConfig.enableMessageRewriter) {
+        const rewriteResult = await conditionalRewriteMessage(userMessage, this.llmConfig);
+        processedMessage = rewriteResult.message;
+        if (rewriteResult.wasRewritten) {
+          console.log('✏️ Mensagem reescrita:', processedMessage);
+        }
+      }
       
       const session = this.getSession(sessionId);
       console.log('📋 Sessão obtida, mensagens existentes:', session.messages.length);
@@ -248,7 +271,7 @@ export class PharmacyAIAgent {
       // Adicionar mensagem do usuário
       const userMsg: AgentMessage = {
         role: 'user',
-        content: userMessage,
+        content: processedMessage,
         timestamp: new Date(),
       };
       session.messages.push(userMsg);
