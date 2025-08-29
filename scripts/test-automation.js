@@ -5,7 +5,7 @@
  * o funcionamento do agente AI e suas principais funcionalidades.
  */
 
-const BASE_URL = 'http://localhost:3007';
+const BASE_URL = 'http://localhost:3008';
 
 // Função para fazer requisições HTTP
 async function makeRequest(endpoint, method = 'GET', body = null) {
@@ -35,7 +35,8 @@ async function testAIAgent(message, sessionId = 'test-session') {
   
   const result = await makeRequest('/api/ai-chat', 'POST', {
     message,
-    sessionId
+    sessionId,
+    streaming: false
   });
   
   if (result.success) {
