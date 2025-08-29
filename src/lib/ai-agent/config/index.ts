@@ -20,9 +20,9 @@ const DEFAULT_MODELS = {
   mistral: process.env.MISTRAL_MODEL || "mistral-large-latest",
 };
 
-// Configurações padrão
+// Configurações padrão - simplificado para usar apenas Google Gemini
 const DEFAULT_CONFIG: LLMConfig = {
-  provider: (process.env.DEFAULT_LLM_PROVIDER as LLMConfig["provider"]) || "openai",
+  provider: "google",
   temperature: parseFloat(process.env.LLM_TEMPERATURE || "0.7"),
   maxTokens: parseInt(process.env.LLM_MAX_TOKENS || "2000"),
   enableMessageRewriter: process.env.ENABLE_MESSAGE_REWRITER === "true",
@@ -32,93 +32,61 @@ const DEFAULT_CONFIG: LLMConfig = {
  * Cria uma instância do modelo LLM baseado na configuração
  */
 export async function createLLMModel(config: Partial<LLMConfig> = {}) {
-  console.log('🔧 createLLMModel: Iniciando criação do modelo');
-  console.log('📋 Configuração recebida:', config);
-  
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
   const modelName = finalConfig.model || DEFAULT_MODELS[finalConfig.provider];
-  
-  console.log('⚙️ Configuração final:', finalConfig);
-  console.log('🏷️ Nome do modelo:', modelName);
-  console.log('🔑 Provider selecionado:', finalConfig.provider);
 
   switch (finalConfig.provider) {
     case "openai":
-      console.log('🔍 Verificando OPENAI_API_KEY...');
       if (!process.env.OPENAI_API_KEY) {
-        console.log('❌ OPENAI_API_KEY não encontrada');
         throw new Error("OPENAI_API_KEY não configurada");
       }
-      console.log('✅ Criando modelo OpenAI:', modelName);
       return openai(modelName);
 
     case "google":
-      console.log('🔍 Verificando GOOGLE_GENERATIVE_AI_API_KEY...');
       if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-        console.log('❌ GOOGLE_GENERATIVE_AI_API_KEY não encontrada');
         throw new Error("GOOGLE_GENERATIVE_AI_API_KEY não configurada");
       }
-      console.log('✅ Criando modelo Google:', modelName);
       return google(modelName);
 
     case "anthropic":
-      console.log('🔍 Verificando ANTHROPIC_API_KEY...');
       if (!process.env.ANTHROPIC_API_KEY) {
-        console.log('❌ ANTHROPIC_API_KEY não encontrada');
         throw new Error("ANTHROPIC_API_KEY não configurada");
       }
-      console.log('✅ Criando modelo Anthropic:', modelName);
       return anthropic(modelName);
 
     case "mistral":
-      console.log('🔍 Verificando MISTRAL_API_KEY...');
       if (!process.env.MISTRAL_API_KEY) {
-        console.log('❌ MISTRAL_API_KEY não encontrada');
         throw new Error("MISTRAL_API_KEY não configurada");
       }
-      console.log('✅ Criando modelo Mistral:', modelName);
-      const model = mistral(modelName);
-      console.log('🎯 Modelo Mistral criado com sucesso');
-      return model;
+      return mistral(modelName);
 
     default:
-      console.log('❌ Provider não suportado:', finalConfig.provider);
       throw new Error(`Provedor LLM não suportado: ${finalConfig.provider}`);
   }
 }
 
 /**
- * Cria modelo com fallback automático para outros provedores
+ * Cria modelo com fallback automático - prioriza Google Gemini
  */
 export async function createLLMModelWithFallback(config: Partial<LLMConfig> = {}) {
-  console.log('🔄 createLLMModelWithFallback: Iniciando criação com fallback');
+  const finalConfig = { ...DEFAULT_CONFIG, ...config };
   
-  const availableProviders = getAvailableProviders();
-  const primaryProvider = config.provider || DEFAULT_CONFIG.provider;
-  
-  // Tenta o provider primário primeiro
-  if (availableProviders.includes(primaryProvider)) {
-    try {
-      console.log(`🎯 Tentando provider primário: ${primaryProvider}`);
-      return await createLLMModel({ ...config, provider: primaryProvider });
-    } catch (error) {
-      console.log(`⚠️ Falha no provider ${primaryProvider}:`, error);
-    }
-  }
-  
-  // Tenta outros providers disponíveis como fallback
-  for (const provider of availableProviders) {
-    if (provider !== primaryProvider) {
+  // Tenta Google Gemini primeiro (padrão)
+  try {
+    return await createLLMModel({ ...finalConfig, provider: "google" });
+  } catch (error) {
+    // Fallback para OpenAI se disponível
+    if (process.env.OPENAI_API_KEY) {
       try {
-        console.log(`🔄 Tentando fallback para: ${provider}`);
-        return await createLLMModel({ ...config, provider });
-      } catch (error) {
-        console.log(`⚠️ Falha no fallback ${provider}:`, error);
+        return await createLLMModel({ ...finalConfig, provider: "openai" });
+      } catch (fallbackError) {
+        // Se ambos falharem, lança erro
+        throw new Error('Nenhum provider LLM disponível. Verifique GOOGLE_GENERATIVE_AI_API_KEY ou OPENAI_API_KEY.');
       }
     }
+    
+    throw new Error('Google Gemini não disponível e nenhum fallback configurado. Verifique GOOGLE_GENERATIVE_AI_API_KEY.');
   }
-  
-  throw new Error('❌ Nenhum provider LLM disponível. Verifique as chaves de API.');
 }
 
 /**

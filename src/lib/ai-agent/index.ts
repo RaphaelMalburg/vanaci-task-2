@@ -89,7 +89,7 @@ export class PharmacyAIAgent {
 
   constructor(llmConfig?: ConfigLLMConfig) {
     this.llmConfig = llmConfig || {
-      provider: (process.env.DEFAULT_LLM_PROVIDER as ConfigLLMConfig['provider']) || 'openai',
+      provider: 'google', // Simplificado para usar apenas Google Gemini
       temperature: parseFloat(process.env.LLM_TEMPERATURE || '0.7'),
       maxTokens: parseInt(process.env.LLM_MAX_TOKENS || '2000')
     };
@@ -99,11 +99,17 @@ export class PharmacyAIAgent {
 
   // Criar ou obter sessão
   private async getSession(sessionId: string): Promise<AgentSession> {
-    let session = await this.sessionService.getSession(sessionId);
-    if (!session) {
-      session = await this.sessionService.createSession(sessionId);
+    try {
+      const session = await this.sessionService.getSession(sessionId);
+      if (!session) {
+        logger.debug('Sessão não encontrada, criando nova', { sessionId });
+        return await this.sessionService.createSession(sessionId);
+      }
+      return session;
+    } catch (error) {
+      logger.debug('Erro ao obter sessão, criando nova', { sessionId });
+      return await this.sessionService.createSession(sessionId);
     }
-    return session;
   }
 
   // Converter mensagens para formato CoreMessage
@@ -121,7 +127,7 @@ export class PharmacyAIAgent {
     context?: { cartId?: string; userId?: string; currentPage?: string }
   ): Promise<string> {
     try {
-      logger.info('ProcessMessage iniciado', { sessionId, messageLength: userMessage.length, context });
+      logger.info('Processando mensagem', { sessionId, messageLength: userMessage.length });
       
       // Reescrever mensagem se habilitado
       let processedMessage = userMessage;
@@ -134,12 +140,10 @@ export class PharmacyAIAgent {
       }
       
       const session = await this.getSession(sessionId);
-      logger.debug('Sessão obtida', { sessionId, existingMessages: session.messages.length });
       
       // Atualizar contexto se fornecido
       if (context) {
         await this.sessionService.updateSessionContext(sessionId, { ...session.context, ...context });
-        console.log('🔄 Contexto atualizado:', context);
       }
 
       // Adicionar mensagem do usuário
@@ -150,21 +154,15 @@ export class PharmacyAIAgent {
       };
       await this.sessionService.addMessage(sessionId, userMsg);
       session.messages.push(userMsg);
-      console.log('➕ Mensagem do usuário adicionada à sessão');
 
       // Preparar mensagens para o LLM
       const messages: CoreMessage[] = [
         { role: 'system', content: SYSTEM_PROMPT },
         ...this.convertMessages(session.messages),
       ];
-      console.log('📨 Mensagens preparadas para LLM:', messages.length);
-      console.log('📨 Última mensagem:', messages[messages.length - 1]);
 
       // Gerar resposta com tools (usando fallback)
       const llmModel = await createLLMModelWithFallback(this.llmConfig);
-      console.log('🤖 Modelo LLM criado com fallback:', !!llmModel);
-      console.log('🔧 Tools disponíveis:', Object.keys(allTools));
-      console.log('🌡️ Temperatura configurada:', this.llmConfig.temperature || 0.7);
       
       // Definir sessionId no contexto global para as tools
       setGlobalContext('sessionId', sessionId);
@@ -173,9 +171,7 @@ export class PharmacyAIAgent {
         if (context.userId) setGlobalContext('userId', context.userId);
         if (context.currentPage) setGlobalContext('currentPage', context.currentPage);
       }
-      console.log('🔑 SessionId e contexto definidos no contexto global:', sessionId);
       
-      console.log('🚀 Iniciando generateText...');
       const result = await generateText({
         model: llmModel,
         messages: messages,
@@ -184,32 +180,12 @@ export class PharmacyAIAgent {
         stopWhen: stepCountIs(5), // Permite até 5 steps para múltiplas tool calls em sequência
       });
       
-      console.log('✅ GenerateText concluído');
       const responseText = result.text;
       const toolCalls = result.toolCalls;
       const toolResults = result.toolResults;
-      console.log('📝 Texto da resposta:', responseText?.substring(0, 100) + '...');
-      console.log('🔧 Tool calls encontrados:', toolCalls?.length || 0);
-      console.log('🔧 Tool results encontrados:', toolResults?.length || 0);
 
       if (toolCalls && toolCalls.length > 0) {
-        toolCalls.forEach((tc, index) => {
-          console.log(`🛠️ Tool Call ${index} no processMessage:`, {
-            toolName: tc.toolName,
-            toolCallId: tc.toolCallId,
-            args: JSON.stringify(tc, null, 2),
-            type: typeof tc
-          });
-        });
-      }
-
-      if (toolResults && toolResults.length > 0) {
-        toolResults.forEach((tr, index) => {
-          console.log(`🔧 Tool Result ${index}:`, {
-            toolCallId: tr.toolCallId,
-            result: JSON.stringify(tr, null, 2)
-          });
-        });
+        logger.debug('Tool calls executados', { count: toolCalls.length });
       }
 
       // Processar tool calls se existirem
