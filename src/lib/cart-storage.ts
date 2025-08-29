@@ -28,20 +28,33 @@ export function recalculateCartTotal(cart: CartData): number {
 
 // Função utilitária para obter ou criar um carrinho
 export function getOrCreateCart(sessionId: string): CartData {
+  console.log(`🗄️ [Cart Storage] getOrCreateCart chamado com sessionId: '${sessionId}'`);
+  console.log(`🗄️ [Cart Storage] Chaves existentes no Map:`, Array.from(cartStorage.keys()));
+  console.log(`🗄️ [Cart Storage] Total de carrinhos no Map: ${cartStorage.size}`);
+  
   let cart = cartStorage.get(sessionId)
   if (!cart) {
+    console.log(`➕ [Cart Storage] Criando novo carrinho para sessionId: '${sessionId}'`);
     cart = {
       sessionId,
       items: [],
       total: 0
     }
     cartStorage.set(sessionId, cart)
+    console.log(`✅ [Cart Storage] Novo carrinho criado e salvo`);
+  } else {
+    console.log(`✅ [Cart Storage] Carrinho existente encontrado:`, cart);
   }
   return cart
 }
 
 // Função utilitária para salvar carrinho
 export function saveCart(cart: CartData): void {
+  console.log(`💾 [Cart Storage] saveCart chamado para sessionId: '${cart.sessionId}'`);
+  console.log(`💾 [Cart Storage] Carrinho antes de salvar:`, cart);
   cart.total = recalculateCartTotal(cart)
+  console.log(`💾 [Cart Storage] Total recalculado: ${cart.total}`);
   cartStorage.set(cart.sessionId, cart)
+  console.log(`✅ [Cart Storage] Carrinho salvo no Map`);
+  console.log(`🗄️ [Cart Storage] Chaves no Map após salvar:`, Array.from(cartStorage.keys()));
 }

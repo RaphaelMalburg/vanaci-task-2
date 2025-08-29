@@ -7,9 +7,13 @@ import { logger } from '@/lib/logger';
 // Função para obter session ID do contexto global
 function getSessionId(): string {
   const context = getAllGlobalContext();
+  console.log('🔍 [Cart Tool] Contexto global completo:', context);
   if (!context.sessionId) {
+    console.error('❌ [Cart Tool] SessionId não encontrado no contexto global!');
+    console.error('❌ [Cart Tool] Contexto disponível:', Object.keys(context));
     throw new Error('SessionId não encontrado no contexto global. Certifique-se de que o AI Agent definiu o sessionId antes de usar as tools.');
   }
+  console.log('✅ [Cart Tool] SessionId obtido do contexto:', context.sessionId);
   return context.sessionId;
 }
 
@@ -46,28 +50,17 @@ export const addToCartTool = tool({
     quantity: number;
   }) => {
     try {
-      console.log('🚀 [addToCartTool] INICIANDO execução');
-      console.log('📦 [addToCartTool] Parâmetros recebidos:', { productId, quantity });
-      
       const sessionId = getSessionId();
-      console.log('🔑 [addToCartTool] SessionId obtido:', sessionId);
-      
       logger.info('Adicionando produto ao carrinho via API', { productId, quantity, sessionId });
       
-      const requestBody = {
-        sessionId,
-        productId,
-        quantity
-      };
-      console.log('📋 [addToCartTool] Body da requisição:', JSON.stringify(requestBody, null, 2));
-      
-      console.log('🌐 [addToCartTool] Fazendo chamada para API /cart');
       const cart = await apiCall('/cart', {
         method: 'POST',
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({
+          sessionId,
+          productId,
+          quantity
+        })
       });
-      
-      console.log('✅ [addToCartTool] Resposta da API recebida:', JSON.stringify(cart, null, 2));
       
       return {
         success: true,
@@ -75,8 +68,6 @@ export const addToCartTool = tool({
         data: cart,
       } as ToolResult;
     } catch (error) {
-      console.error('❌ [addToCartTool] ERRO capturado:', error);
-      console.error('❌ [addToCartTool] Stack trace:', error instanceof Error ? error.stack : 'N/A');
       logger.error('Erro ao adicionar produto ao carrinho', { error, productId, quantity });
       return {
         success: false,
@@ -96,14 +87,10 @@ export const removeFromCartTool = tool({
   execute: async ({ productId }: {
     productId: string;
   }) => {
-    console.log(`🛠️ [AI Agent removeFromCartTool] INICIANDO remoção do produto: ${productId}`);
-    
     try {
       const sessionId = getSessionId();
-      console.log(`🔑 [AI Agent removeFromCartTool] SessionId obtido: ${sessionId}`);
       logger.info('Removendo produto do carrinho via API', { productId, sessionId });
       
-      console.log(`📡 [AI Agent removeFromCartTool] Fazendo chamada DELETE para /cart`);
       const cart = await apiCall('/cart', {
         method: 'DELETE',
         body: JSON.stringify({
@@ -112,15 +99,12 @@ export const removeFromCartTool = tool({
         })
       });
       
-      console.log(`✅ [AI Agent removeFromCartTool] Produto removido com sucesso:`, cart);
-      
       return {
         success: true,
         message: 'Produto removido do carrinho!',
         data: cart,
       } as ToolResult;
     } catch (error) {
-      console.log(`❌ [AI Agent removeFromCartTool] ERRO ao remover produto:`, error);
       logger.error('Erro ao remover produto do carrinho', { error, productId });
       return {
         success: false,
