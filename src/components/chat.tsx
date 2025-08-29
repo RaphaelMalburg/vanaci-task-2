@@ -73,9 +73,20 @@ export function Chat() {
 
   // Generate session ID on component mount and set client flag
   useEffect(() => {
-    const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Use the same sessionId as CartSyncService
+    const getOrCreateSessionId = () => {
+      let sessionId = localStorage.getItem('cart-session-id');
+      if (!sessionId) {
+        sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('cart-session-id', sessionId);
+      }
+      return sessionId;
+    };
+    
+    const newSessionId = getOrCreateSessionId();
     setSessionId(newSessionId);
     setIsClient(true);
+    console.log('🔑 Chat usando sessionId:', newSessionId);
   }, []);
 
   // Atualizar input com transcript de voz

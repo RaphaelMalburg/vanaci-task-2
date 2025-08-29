@@ -4,22 +4,13 @@ import { getAllGlobalContext, setGlobalContext } from '../context';
 import type { ToolResult } from '../types';
 import { logger } from '@/lib/logger';
 
-// Função para gerar session ID único
-function generateSessionId(): string {
-  return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
-
-// Função para obter session ID do contexto global ou gerar um novo
+// Função para obter session ID do contexto global
 function getSessionId(): string {
   const context = getAllGlobalContext();
-  if (context.sessionId) {
-    return context.sessionId;
+  if (!context.sessionId) {
+    throw new Error('SessionId não encontrado no contexto global. Certifique-se de que o AI Agent definiu o sessionId antes de usar as tools.');
   }
-  
-  // Gerar novo session ID e salvar no contexto
-  const newSessionId = generateSessionId();
-  setGlobalContext('sessionId', newSessionId);
-  return newSessionId;
+  return context.sessionId;
 }
 
 // Função auxiliar para fazer chamadas à API
