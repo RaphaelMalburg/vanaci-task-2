@@ -1,4 +1,5 @@
 import type { CartItem, Product, ToolResult } from '../types';
+import { generateId, calculateCartTotal } from '@/lib/utils/api';
 
 // Utilitários para formatação de preços
 export const formatPrice = (price: number): string => {
@@ -57,12 +58,8 @@ export const formatPhone = (phone: string): string => {
   return phone;
 };
 
-// Utilitários para cálculo de totais do carrinho
-export const calculateCartTotal = (items: CartItem[]): number => {
-  return items.reduce((total, item) => {
-    return total + (item.price * item.quantity);
-  }, 0);
-};
+// Re-exportar função de cálculo centralizada
+export { calculateCartTotal };
 
 // Utilitários para cálculo de desconto
 export const calculateDiscount = (total: number, discountPercent: number): number => {
@@ -100,10 +97,7 @@ export const calculateShipping = (zipCode: string, total: number): number => {
   return shippingRates[firstDigit as keyof typeof shippingRates] || 5.50;
 };
 
-// Utilitários para geração de IDs únicos
-export const generateId = (): string => {
-  return Math.random().toString(36).substr(2, 9);
-};
+export { generateId };
 
 // Utilitários para geração de session IDs
 export const generateSessionId = (): string => {

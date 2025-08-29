@@ -9,20 +9,8 @@ import { ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowLeft } from 'lucide
 import { toast } from 'sonner';
 import Image from 'next/image';
 import Link from 'next/link';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  description: string | null;
-  imagePath: string | null;
-  stock: number;
-  prescription: boolean;
-  manufacturer: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { fetchProducts, processCheckout, validateCartNotEmpty } from '@/lib/utils/api';
+import type { Product } from '@/lib/types';
 
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
@@ -32,22 +20,13 @@ export default function CartPage() {
 
   // Buscar produtos ao carregar a página
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        // Buscar produtos para a página do carrinho
-        const response = await fetch('/api/products');
-        if (!response.ok) throw new Error('Falha ao buscar produtos');
-        const data = await response.json();
-        setProducts(data);
-      } catch (error) {
-        console.error('[Cart Debug] Erro ao buscar produtos:', error);
-        toast.error('Não foi possível carregar os produtos. Tente novamente.');
-      } finally {
-        setIsLoading(false);
-      }
+    const loadProducts = async () => {
+      const products = await fetchProducts();
+      setProducts(products);
+      setIsLoading(false);
     };
 
-    fetchProducts();
+    loadProducts();
   }, []);
 
   // Melhor sincronização: usar dados do carrinho como fonte principal
@@ -63,11 +42,11 @@ export default function CartPage() {
         name: cartItem.name,
         price: cartItem.price,
         category: cartItem.category,
-        description: null,
-        imagePath: cartItem.imagePath || null,
+        description: '',
+        image: cartItem.imagePath || undefined,
         stock: 999, // Assumir disponível se não encontrado
         prescription: false,
-        manufacturer: null,
+        manufacturer: undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       } as Product,
@@ -93,28 +72,18 @@ export default function CartPage() {
   };
 
   const handleCheckout = async () => {
-    if (cartItems.length === 0) {
-      toast.error('Carrinho vazio');
+    if (!validateCartNotEmpty(cartItems)) {
       return;
     }
 
     setIsCheckingOut(true);
     
-    // Simular processo de checkout
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simular sucesso do checkout
-      const orderId = Math.random().toString(36).substr(2, 9).toUpperCase();
-      
-      toast.success(`Pedido ${orderId} realizado com sucesso!`);
+    const orderId = await processCheckout();
+    if (orderId) {
       clearCart();
-    } catch (error) {
-      console.error('Checkout error:', error);
-      toast.error('Erro ao processar pedido. Tente novamente.');
-    } finally {
-      setIsCheckingOut(false);
     }
+    
+    setIsCheckingOut(false);
   };
 
   const subtotal = cartItems.reduce(
@@ -180,9 +149,9 @@ export default function CartPage() {
                   {cartItems.map(({ product, quantity }) => (
                     <div key={product.id} className="flex flex-col sm:flex-row items-start sm:items-center py-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
                       <div className="flex-shrink-0 w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden mr-4 mb-4 sm:mb-0">
-                        {product.imagePath ? (
+                        {product.image ? (
                           <Image 
-                            src={product.imagePath} 
+                            src={product.image} 
                             alt={product.name} 
                             width={80} 
                             height={80} 

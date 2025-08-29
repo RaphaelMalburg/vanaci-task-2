@@ -6,24 +6,11 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
 import { ShoppingCart, ArrowLeft, Package, Clock, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/stores/cart-store';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  stock: number;
-  imagePath: string | null;
-  prescription: boolean;
-  manufacturer: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { fetchProductById } from '@/lib/utils/api';
+import type { Product } from '@/lib/types';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -36,33 +23,22 @@ export default function ProductDetailPage() {
   const productId = params.id as string;
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/products/${productId}`);
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            setError('Produto não encontrado');
-          } else {
-            setError('Erro ao carregar produto');
-          }
-          return;
-        }
-
-        const productData = await response.json();
+    const loadProduct = async () => {
+      if (!productId) return;
+      
+      setLoading(true);
+      const productData = await fetchProductById(productId);
+      
+      if (productData) {
         setProduct(productData);
-      } catch (err) {
-        console.error('Erro ao buscar produto:', err);
-        setError('Erro ao carregar produto');
-      } finally {
-        setLoading(false);
+      } else {
+        setError('Produto não encontrado');
       }
+      
+      setLoading(false);
     };
 
-    if (productId) {
-      fetchProduct();
-    }
+    loadProduct();
   }, [productId]);
 
   const handleAddToCart = () => {
@@ -77,7 +53,7 @@ export default function ProductDetailPage() {
       id: product.id,
       name: product.name,
       price: product.price,
-      imagePath: product.imagePath || undefined,
+      imagePath: product.image || undefined,
       category: product.category
     });
 
@@ -170,9 +146,9 @@ export default function ProductDetailPage() {
           <Card>
             <CardContent className="p-6">
               <div className="relative w-full h-96 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                {product.imagePath ? (
+                {product.image ? (
                   <Image
-                    src={product.imagePath}
+                    src={product.image}
                     alt={product.name}
                     fill
                     className="object-cover"

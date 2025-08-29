@@ -1,3 +1,6 @@
+// Importar função de cálculo centralizada
+import { calculateCartTotal } from '@/lib/utils/api';
+
 // Tipos para os dados do carrinho
 export interface CartItem {
   id: string
@@ -20,7 +23,7 @@ export const cartStorage = new Map<string, CartData>()
 
 // Função utilitária para recalcular o total do carrinho
 export function recalculateCartTotal(cart: CartData): number {
-  return cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  return calculateCartTotal(cart.items);
 }
 
 // Função utilitária para obter ou criar um carrinho

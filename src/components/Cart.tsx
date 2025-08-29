@@ -3,26 +3,13 @@
 import { useState } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
-
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Trash2, Plus, Minus, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  description: string | null;
-  imagePath: string | null;
-  stock: number;
-  prescription: boolean;
-  manufacturer: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { processCheckout, validateCartNotEmpty } from '@/lib/utils/api';
+import type { Product } from '@/lib/types';
 
 interface CartProps {
   products: Product[];
@@ -47,11 +34,11 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
         name: cartItem.name,
         price: cartItem.price,
         category: cartItem.category,
-        description: null,
-        imagePath: cartItem.imagePath || null,
+        description: '',
+        image: cartItem.imagePath || undefined,
         stock: 999, // Assumir disponível se não encontrado
         prescription: false,
-        manufacturer: null,
+        manufacturer: undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       } as Product,
@@ -77,23 +64,18 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
   };
 
   const handleCheckout = async () => {
-    if (cartItems.length === 0) {
-      toast.error('Carrinho vazio');
+    if (!validateCartNotEmpty(cartItems)) {
       return;
     }
 
     setIsCheckingOut(true);
     
-    // Simular processo de checkout
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simular sucesso do checkout
-      const orderId = Math.random().toString(36).substr(2, 9).toUpperCase();
-      
-      toast.success(`Pedido ${orderId} realizado com sucesso!`);
-      clearCart();
-      onClose();
+      const orderId = await processCheckout();
+      if (orderId) {
+        clearCart();
+        onClose();
+      }
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error('Erro ao processar pedido. Tente novamente.');
@@ -160,9 +142,9 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                   return (
                     <div key={product.id} className="flex gap-3 p-3 border rounded-lg">
                       <div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden flex-shrink-0">
-                        {product.imagePath ? (
+                        {product.image ? (
                           <Image
-                            src={product.imagePath}
+                            src={product.image}
                             alt={product.name}
                             fill
                             className="object-cover"
