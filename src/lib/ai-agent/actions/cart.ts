@@ -83,10 +83,14 @@ export const removeFromCartTool = tool({
   execute: async ({ productId }: {
     productId: string;
   }) => {
+    console.log(`🛠️ [AI Agent removeFromCartTool] INICIANDO remoção do produto: ${productId}`);
+    
     try {
       const sessionId = getSessionId();
+      console.log(`🔑 [AI Agent removeFromCartTool] SessionId obtido: ${sessionId}`);
       logger.info('Removendo produto do carrinho via API', { productId, sessionId });
       
+      console.log(`📡 [AI Agent removeFromCartTool] Fazendo chamada DELETE para /cart`);
       const cart = await apiCall('/cart', {
         method: 'DELETE',
         body: JSON.stringify({
@@ -95,12 +99,15 @@ export const removeFromCartTool = tool({
         })
       });
       
+      console.log(`✅ [AI Agent removeFromCartTool] Produto removido com sucesso:`, cart);
+      
       return {
         success: true,
         message: 'Produto removido do carrinho!',
         data: cart,
       } as ToolResult;
     } catch (error) {
+      console.log(`❌ [AI Agent removeFromCartTool] ERRO ao remover produto:`, error);
       logger.error('Erro ao remover produto do carrinho', { error, productId });
       return {
         success: false,

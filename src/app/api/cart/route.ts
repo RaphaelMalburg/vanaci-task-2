@@ -231,6 +231,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Remover item do carrinho
 export async function DELETE(request: NextRequest) {
+  console.log(`🗑️ [Cart API DELETE] INICIANDO requisição`);
+  
   try {
     // Tentar obter dados do body primeiro (para clearAll)
     let sessionId: string | null = null;
@@ -242,11 +244,13 @@ export async function DELETE(request: NextRequest) {
       sessionId = body.sessionId;
       productId = body.productId;
       clearAll = body.clearAll || false;
+      console.log(`🔑 [Cart API DELETE] Dados do body:`, { sessionId, productId, clearAll });
     } catch {
       // Se não conseguir parsear o body, usar query params
       const { searchParams } = new URL(request.url);
       sessionId = searchParams.get('sessionId');
       productId = searchParams.get('productId');
+      console.log(`🔑 [Cart API DELETE] Dados dos query params:`, { sessionId, productId });
     }
 
     if (!sessionId) {
@@ -258,12 +262,14 @@ export async function DELETE(request: NextRequest) {
 
     // Se clearAll for true, limpar todo o carrinho
     if (clearAll) {
+      console.log(`🧹 [Cart API DELETE] Limpando carrinho completo para sessionId: ${sessionId}`);
       const cart = {
         sessionId,
         items: [],
         total: 0
       };
       cartStorage.set(sessionId, cart);
+      console.log(`✅ [Cart API DELETE] Carrinho limpo com sucesso`);
       
       return NextResponse.json({
         message: 'Carrinho limpo com sucesso',
@@ -279,19 +285,29 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    console.log(`🔍 [Cart API DELETE] Buscando carrinho para sessionId: ${sessionId}`);
     const cart = cartStorage.get(sessionId)
     if (!cart) {
+      console.log(`❌ [Cart API DELETE] Carrinho não encontrado para sessionId: ${sessionId}`);
       return NextResponse.json(
         { error: 'Carrinho não encontrado' },
         { status: 404 }
       )
     }
 
+    console.log(`📦 [Cart API DELETE] Carrinho antes da remoção:`, cart);
+    console.log(`🎯 [Cart API DELETE] Removendo produto: ${productId}`);
+    
     // Remover item específico
+    const itemsBefore = cart.items.length;
     cart.items = cart.items.filter(item => item.id !== productId)
+    const itemsAfter = cart.items.length;
+    
+    console.log(`📊 [Cart API DELETE] Itens antes: ${itemsBefore}, depois: ${itemsAfter}`);
 
     // Salvar carrinho
     saveCart(cart)
+    console.log(`💾 [Cart API DELETE] Carrinho salvo após remoção:`, cart);
 
     return NextResponse.json({
       message: 'Item removido do carrinho',
