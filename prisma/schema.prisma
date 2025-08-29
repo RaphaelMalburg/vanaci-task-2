@@ -20,7 +20,7 @@ model Product {
   stock        Int
   prescription Boolean @default(false)
   manufacturer String?
-  imagePath    String? // Caminho da imagem no diretório public
+  image        String? // Caminho da imagem no diretório public
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

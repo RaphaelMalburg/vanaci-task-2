@@ -10,7 +10,7 @@ export interface DatabaseProduct {
   stock: number;
   prescription: boolean;
   manufacturer: string | null;
-  imagePath: string | null;
+  image: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -172,7 +172,7 @@ export function databaseProductToProduct(dbProduct: DatabaseProduct): Product {
     price: dbProduct.price,
     category: dbProduct.category,
     stock: dbProduct.stock,
-    image: dbProduct.imagePath || undefined,
+    image: dbProduct.image || undefined,
     prescription: dbProduct.prescription,
     manufacturer: dbProduct.manufacturer || undefined,
   };

@@ -30,7 +30,7 @@ const products = [
     stock: 150,
     prescription: false,
     manufacturer: 'EMS',
-    imageUrl: '' // Adicionar URL da imagem aqui
+    image: getImagePath('Dipirona 500mg')
   },
   {
     name: 'Ibuprofeno 600mg',
@@ -40,7 +40,7 @@ const products = [
     stock: 80,
     prescription: false,
     manufacturer: 'Medley',
-    imageUrl: ''
+    image: getImagePath('Ibuprofeno 600mg')
   },
   {
     name: 'Paracetamol 750mg',
@@ -50,7 +50,7 @@ const products = [
     stock: 200,
     prescription: false,
     manufacturer: 'Eurofarma',
-    imageUrl: ''
+    image: getImagePath('Paracetamol 750mg')
   },
   {
     name: 'Diclofenaco Sódico 50mg',
@@ -60,7 +60,7 @@ const products = [
     stock: 60,
     prescription: false,
     manufacturer: 'Voltaren',
-    imageUrl: ''
+    image: getImagePath('Diclofenaco Sódico 50mg')
   },
   {
     name: 'Nimesulida 100mg',
@@ -70,7 +70,7 @@ const products = [
     stock: 45,
     prescription: false,
     manufacturer: 'Apsen',
-    imageUrl: ''
+    image: getImagePath('Nimesulida 100mg')
   },
 
   // ANTIBIÓTICOS
@@ -82,7 +82,7 @@ const products = [
     stock: 40,
     prescription: true,
     manufacturer: 'Neo Química',
-    imageUrl: ''
+    image: getImagePath('Amoxicilina 500mg')
   },
   {
     name: 'Azitromicina 500mg',
@@ -92,7 +92,7 @@ const products = [
     stock: 35,
     prescription: true,
     manufacturer: 'Sandoz',
-    imageUrl: ''
+    image: getImagePath('Azitromicina 500mg')
   },
   {
     name: 'Cefalexina 500mg',
@@ -102,7 +102,7 @@ const products = [
     stock: 30,
     prescription: true,
     manufacturer: 'Cimed',
-    imageUrl: ''
+    image: getImagePath('Cefalexina 500mg')
   },
   {
     name: 'Ciprofloxacino 500mg',
@@ -112,7 +112,7 @@ const products = [
     stock: 25,
     prescription: true,
     manufacturer: 'Eurofarma',
-    imageUrl: ''
+    image: getImagePath('Ciprofloxacino 500mg')
   },
 
   // VITAMINAS E SUPLEMENTOS
@@ -124,7 +124,7 @@ const products = [
     stock: 100,
     prescription: false,
     manufacturer: 'Redoxon',
-    imageUrl: ''
+    image: getImagePath('Vitamina C 1g')
   },
   {
     name: 'Complexo B',
@@ -134,7 +134,7 @@ const products = [
     stock: 75,
     prescription: false,
     manufacturer: 'Centrum',
-    imageUrl: ''
+    image: getImagePath('Complexo B')
   },
   {
     name: 'Vitamina D3 2000UI',
@@ -144,7 +144,7 @@ const products = [
     stock: 60,
     prescription: false,
     manufacturer: 'Addera',
-    imageUrl: ''
+    image: getImagePath('Vitamina D3 2000UI')
   },
   {
     name: 'Ômega 3 1000mg',
@@ -154,7 +154,7 @@ const products = [
     stock: 50,
     prescription: false,
     manufacturer: 'Vitafor',
-    imageUrl: ''
+    image: getImagePath('Ômega 3 1000mg')
   },
   {
     name: 'Ferro Quelato',
@@ -164,7 +164,7 @@ const products = [
     stock: 40,
     prescription: false,
     manufacturer: 'Noripurum',
-    imageUrl: ''
+    image: getImagePath('Ferro Quelato')
   },
 
   // MEDICAMENTOS PARA PRESSÃO
@@ -176,7 +176,7 @@ const products = [
     stock: 80,
     prescription: true,
     manufacturer: 'EMS',
-    imageUrl: ''
+    image: getImagePath('Losartana 50mg')
   },
   {
     name: 'Enalapril 10mg',
@@ -186,7 +186,7 @@ const products = [
     stock: 90,
     prescription: true,
     manufacturer: 'Medley',
-    imageUrl: ''
+    image: getImagePath('Enalapril 10mg')
   },
   {
     name: 'Amlodipina 5mg',
@@ -196,7 +196,7 @@ const products = [
     stock: 70,
     prescription: true,
     manufacturer: 'Eurofarma',
-    imageUrl: ''
+    image: getImagePath('Amlodipina 5mg')
   },
   {
     name: 'Hidroclorotiazida 25mg',
@@ -206,7 +206,7 @@ const products = [
     stock: 100,
     prescription: true,
     manufacturer: 'Neo Química',
-    imageUrl: ''
+    image: getImagePath('Hidroclorotiazida 25mg')
   },
 
   // MEDICAMENTOS PARA DIABETES
@@ -218,7 +218,7 @@ const products = [
     stock: 60,
     prescription: true,
     manufacturer: 'Glifage',
-    imageUrl: ''
+    image: getImagePath('Metformina 850mg')
   },
   {
     name: 'Glibenclamida 5mg',
@@ -228,7 +228,7 @@ const products = [
     stock: 45,
     prescription: true,
     manufacturer: 'EMS',
-    imageUrl: ''
+    image: getImagePath('Glibenclamida 5mg')
   },
 
   // MEDICAMENTOS DIGESTIVOS
@@ -240,7 +240,7 @@ const products = [
     stock: 85,
     prescription: false,
     manufacturer: 'Eurofarma',
-    imageUrl: ''
+    image: getImagePath('Omeprazol 20mg')
   },
   {
     name: 'Ranitidina 150mg',
@@ -250,7 +250,7 @@ const products = [
     stock: 70,
     prescription: false,
     manufacturer: 'Label',
-    imageUrl: ''
+    image: getImagePath('Ranitidina 150mg')
   },
   {
     name: 'Domperidona 10mg',
@@ -260,7 +260,7 @@ const products = [
     stock: 55,
     prescription: false,
     manufacturer: 'Motilium',
-    imageUrl: ''
+    image: getImagePath('Domperidona 10mg')
   },
   {
     name: 'Simeticona 40mg',
@@ -270,7 +270,7 @@ const products = [
     stock: 90,
     prescription: false,
     manufacturer: 'Luftal',
-    imageUrl: ''
+    image: getImagePath('Simeticona 40mg')
   },
 
   // MEDICAMENTOS RESPIRATÓRIOS
@@ -282,7 +282,7 @@ const products = [
     stock: 30,
     prescription: true,
     manufacturer: 'Aerolin',
-    imageUrl: ''
+    image: getImagePath('Salbutamol 100mcg')
   },
   {
     name: 'Loratadina 10mg',
@@ -292,7 +292,7 @@ const products = [
     stock: 80,
     prescription: false,
     manufacturer: 'Claritin',
-    imageUrl: ''
+    image: getImagePath('Loratadina 10mg')
   },
   {
     name: 'Dextrometorfano 15mg',
@@ -302,7 +302,7 @@ const products = [
     stock: 65,
     prescription: false,
     manufacturer: 'Bisolvon',
-    imageUrl: ''
+    image: getImagePath('Dextrometorfano 15mg')
   },
   {
     name: 'Carbocisteína 250mg',
@@ -312,7 +312,7 @@ const products = [
     stock: 50,
     prescription: false,
     manufacturer: 'Fluimucil',
-    imageUrl: ''
+    image: getImagePath('Carbocisteína 250mg')
   },
 
   // MEDICAMENTOS NEUROLÓGICOS
@@ -324,7 +324,7 @@ const products = [
     stock: 20,
     prescription: true,
     manufacturer: 'Roche',
-    imageUrl: ''
+    image: getImagePath('Rivotril 2mg')
   },
   {
     name: 'Fluoxetina 20mg',
@@ -334,7 +334,7 @@ const products = [
     stock: 35,
     prescription: true,
     manufacturer: 'Prozac',
-    imageUrl: ''
+    image: getImagePath('Fluoxetina 20mg')
   },
   {
     name: 'Sertralina 50mg',
@@ -344,7 +344,7 @@ const products = [
     stock: 30,
     prescription: true,
     manufacturer: 'Zoloft',
-    imageUrl: ''
+    image: getImagePath('Sertralina 50mg')
   },
 
   // DERMOCOSMÉTICOS
@@ -356,7 +356,7 @@ const products = [
     stock: 40,
     prescription: false,
     manufacturer: 'La Roche-Posay',
-    imageUrl: ''
+    image: getImagePath('Protetor Solar FPS 60')
   },
   {
     name: 'Hidratante Facial',
@@ -366,7 +366,7 @@ const products = [
     stock: 35,
     prescription: false,
     manufacturer: 'Vichy',
-    imageUrl: ''
+    image: getImagePath('Hidratante Facial')
   },
   {
     name: 'Shampoo Anticaspa',
@@ -376,7 +376,7 @@ const products = [
     stock: 50,
     prescription: false,
     manufacturer: 'Selsun',
-    imageUrl: ''
+    image: getImagePath('Shampoo Anticaspa')
   },
 
   // HIGIENE E CUIDADOS
@@ -388,7 +388,7 @@ const products = [
     stock: 200,
     prescription: false,
     manufacturer: 'Antisséptico',
-    imageUrl: ''
+    image: getImagePath('Álcool Gel 70%')
   },
   {
     name: 'Termômetro Digital',
@@ -398,7 +398,7 @@ const products = [
     stock: 25,
     prescription: false,
     manufacturer: 'G-Tech',
-    imageUrl: ''
+    image: getImagePath('Termômetro Digital')
   },
   {
     name: 'Aparelho de Pressão',
@@ -408,7 +408,7 @@ const products = [
     stock: 15,
     prescription: false,
     manufacturer: 'Omron',
-    imageUrl: ''
+    image: getImagePath('Aparelho de Pressão')
   },
   {
     name: 'Fita Teste Glicemia',
@@ -418,7 +418,7 @@ const products = [
     stock: 30,
     prescription: false,
     manufacturer: 'Accu-Chek',
-    imageUrl: ''
+    image: getImagePath('Fita Teste Glicemia')
   },
 
   // MEDICAMENTOS GINECOLÓGICOS
@@ -430,7 +430,7 @@ const products = [
     stock: 40,
     prescription: true,
     manufacturer: 'Bayer',
-    imageUrl: ''
+    image: getImagePath('Anticoncepcional Yasmin')
   },
   {
     name: 'Ácido Fólico 5mg',
@@ -440,7 +440,7 @@ const products = [
     stock: 60,
     prescription: false,
     manufacturer: 'Folifolim',
-    imageUrl: ''
+    image: getImagePath('Ácido Fólico 5mg')
   },
 
   // MEDICAMENTOS PEDIÁTRICOS
@@ -452,7 +452,7 @@ const products = [
     stock: 80,
     prescription: false,
     manufacturer: 'Tylenol',
-    imageUrl: ''
+    image: getImagePath('Paracetamol Gotas')
   },
   {
     name: 'Soro Fisiológico',
@@ -462,7 +462,7 @@ const products = [
     stock: 100,
     prescription: false,
     manufacturer: 'Rinosoro',
-    imageUrl: ''
+    image: getImagePath('Soro Fisiológico')
   },
   {
     name: 'Probiótico Infantil',
@@ -472,7 +472,7 @@ const products = [
     stock: 45,
     prescription: false,
     manufacturer: 'Floratil',
-    imageUrl: ''
+    image: getImagePath('Probiótico Infantil')
   }
 ]
 
@@ -485,14 +485,8 @@ async function main() {
 
   // Inserir produtos
   for (const product of products) {
-    const { imageUrl, ...productData } = product
-    const imagePath = getImagePath(product.name)
-    
     await prisma.product.create({
-      data: {
-        ...productData,
-        imagePath: imagePath // Caminho da imagem no diretório public
-      }
+      data: product
     })
   }
 

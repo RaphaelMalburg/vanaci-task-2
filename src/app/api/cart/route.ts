@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         id: product.id,
         name: product.name,
         price: product.price,
-        imagePath: product.imagePath,
+        imagePath: product.image,
         category: product.category,
         quantity
       };
