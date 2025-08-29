@@ -1,33 +1,47 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { getGlobalContext } from '../context';
+import { getAllGlobalContext, setGlobalContext } from '../context';
 import type { ToolResult } from '../types';
-import { CartService } from '@/lib/services/cart.service';
-import { ProductService } from '@/lib/services/product.service';
 import { logger } from '@/lib/logger';
 
-// Função auxiliar para gerar sessionId (fallback)
+// Função para gerar session ID único
 function generateSessionId(): string {
   return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 }
 
-// Função para obter sessionId do contexto ou gerar um novo
+// Função para obter session ID do contexto global ou gerar um novo
 function getSessionId(): string {
-  try {
-    const sessionId = getGlobalContext('sessionId');
-    if (sessionId && typeof sessionId === 'string') {
-      return sessionId;
-    }
-  } catch (error) {
-    logger.debug('Erro ao obter sessionId do contexto', { error });
+  const context = getAllGlobalContext();
+  if (context.sessionId) {
+    return context.sessionId;
   }
   
-  return generateSessionId();
+  // Gerar novo session ID e salvar no contexto
+  const newSessionId = generateSessionId();
+  setGlobalContext('sessionId', newSessionId);
+  return newSessionId;
 }
 
-// Instâncias dos serviços
-const cartService = CartService.getInstance();
-const productService = ProductService.getInstance();
+// Função auxiliar para fazer chamadas à API
+async function apiCall(endpoint: string, options: RequestInit = {}) {
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? process.env.NEXT_PUBLIC_APP_URL || 'https://farmacia-vanaci.vercel.app'
+    : 'http://localhost:3007';
+  
+  const response = await fetch(`${baseUrl}/api${endpoint}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
 
 // Tool: Adicionar produto ao carrinho
 export const addToCartTool = tool({
@@ -42,9 +56,16 @@ export const addToCartTool = tool({
   }) => {
     try {
       const sessionId = getSessionId();
-      logger.info('Adicionando produto ao carrinho', { productId, quantity, sessionId });
+      logger.info('Adicionando produto ao carrinho via API', { productId, quantity, sessionId });
       
-      const cart = await cartService.addItem(productId, quantity, sessionId);
+      const cart = await apiCall('/cart', {
+        method: 'POST',
+        body: JSON.stringify({
+          sessionId,
+          productId,
+          quantity
+        })
+      });
       
       return {
         success: true,
@@ -73,9 +94,15 @@ export const removeFromCartTool = tool({
   }) => {
     try {
       const sessionId = getSessionId();
-      logger.info('Removendo produto do carrinho', { productId, sessionId });
+      logger.info('Removendo produto do carrinho via API', { productId, sessionId });
       
-      const cart = await cartService.removeItem(productId, sessionId);
+      const cart = await apiCall('/cart', {
+        method: 'DELETE',
+        body: JSON.stringify({
+          sessionId,
+          productId
+        })
+      });
       
       return {
         success: true,
@@ -106,9 +133,16 @@ export const updateCartQuantityTool = tool({
   }) => {
     try {
       const sessionId = getSessionId();
-      logger.info('Atualizando quantidade no carrinho', { productId, quantity, sessionId });
+      logger.info('Atualizando quantidade no carrinho via API', { productId, quantity, sessionId });
       
-      const cart = await cartService.updateQuantity(productId, quantity, sessionId);
+      const cart = await apiCall('/cart', {
+        method: 'PUT',
+        body: JSON.stringify({
+          sessionId,
+          productId,
+          quantity
+        })
+      });
       
       const message = quantity === 0 
         ? 'Produto removido do carrinho!' 
@@ -137,9 +171,11 @@ export const viewCartTool = tool({
   execute: async (): Promise<ToolResult> => {
     try {
       const sessionId = getSessionId();
-      logger.info('Visualizando carrinho', { sessionId });
+      logger.info('Visualizando carrinho via API', { sessionId });
       
-      const cart = await cartService.getCart(sessionId);
+      const cart = await apiCall(`/cart?sessionId=${sessionId}`, {
+        method: 'GET'
+      });
       
       const itemCount = cart.items?.length || 0;
       const total = cart.total || 0;
@@ -175,9 +211,15 @@ export const clearCartTool = tool({
   execute: async (): Promise<ToolResult> => {
     try {
       const sessionId = getSessionId();
-      logger.info('Limpando carrinho', { sessionId });
+      logger.info('Limpando carrinho via API', { sessionId });
       
-      const cart = await cartService.clearCart(sessionId);
+      const cart = await apiCall('/cart', {
+        method: 'DELETE',
+        body: JSON.stringify({
+          sessionId,
+          clearAll: true
+        })
+      });
       
       return {
         success: true,
@@ -203,25 +245,27 @@ export const searchProductsTool = tool({
   }),
   execute: async ({ query }: { query: string }) => {
     try {
-      logger.info('Buscando produtos', { query });
+      logger.info('Buscando produtos via API', { query });
       
-      const products = await productService.searchProducts(query);
+      const products = await apiCall(`/products?search=${encodeURIComponent(query)}`, {
+        method: 'GET'
+      });
       
-      if (products.length === 0) {
+      if (!products || products.length === 0) {
         return {
           success: true,
-          message: `Nenhum produto encontrado para "${query}".`,
+          message: `Nenhum produto encontrado para "${query}". Tente termos diferentes.`,
           data: [],
         } as ToolResult;
       }
       
-      const productList = products.slice(0, 10).map((product: any) => 
-        `${product.name} - €${product.price} (ID: ${product.id})`
+      const productList = products.map((p: any) => 
+        `- ${p.name} (€${p.price}) - ${p.category}${p.prescription ? ' [Receita]' : ''}`
       ).join('\n');
       
       return {
         success: true,
-        message: `Encontrados ${products.length} produtos para "${query}":\n${productList}`,
+        message: `Encontrei ${products.length} produto(s) para "${query}":\n${productList}`,
         data: products,
       } as ToolResult;
     } catch (error) {
@@ -229,7 +273,7 @@ export const searchProductsTool = tool({
       return {
         success: false,
         message: `Erro ao buscar produtos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
-        data: [],
+        data: null,
       } as ToolResult;
     }
   },

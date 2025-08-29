@@ -1,7 +1,8 @@
 'use client'
 
 import { useCartStore } from '@/stores/cart-store'
-import { useState } from 'react'
+import { useCartSync } from '@/lib/services/cart-sync.service'
+import { useState, useEffect } from 'react'
 
 interface CartItem {
   id: string
@@ -18,16 +19,29 @@ interface CartData {
   total: number
 }
 
-function generateSessionId(): string {
-  return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
-}
-
 export function useCart() {
   // Use Zustand store for global state management
   const { items, total, itemCount, addItem, removeItem, updateQuantity, clearCart, getItemCount } = useCartStore()
   
-  // Keep session ID in local state as it's component-specific
-  const [sessionId] = useState(() => generateSessionId())
+  // Use cart sync service
+  const { syncFromBackend, startAutoSync, stopAutoSync, getSessionId } = useCartSync()
+  
+  // Get session ID from sync service
+  const sessionId = getSessionId()
+  
+  // Start auto-sync when component mounts
+  useEffect(() => {
+    // Initial sync from backend
+    syncFromBackend()
+    
+    // Start auto-sync every 3 seconds
+    startAutoSync(3000)
+    
+    // Cleanup on unmount
+    return () => {
+      stopAutoSync()
+    }
+  }, [])
 
   const addToCart = (product: Omit<CartItem, 'quantity'>) => {
     addItem(product, 1)

@@ -232,13 +232,49 @@ export async function PUT(request: NextRequest) {
 // DELETE - Remover item do carrinho
 export async function DELETE(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const sessionId = searchParams.get('sessionId')
-    const productId = searchParams.get('productId')
+    // Tentar obter dados do body primeiro (para clearAll)
+    let sessionId: string | null = null;
+    let productId: string | null = null;
+    let clearAll = false;
+    
+    try {
+      const body = await request.json();
+      sessionId = body.sessionId;
+      productId = body.productId;
+      clearAll = body.clearAll || false;
+    } catch {
+      // Se não conseguir parsear o body, usar query params
+      const { searchParams } = new URL(request.url);
+      sessionId = searchParams.get('sessionId');
+      productId = searchParams.get('productId');
+    }
 
-    if (!sessionId || !productId) {
+    if (!sessionId) {
       return NextResponse.json(
-        { error: 'Session ID e Product ID são obrigatórios' },
+        { error: 'Session ID é obrigatório' },
+        { status: 400 }
+      )
+    }
+
+    // Se clearAll for true, limpar todo o carrinho
+    if (clearAll) {
+      const cart = {
+        sessionId,
+        items: [],
+        total: 0
+      };
+      cartStorage.set(sessionId, cart);
+      
+      return NextResponse.json({
+        message: 'Carrinho limpo com sucesso',
+        ...cart
+      });
+    }
+
+    // Caso contrário, remover item específico
+    if (!productId) {
+      return NextResponse.json(
+        { error: 'Product ID é obrigatório para remover item específico' },
         { status: 400 }
       )
     }
@@ -251,7 +287,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Remover item
+    // Remover item específico
     cart.items = cart.items.filter(item => item.id !== productId)
 
     // Salvar carrinho
@@ -259,7 +295,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       message: 'Item removido do carrinho',
-      cart
+      ...cart
     })
   } catch (error) {
     console.error('Erro ao remover item do carrinho:', error)
