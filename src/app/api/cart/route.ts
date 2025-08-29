@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { CartItem, CartData, cartStorage, getOrCreateCart, saveCart } from '@/lib/cart-storage'
+import { CartItem, CartData, getOrCreateCart, saveCart } from '@/lib/cart-storage'
 
 // GET - Obter carrinho por session ID
 export async function GET(request: NextRequest) {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const cart = getOrCreateCart(sessionId)
+    const cart = await getOrCreateCart(sessionId)
     console.log(`✅ [Cart API GET] Carrinho obtido:`, cart);
 
     return NextResponse.json(cart)
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     // Obter carrinho atual
     console.log(`🛒 [DEBUG] Obtendo carrinho atual para sessionId: ${sessionId}`);
-    let cart: CartData = getOrCreateCart(sessionId)
+    let cart: CartData = await getOrCreateCart(sessionId)
     console.log(`🛒 [DEBUG] Carrinho atual:`, JSON.stringify(cart, null, 2));
 
     // Verificar se item já existe no carrinho
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     console.log(`🛒 [DEBUG] Carrinho antes de salvar:`, JSON.stringify(cart, null, 2));
     // Salvar carrinho
     console.log(`💾 [DEBUG] Salvando carrinho...`);
-    saveCart(cart)
+    await saveCart(cart)
     console.log(`💾 [DEBUG] Carrinho salvo com sucesso`);
 
     const response = {
@@ -174,13 +174,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const cart = cartStorage.get(sessionId)
-    if (!cart) {
-      return NextResponse.json(
-        { error: 'Carrinho não encontrado' },
-        { status: 404 }
-      )
-    }
+    const cart = await getOrCreateCart(sessionId)
 
     if (quantity <= 0) {
       // Remover item se quantidade for 0 ou negativa
@@ -218,7 +212,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Salvar carrinho
-    saveCart(cart)
+    await saveCart(cart)
 
     return NextResponse.json({
       message: 'Carrinho atualizado',
@@ -262,12 +256,10 @@ export async function DELETE(request: NextRequest) {
 
     // Se clearAll for true, limpar todo o carrinho
     if (clearAll) {
-      const cart = {
-        sessionId,
-        items: [],
-        total: 0
-      };
-      cartStorage.set(sessionId, cart);
+      const cart = await getOrCreateCart(sessionId);
+      cart.items = [];
+      cart.total = 0;
+      await saveCart(cart);
       
       return NextResponse.json({
         message: 'Carrinho limpo com sucesso',
@@ -283,19 +275,13 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const cart = cartStorage.get(sessionId)
-    if (!cart) {
-      return NextResponse.json(
-        { error: 'Carrinho não encontrado' },
-        { status: 404 }
-      )
-    }
+    const cart = await getOrCreateCart(sessionId)
 
     // Remover item específico
     cart.items = cart.items.filter(item => item.id !== productId)
 
     // Salvar carrinho
-    saveCart(cart)
+    await saveCart(cart)
 
     return NextResponse.json({
       message: 'Item removido do carrinho',

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { CartData, cartStorage, saveCart } from '@/lib/cart-storage'
+import { CartData, getOrCreateCart, saveCart } from '@/lib/cart-storage'
 
 // DELETE - Remover item específico do carrinho
 export async function DELETE(request: NextRequest) {
@@ -14,13 +14,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const cart = cartStorage.get(sessionId)
-    if (!cart) {
-      return NextResponse.json(
-        { error: 'Carrinho não encontrado' },
-        { status: 404 }
-      )
-    }
+    const cart = await getOrCreateCart(sessionId)
 
     // Verificar se o item existe no carrinho
     const itemExists = cart.items.some(item => item.id === productId)
@@ -35,7 +29,7 @@ export async function DELETE(request: NextRequest) {
     cart.items = cart.items.filter(item => item.id !== productId)
 
     // Salvar carrinho atualizado
-    saveCart(cart)
+    await saveCart(cart)
 
     return NextResponse.json({
       message: 'Item removido do carrinho com sucesso',
@@ -64,13 +58,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const cart = cartStorage.get(sessionId)
-    if (!cart) {
-      return NextResponse.json(
-        { error: 'Carrinho não encontrado' },
-        { status: 404 }
-      )
-    }
+    const cart = await getOrCreateCart(sessionId)
 
     // Verificar se o item existe no carrinho
     const itemExists = cart.items.some(item => item.id === productId)
@@ -85,7 +73,7 @@ export async function POST(request: NextRequest) {
     cart.items = cart.items.filter(item => item.id !== productId)
 
     // Salvar carrinho atualizado
-    saveCart(cart)
+    await saveCart(cart)
 
     return NextResponse.json({
       message: 'Item removido do carrinho com sucesso',
