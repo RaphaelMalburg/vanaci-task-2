@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { Product } from '@prisma/client'
+import { logger } from '@/lib/logger'
 import type { CartItem, CartData } from '@/lib/types'
 
 // Alias para compatibilidade
@@ -56,7 +57,16 @@ export class CartService {
       this.updateCartTotals(cart)
       return cart
     } catch (error) {
-      console.error('Erro ao adicionar item ao carrinho:', error)
+      logger.error('Erro ao adicionar item ao carrinho:', {
+        productId,
+        quantity,
+        sessionId,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        } : error
+      })
       throw error
     }
   }

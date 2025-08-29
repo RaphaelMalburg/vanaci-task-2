@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import type { Product as PrismaProduct } from '@prisma/client'
+import { logger } from '@/lib/logger'
 import type { Product, DatabaseProduct } from '@/lib/types'
 import { databaseProductToProduct } from '@/lib/types'
 
@@ -61,7 +62,14 @@ export class ProductService {
 
       return products.map(databaseProductToProduct)
     } catch (error) {
-      console.error('Erro ao buscar produtos:', error)
+      logger.error('Erro ao buscar produtos:', {
+        params,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        } : error
+      })
       throw new Error('Falha ao buscar produtos')
     }
   }
@@ -73,7 +81,14 @@ export class ProductService {
       })
       return product ? databaseProductToProduct(product) : null
     } catch (error) {
-      console.error('Erro ao buscar produto por ID:', error)
+      logger.error('Erro ao buscar produto por ID:', {
+        id,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        } : error
+      })
       throw new Error('Falha ao buscar produto')
     }
   }

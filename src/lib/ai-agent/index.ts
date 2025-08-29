@@ -265,6 +265,25 @@ export class PharmacyAIAgent {
     userMessage: string,
     context?: { cartId?: string; userId?: string; currentPage?: string }
   ) {
+    // Validação de entrada
+    if (!sessionId || typeof sessionId !== 'string' || sessionId.trim().length === 0) {
+      const error = new Error('SessionId é obrigatório e deve ser uma string não vazia');
+      logger.error('Erro de validação no streamMessage:', error);
+      throw error;
+    }
+
+    if (!userMessage || typeof userMessage !== 'string' || userMessage.trim().length === 0) {
+      const error = new Error('Mensagem do usuário é obrigatória e deve ser uma string não vazia');
+      logger.error('Erro de validação no streamMessage:', error);
+      throw error;
+    }
+
+    if (userMessage.length > 10000) {
+      const error = new Error('Mensagem do usuário muito longa (máximo 10000 caracteres)');
+      logger.error('Erro de validação no streamMessage:', error);
+      throw error;
+    }
+
     try {
       console.log('🎯 StreamMessage iniciado para sessão:', sessionId);
       console.log('💬 Mensagem original do usuário:', userMessage);
@@ -389,27 +408,61 @@ export class PharmacyAIAgent {
 
       return result;
     } catch (error) {
+      logger.error('Erro ao processar mensagem com streaming:', {
+        sessionId,
+        userMessage: userMessage.substring(0, 100) + (userMessage.length > 100 ? '...' : ''),
+        context,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        } : error
+      });
+      
       console.error('❌ Erro ao processar mensagem com streaming:', error);
       console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível');
-      throw error;
+      
+      // Re-throw validation errors as-is
+      if (error instanceof Error && error.message.includes('validação')) {
+        throw error;
+      }
+      
+      // For other errors, provide a more user-friendly message
+      throw new Error('Erro interno ao processar mensagem. Tente novamente.');
     }
   }
 
   // Obter histórico da sessão
   async getSessionHistory(sessionId: string): Promise<AgentMessage[]> {
-    const session = await this.sessionService.getSession(sessionId);
-    return session ? [...session.messages] : [];
+    try {
+      const session = await this.sessionService.getSession(sessionId);
+      return session ? [...session.messages] : [];
+    } catch (error) {
+      logger.error('Erro ao obter histórico da sessão', { sessionId, error });
+      return [];
+    }
   }
 
   // Limpar sessão
   async clearSession(sessionId: string): Promise<void> {
-    await this.sessionService.deleteSession(sessionId);
+    try {
+      await this.sessionService.deleteSession(sessionId);
+      logger.info('Sessão limpa com sucesso', { sessionId });
+    } catch (error) {
+      logger.error('Erro ao limpar sessão', { sessionId, error });
+      throw new Error(`Falha ao limpar sessão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
   }
 
   // Obter contexto da sessão
   async getSessionContext(sessionId: string): Promise<Record<string, any>> {
-    const session = await this.sessionService.getSession(sessionId);
-    return session ? { ...session.context } : {};
+    try {
+      const session = await this.sessionService.getSession(sessionId);
+      return session ? { ...session.context } : {};
+    } catch (error) {
+      logger.error('Erro ao obter contexto da sessão', { sessionId, error });
+      return {};
+    }
   }
 
   // Atualizar configuração do LLM
@@ -442,8 +495,31 @@ export async function processUserMessage(
   context?: { cartId?: string; userId?: string; currentPage?: string },
   llmConfig?: ConfigLLMConfig
 ): Promise<string> {
-  const agent = getPharmacyAgent(llmConfig);
-  return agent.processMessage(sessionId, message, context);
+  try {
+    // Validar entrada
+    if (!sessionId || typeof sessionId !== 'string') {
+      throw new Error('SessionId é obrigatório e deve ser uma string');
+    }
+    
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      throw new Error('Mensagem é obrigatória e não pode estar vazia');
+    }
+    
+    if (message.length > 10000) {
+      throw new Error('Mensagem muito longa (máximo 10.000 caracteres)');
+    }
+    
+    const agent = getPharmacyAgent(llmConfig);
+    return await agent.processMessage(sessionId, message.trim(), context);
+  } catch (error) {
+    logger.error('Erro na função processUserMessage', { sessionId, messageLength: message?.length, error });
+    
+    if (error instanceof Error && error.message.includes('obrigatório')) {
+      throw error; // Re-throw validation errors
+    }
+    
+    return 'Desculpe, ocorreu um erro interno. Tente novamente em alguns instantes ou entre em contato conosco pelo telefone (11) 1234-5678.';
+  }
 }
 
 // Exportar types e tools

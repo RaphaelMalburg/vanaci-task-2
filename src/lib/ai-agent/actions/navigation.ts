@@ -1,5 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 import type { NavigationResult } from '../types';
 
 // Tool: Redirecionar para produto
@@ -10,7 +11,7 @@ export const redirectToProductTool = tool({
   }),
   execute: async ({ productIdentifier }): Promise<NavigationResult> => {
     try {
-      console.log(`[Navigation] Buscando produto: ${productIdentifier}`);
+      logger.debug('Buscando produto para navegação:', { productIdentifier });
       
       // Usar URL absoluta para funcionar no contexto do servidor
       const baseUrl = process.env.NODE_ENV === 'production' 
@@ -23,30 +24,30 @@ export const redirectToProductTool = tool({
       
       if (response.ok) {
         product = await response.json();
-        console.log(`[Navigation] Produto encontrado por ID: ${product.name}`);
+        logger.debug('Produto encontrado por ID:', { productName: product.name, productId: product.id });
       } else {
         // Se não encontrar por ID, buscar por nome
-        console.log(`[Navigation] Produto não encontrado por ID, buscando por nome...`);
+        logger.debug('Produto não encontrado por ID, buscando por nome');
         const searchResponse = await fetch(`${baseUrl}/api/products?search=${encodeURIComponent(productIdentifier)}&limit=1`);
         
         if (searchResponse.ok) {
           const searchResults = await searchResponse.json();
           if (searchResults.length > 0) {
             product = searchResults[0];
-            console.log(`[Navigation] Produto encontrado por nome: ${product.name} (ID: ${product.id})`);
+            logger.debug('Produto encontrado por nome:', { productName: product.name, productId: product.id });
           }
         }
       }
       
       if (!product) {
-        console.log(`[Navigation] Produto não encontrado: ${productIdentifier}`);
+        logger.debug('Produto não encontrado para navegação:', { productIdentifier });
         return {
           success: false,
           message: `Produto "${productIdentifier}" não encontrado. Verifique o nome ou ID do produto.`,
         };
       }
       
-      console.log(`[Navigation] Redirecionando para produto: ${product.name} (${product.id})`);
+      logger.debug('Redirecionando para produto:', { productName: product.name, productId: product.id });
       return {
         success: true,
         message: `Redirecionando para o produto: ${product.name}`,
@@ -54,7 +55,14 @@ export const redirectToProductTool = tool({
         data: product,
       };
     } catch (error) {
-      console.error(`[Navigation] Erro ao acessar produto:`, error);
+      logger.error('Erro ao acessar produto:', {
+        productIdentifier,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        } : error
+      });
       return {
         success: false,
         message: `Erro ao acessar produto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
