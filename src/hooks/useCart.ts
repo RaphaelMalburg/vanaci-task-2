@@ -34,8 +34,8 @@ export function useCart() {
     // Initial sync from backend
     syncFromBackend()
     
-    // Start auto-sync every 3 seconds
-    startAutoSync(3000)
+    // Start auto-sync every 10 seconds
+    startAutoSync(10000)
     
     // Cleanup on unmount
     return () => {

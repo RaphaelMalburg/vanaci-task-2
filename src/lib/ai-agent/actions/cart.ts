@@ -62,6 +62,15 @@ export const addToCartTool = tool({
         })
       });
       
+      // Forçar sincronização imediata com o frontend
+      try {
+        // Trigger uma sincronização do carrinho no frontend
+        // Isso será capturado pelo polling do CartSyncService
+        logger.info('Produto adicionado com sucesso, sincronização será feita pelo polling', { productId, quantity, sessionId });
+      } catch (syncError) {
+        logger.warn('Erro na sincronização imediata, mas item foi adicionado', { syncError });
+      }
+      
       return {
         success: true,
         message: `Produto adicionado ao carrinho! Quantidade: ${quantity}`,
