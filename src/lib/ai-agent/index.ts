@@ -89,7 +89,7 @@ export class PharmacyAIAgent {
 
   constructor(llmConfig?: ConfigLLMConfig) {
     this.llmConfig = llmConfig || {
-      provider: 'google', // Simplificado para usar apenas Google Gemini
+      provider: (process.env.DEFAULT_LLM_PROVIDER as ConfigLLMConfig['provider']) || 'google',
       temperature: parseFloat(process.env.LLM_TEMPERATURE || '0.7'),
       maxTokens: parseInt(process.env.LLM_MAX_TOKENS || '2000')
     };

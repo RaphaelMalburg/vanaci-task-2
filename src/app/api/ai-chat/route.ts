@@ -30,11 +30,11 @@ export async function POST(request: NextRequest) {
     console.log('📝 Mensagem:', message);
     console.log('🔄 Streaming habilitado:', streaming);
 
-    // Configuração do LLM - usando Google Gemini como padrão
+    // Configuração do LLM - usando configuração do .env
     const finalLlmConfig = llmConfig || {
-      provider: 'google' as const,
-      temperature: 0.7,
-      maxTokens: 2000,
+      provider: (process.env.DEFAULT_LLM_PROVIDER as 'google' | 'openai' | 'anthropic' | 'mistral') || 'google',
+      temperature: parseFloat(process.env.LLM_TEMPERATURE || '0.7'),
+      maxTokens: parseInt(process.env.LLM_MAX_TOKENS || '2000'),
     };
     console.log('⚙️ Configuração LLM:', finalLlmConfig);
 

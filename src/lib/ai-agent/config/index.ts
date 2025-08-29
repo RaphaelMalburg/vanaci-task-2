@@ -15,14 +15,14 @@ export interface LLMConfig {
 // Configurações padrão dos modelos
 const DEFAULT_MODELS = {
   openai: process.env.OPENAI_MODEL || "gpt-4-turbo-preview",
-  google: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+  google: process.env.GEMINI_MODEL || "gemini-1.5-pro",
   anthropic: process.env.ANTHROPIC_MODEL || "claude-3-sonnet-20240229",
   mistral: process.env.MISTRAL_MODEL || "mistral-large-latest",
 };
 
-// Configurações padrão - simplificado para usar apenas Google Gemini
+// Configurações padrão - usando Google Gemini como padrão
 const DEFAULT_CONFIG: LLMConfig = {
-  provider: "google",
+  provider: (process.env.DEFAULT_LLM_PROVIDER as LLMConfig["provider"]) || "google",
   temperature: parseFloat(process.env.LLM_TEMPERATURE || "0.7"),
   maxTokens: parseInt(process.env.LLM_MAX_TOKENS || "2000"),
   enableMessageRewriter: process.env.ENABLE_MESSAGE_REWRITER === "true",
