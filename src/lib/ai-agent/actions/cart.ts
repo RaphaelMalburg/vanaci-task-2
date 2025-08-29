@@ -46,17 +46,28 @@ export const addToCartTool = tool({
     quantity: number;
   }) => {
     try {
+      console.log('🚀 [addToCartTool] INICIANDO execução');
+      console.log('📦 [addToCartTool] Parâmetros recebidos:', { productId, quantity });
+      
       const sessionId = getSessionId();
+      console.log('🔑 [addToCartTool] SessionId obtido:', sessionId);
+      
       logger.info('Adicionando produto ao carrinho via API', { productId, quantity, sessionId });
       
+      const requestBody = {
+        sessionId,
+        productId,
+        quantity
+      };
+      console.log('📋 [addToCartTool] Body da requisição:', JSON.stringify(requestBody, null, 2));
+      
+      console.log('🌐 [addToCartTool] Fazendo chamada para API /cart');
       const cart = await apiCall('/cart', {
         method: 'POST',
-        body: JSON.stringify({
-          sessionId,
-          productId,
-          quantity
-        })
+        body: JSON.stringify(requestBody)
       });
+      
+      console.log('✅ [addToCartTool] Resposta da API recebida:', JSON.stringify(cart, null, 2));
       
       return {
         success: true,
@@ -64,6 +75,8 @@ export const addToCartTool = tool({
         data: cart,
       } as ToolResult;
     } catch (error) {
+      console.error('❌ [addToCartTool] ERRO capturado:', error);
+      console.error('❌ [addToCartTool] Stack trace:', error instanceof Error ? error.stack : 'N/A');
       logger.error('Erro ao adicionar produto ao carrinho', { error, productId, quantity });
       return {
         success: false,
