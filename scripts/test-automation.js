@@ -5,7 +5,7 @@
  * o funcionamento do agente AI e suas principais funcionalidades.
  */
 
-const BASE_URL = 'http://localhost:3008';
+const BASE_URL = 'http://localhost:3007';
 
 // Função para fazer requisições HTTP
 async function makeRequest(endpoint, method = 'GET', body = null) {
@@ -40,7 +40,8 @@ async function testAIAgent(message, sessionId = 'test-session') {
   });
   
   if (result.success) {
-    console.log(`✅ Resposta: ${result.data.content || result.data.message}`);
+    const response = result.data.response || result.data.content || result.data.message || 'Resposta recebida';
+    console.log(`✅ Resposta: ${response}`);
     if (result.data.toolCalls && result.data.toolCalls.length > 0) {
       console.log(`🔧 Tools usados: ${result.data.toolCalls.map(t => t.toolName).join(', ')}`);
     }
