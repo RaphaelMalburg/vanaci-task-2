@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/theme-context";
 import { CartProvider } from "@/contexts/cart-context";
 import { LayoutContent } from "@/components/layout-content";
 import { GlobalCart } from "@/components/global-cart";
+import { CartSyncProvider } from "@/components/cart-sync-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,16 +36,18 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <CartProvider>
-            <ChatProvider>
-              <LayoutContent>
-                <Navigation />
-                <main className="min-h-screen">
-                  {children}
-                </main>
-              </LayoutContent>
-              <Chat />
-              <GlobalCart />
-            </ChatProvider>
+            <CartSyncProvider>
+              <ChatProvider>
+                <LayoutContent>
+                  <Navigation />
+                  <main className="min-h-screen">
+                    {children}
+                  </main>
+                </LayoutContent>
+                <Chat />
+                <GlobalCart />
+              </ChatProvider>
+            </CartSyncProvider>
           </CartProvider>
         </ThemeProvider>
       </body>
