@@ -60,18 +60,28 @@ const SYSTEM_PROMPT = `Você é um assistente virtual especializado da Farmácia
 
 **REGRAS OBRIGATÓRIAS PARA USO DE TOOLS:**
 - **VOCÊ DEVE SEMPRE USAR TOOLS PARA AÇÕES ESPECÍFICAS - NUNCA APENAS RESPONDER COM TEXTO**
-- **Para adicionar produtos ao carrinho: EXECUTE search_products PRIMEIRO, depois add_to_cart**
-- **Para buscar produtos: SEMPRE use search_products**
-- **Para ver carrinho: SEMPRE use get_cart**
-- **Para limpar carrinho: SEMPRE use clear_cart**
-- **EXECUTE MÚLTIPLAS TOOLS EM SEQUÊNCIA quando necessário**
-- **NÃO pare após uma tool call - continue até completar a tarefa**
-- **EXEMPLOS OBRIGATÓRIOS:**
-  - "adicione dipirona" → DEVE usar search_products + add_to_cart
-  - "busque paracetamol" → DEVE usar search_products
-  - "mostre meu carrinho" → DEVE usar get_cart
-  - "limpe carrinho" → DEVE usar clear_cart
-- **NUNCA responda apenas com texto para essas ações - SEMPRE use as tools correspondentes**
+
+**REGRA CRÍTICA PARA ADICIONAR AO CARRINHO:**
+- **COMANDOS DE ADICIONAR REQUEREM EXATAMENTE 2 TOOLS EM SEQUÊNCIA - SEM EXCEÇÕES:**
+  1. **OBRIGATÓRIO: search_products** (para encontrar o produto)
+  2. **OBRIGATÓRIO: add_to_cart** (usando productId + quantity do resultado anterior)
+- **VOCÊ DEVE EXECUTAR AMBAS AS TOOLS NO MESMO TURNO - NÃO PARE APÓS A PRIMEIRA**
+- **APÓS search_products, IMEDIATAMENTE execute add_to_cart com o productId encontrado**
+- **NÃO responda com texto entre as tools - execute ambas em sequência**
+
+**OUTRAS REGRAS:**
+- **Para buscar produtos: APENAS search_products**
+- **Para ver carrinho: APENAS view_cart**
+- **Para limpar carrinho: APENAS clear_cart**
+
+**EXEMPLOS OBRIGATÓRIOS:**
+- "adicione dipirona" → search_products → add_to_cart
+- "add 2 dipirona" → search_products → add_to_cart (quantity: 2)
+- "coloque paracetamol no carrinho" → search_products → add_to_cart
+- "busque paracetamol" → search_products (APENAS)
+- "mostre meu carrinho" → view_cart (APENAS)
+
+**IMPORTANTE: Se você executar search_products para adicionar, DEVE executar add_to_cart na sequência**
 - Após usar tools, responda de forma natural sobre o resultado final
 
 **IMPORTANTE - Uso Correto de IDs de Produtos:**
@@ -124,6 +134,47 @@ export class PharmacyAIAgent {
       role: msg.role,
       content: msg.content,
     }));
+  }
+
+  /**
+   * Detecta se uma mensagem deve obrigatoriamente usar tools
+   */
+  private shouldForceToolUsage(message: string): boolean {
+    const lowerMessage = message.toLowerCase().trim();
+    
+    // Padrões que SEMPRE devem usar tools
+    const toolPatterns = [
+      // Carrinho
+      /\b(ver|mostrar|visualizar|exibir)\s+(o\s+)?carrinho\b/,
+      /\b(meu|o)\s+carrinho\b/,
+      /\bcarrinho\b/,
+      /\blimpar?\s+carrinho\b/,
+      /\besvaziar\s+carrinho\b/,
+      
+      // Adicionar produtos
+      /\b(adicionar?|add|colocar?)\s+.+\s+(ao\s+)?carrinho\b/,
+      /\b(adicionar?|add|colocar?)\s+\d+\s+.+/,
+      /\bquero\s+(adicionar?|comprar)\b/,
+      
+      // Buscar produtos
+      /\b(buscar?|procurar?|encontrar?)\s+.+/,
+      /\b(tem|há|existe)\s+.+\?/,
+      /\bonde\s+(está|fica)\s+.+\?/,
+      
+      // Remover do carrinho
+      /\b(remover?|tirar|excluir)\s+.+\s+(do\s+)?carrinho\b/,
+      /\b(remover?|tirar|excluir)\s+\d+\s+.+/,
+      
+      // Checkout e pagamento
+      /\b(finalizar|concluir)\s+(compra|pedido)\b/,
+      /\bcheckout\b/,
+      /\bpagar\b/,
+      
+      // Produtos específicos (nomes comuns)
+      /\b(dipirona|paracetamol|ibuprofeno|aspirina|vitamina|termômetro)\b/,
+    ];
+    
+    return toolPatterns.some(pattern => pattern.test(lowerMessage));
   }
 
   // Processar mensagem do usuário
@@ -347,52 +398,39 @@ export class PharmacyAIAgent {
       }
       console.log('🔑 SessionId e contexto definidos no contexto global:', sessionId);
 
-      console.log('🚀 Iniciando streamText...');
-      console.log('🔧 Configuração do streamText:', {
-        model: llmModel.modelId || 'unknown',
-        toolsCount: Object.keys(allTools).length,
-        temperature: this.llmConfig.temperature || 0.7,
-        messagesCount: messages.length
-      });
+      console.log('🚀 [STREAM] Iniciando processamento...');
+      console.log('🔧 [CONFIG] Tools disponíveis:', Object.keys(allTools).length);
+      console.log('💬 [USER] Mensagem:', processedMessage);
       
-      // Debug detalhado das tools
-      console.log('🛠️ [DEBUG] Tools disponíveis detalhadas:');
-      Object.entries(allTools).forEach(([name, tool]) => {
-        console.log(`  - ${name}: ${tool.description?.substring(0, 50) || 'sem descrição'}...`);
-      });
-      
-      // Debug da mensagem do usuário
-      console.log('💬 [DEBUG] Mensagem final do usuário:', processedMessage);
-      console.log('📋 [DEBUG] System prompt contém tool instructions:', SYSTEM_PROMPT.includes('TOOLS'));
+      // Detectar se a mensagem requer tools obrigatoriamente
+      const requiresTools = this.shouldForceToolUsage(processedMessage);
+      console.log('🎯 [TOOL-DETECTION] Mensagem requer tools:', requiresTools);
       
       const result = streamText({
         model: llmModel,
         messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
+        toolChoice: requiresTools ? 'required' : 'auto', // Força tools quando necessário
       });
-      console.log('📡 StreamText result obtido:', !!result);
-      console.log('📡 Result properties:', Object.keys(result));
       
       // Processar tool calls do resultado
-      console.log('🔄 [DEBUG] Iniciando processamento do stream...');
+      console.log('🔄 [STREAM] Processando...');
       for await (const part of result.fullStream) {
-        console.log(`🔄 [DEBUG] Stream part type: ${part.type}`);
-        
         if (part.type === 'tool-call') {
-          console.log(`🛠️ [DEBUG] Stream Tool call detectado: ${part.toolName}`);
-          console.log(`📋 [DEBUG] Stream Args completos:`, JSON.stringify((part as any).args, null, 2));
-          console.log(`🆔 [DEBUG] Stream Tool Call ID: ${part.toolCallId}`);
+          console.log(`🛠️ [TOOL] ${part.toolName} chamada`);
+          console.log(`📋 [TOOL] Argumentos:`, JSON.stringify((part as any).input, null, 2));
+          console.log(`🆔 [TOOL] ID: ${part.toolCallId}`);
           
           try {
-            console.log(`⏳ [DEBUG] Iniciando execução da stream tool ${part.toolName}...`);
+            console.log(`⏳ [TOOL] Executando ${part.toolName}...`);
             const tool = allTools[part.toolName as keyof typeof allTools];
             if (!tool || !tool.execute) {
               throw new Error(`Tool ${part.toolName} não encontrada ou não executável`);
             }
-            const toolResult = await (tool.execute as any)((part as any).args);
-            console.log(`✅ [DEBUG] Stream Tool ${part.toolName} executado com sucesso:`);
-            console.log(`📊 [DEBUG] Stream Resultado completo:`, JSON.stringify(toolResult, null, 2));
+            const toolResult = await (tool.execute as any)((part as any).input);
+            console.log(`✅ [TOOL] ${part.toolName} executada com sucesso`);
+            console.log(`📊 [TOOL] Resultado:`, JSON.stringify(toolResult, null, 2));
             
             // Adicionar resultado da tool à sessão
             session.messages.push({
@@ -400,10 +438,8 @@ export class PharmacyAIAgent {
               content: `Tool ${part.toolName}: ${JSON.stringify(toolResult)}`,
               timestamp: new Date(),
             } as AgentMessage);
-            console.log(`💾 [DEBUG] Stream Resultado da tool ${part.toolName} adicionado à sessão`);
           } catch (error) {
-            console.error(`❌ [DEBUG] Erro na stream tool ${part.toolName}:`, error);
-            console.error(`❌ [DEBUG] Stream Stack trace:`, error instanceof Error ? error.stack : 'Sem stack trace');
+            console.error(`❌ [TOOL] Erro em ${part.toolName}:`, error instanceof Error ? error.message : error);
             
             // Adicionar erro da tool à sessão
             session.messages.push({
@@ -411,16 +447,15 @@ export class PharmacyAIAgent {
               content: `Tool ${part.toolName} Error: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
               timestamp: new Date(),
             } as AgentMessage);
-            console.log(`💾 [DEBUG] Stream Erro da tool ${part.toolName} adicionado à sessão`);
           }
         } else if (part.type === 'text-delta') {
-          console.log(`📝 [DEBUG] Stream text delta recebido`);
+          // Log silencioso para text-delta
         } else {
-          console.log(`🔄 [DEBUG] Stream part type não reconhecido: ${part.type}`);
+          console.log(`🔄 [STREAM] Tipo: ${part.type}`);
         }
       }
-      console.log('🏁 [DEBUG] Processamento do stream concluído');
-      console.log(`📊 [DEBUG] Total de mensagens na sessão: ${session.messages.length}`);
+      console.log('🏁 [STREAM] Processamento concluído');
+      console.log(`📊 [SESSION] Total de mensagens: ${session.messages.length}`);
 
       return result;
     } catch (error) {
