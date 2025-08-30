@@ -58,14 +58,20 @@ const SYSTEM_PROMPT = `Você é um assistente virtual especializado da Farmácia
 - **NÃO informe sobre buscas ou verificações que está fazendo nos bastidores**
 - **Seja natural e direto, como um atendente humano seria**
 
-**Quando Usar as Tools:**
-- **SEMPRE use as tools quando o usuário solicitar ações específicas como adicionar produtos ao carrinho**
-- **Para adicionar produtos: OBRIGATORIAMENTE execute search_products primeiro, depois add_to_cart com o ID encontrado**
-- **EXECUTE MÚLTIPLAS TOOLS EM SEQUÊNCIA: primeiro search_products, depois add_to_cart com o ID encontrado**
-- **NÃO pare após apenas uma tool call - continue executando as ferramentas necessárias para completar a tarefa**
-- **NUNCA apenas responda com texto quando uma ação específica foi solicitada - USE AS TOOLS**
-- **IMPORTANTE: Quando o usuário pedir para adicionar produtos, você DEVE executar AMBAS as tools: search_products E add_to_cart**
-- **Se search_products encontrar produtos, você DEVE imediatamente usar add_to_cart para cada produto solicitado**
+**REGRAS OBRIGATÓRIAS PARA USO DE TOOLS:**
+- **VOCÊ DEVE SEMPRE USAR TOOLS PARA AÇÕES ESPECÍFICAS - NUNCA APENAS RESPONDER COM TEXTO**
+- **Para adicionar produtos ao carrinho: EXECUTE search_products PRIMEIRO, depois add_to_cart**
+- **Para buscar produtos: SEMPRE use search_products**
+- **Para ver carrinho: SEMPRE use get_cart**
+- **Para limpar carrinho: SEMPRE use clear_cart**
+- **EXECUTE MÚLTIPLAS TOOLS EM SEQUÊNCIA quando necessário**
+- **NÃO pare após uma tool call - continue até completar a tarefa**
+- **EXEMPLOS OBRIGATÓRIOS:**
+  - "adicione dipirona" → DEVE usar search_products + add_to_cart
+  - "busque paracetamol" → DEVE usar search_products
+  - "mostre meu carrinho" → DEVE usar get_cart
+  - "limpe carrinho" → DEVE usar clear_cart
+- **NUNCA responda apenas com texto para essas ações - SEMPRE use as tools correspondentes**
 - Após usar tools, responda de forma natural sobre o resultado final
 
 **IMPORTANTE - Uso Correto de IDs de Produtos:**
@@ -348,6 +354,16 @@ export class PharmacyAIAgent {
         temperature: this.llmConfig.temperature || 0.7,
         messagesCount: messages.length
       });
+      
+      // Debug detalhado das tools
+      console.log('🛠️ [DEBUG] Tools disponíveis detalhadas:');
+      Object.entries(allTools).forEach(([name, tool]) => {
+        console.log(`  - ${name}: ${tool.description?.substring(0, 50) || 'sem descrição'}...`);
+      });
+      
+      // Debug da mensagem do usuário
+      console.log('💬 [DEBUG] Mensagem final do usuário:', processedMessage);
+      console.log('📋 [DEBUG] System prompt contém tool instructions:', SYSTEM_PROMPT.includes('TOOLS'));
       
       const result = streamText({
         model: llmModel,

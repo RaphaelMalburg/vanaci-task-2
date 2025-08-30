@@ -20,9 +20,9 @@ const DEFAULT_MODELS = {
   mistral: process.env.MISTRAL_MODEL || "mistral-large-latest",
 };
 
-// Configurações padrão - usando Google Gemini como padrão
+// Configurações padrão - usando OpenAI temporariamente para debug
 const DEFAULT_CONFIG: LLMConfig = {
-  provider: (process.env.DEFAULT_LLM_PROVIDER as LLMConfig["provider"]) || "google",
+  provider: (process.env.DEFAULT_LLM_PROVIDER as LLMConfig["provider"]) || "openai",
   temperature: parseFloat(process.env.LLM_TEMPERATURE || "0.7"),
   maxTokens: parseInt(process.env.LLM_MAX_TOKENS || "2000"),
   enableMessageRewriter: process.env.ENABLE_MESSAGE_REWRITER === "true",
