@@ -1,13 +1,22 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { getAllGlobalContext, setGlobalContext } from '../context';
+import { getAllGlobalContext, setGlobalContext, getGlobalContext } from '../context';
 import type { ToolResult } from '../types';
 import { logger } from '@/lib/logger';
 import { sessionManager } from '@/lib/services/session-manager';
 
-// Função para obter sessionId usando SessionManager
+// Função para obter sessionId do contexto global (definido pelo AI agent)
 function getSessionId(): string {
-  return sessionManager.getSessionId();
+  const contextSessionId = getGlobalContext('sessionId');
+  if (contextSessionId) {
+    console.log('🔑 [Cart Tool] Usando sessionId do contexto global:', contextSessionId);
+    return contextSessionId;
+  }
+  
+  // Fallback para SessionManager se não estiver no contexto
+  const fallbackSessionId = sessionManager.getSessionId();
+  console.log('⚠️ [Cart Tool] Usando sessionId fallback do SessionManager:', fallbackSessionId);
+  return fallbackSessionId;
 }
 
 // Função auxiliar para fazer chamadas à API
