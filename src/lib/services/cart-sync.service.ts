@@ -1,5 +1,6 @@
 import { useCartStore } from '@/stores/cart-store';
 import { logger } from '@/lib/logger';
+import { sessionManager } from '@/lib/services/session-manager';
 
 interface CartSyncItem {
   id: string;
@@ -19,7 +20,6 @@ interface CartSyncData {
 export class CartSyncService {
   private static instance: CartSyncService;
   private syncInterval: NodeJS.Timeout | null = null;
-  private sessionId: string | null = null;
   private isClient = typeof window !== 'undefined';
 
   static getInstance(): CartSyncService {
@@ -30,38 +30,23 @@ export class CartSyncService {
   }
 
   private constructor() {
-    if (this.isClient) {
-      this.sessionId = this.getOrCreateSessionId();
-    }
-  }
-
-  private getOrCreateSessionId(): string {
-    if (!this.isClient) return 'server-session';
-    
-    let sessionId = localStorage.getItem('cart-session-id');
-    if (!sessionId) {
-      sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('cart-session-id', sessionId);
-    }
-    return sessionId;
+    // SessionManager agora gerencia a sessão
   }
 
   getSessionId(): string {
-    if (!this.sessionId) {
-      this.sessionId = this.getOrCreateSessionId();
-    }
-    return this.sessionId;
+    return sessionManager.getSessionId();
   }
 
   async syncCartFromBackend(): Promise<void> {
-    if (!this.isClient || !this.sessionId) {
-      console.log('🔄 [CartSync] Sync cancelado - não é cliente ou sessionId ausente', { isClient: this.isClient, sessionId: this.sessionId });
+    if (!this.isClient) {
+      console.log('🔄 [CartSync] Sync cancelado - não é cliente');
       return;
     }
 
+    const sessionId = this.getSessionId();
     try {
-      console.log('🔄 [CartSync] Iniciando sincronização do backend', { sessionId: this.sessionId });
-      const response = await fetch(`/api/cart?sessionId=${this.sessionId}`);
+      console.log('🔄 [CartSync] Iniciando sincronização do backend', { sessionId });
+      const response = await fetch(`/api/cart?sessionId=${sessionId}`);
       console.log('🔄 [CartSync] Resposta da API cart:', { status: response.status, ok: response.ok });
       
       if (!response.ok) {
@@ -113,7 +98,7 @@ export class CartSyncService {
   }
 
   async syncCartToBackend(): Promise<void> {
-    if (!this.isClient || !this.sessionId) return;
+    if (!this.isClient || !this.getSessionId()) return;
 
     try {
       const cartStore = useCartStore.getState();
@@ -123,7 +108,7 @@ export class CartSyncService {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sessionId: this.sessionId,
+          sessionId: this.getSessionId(),
           clearAll: true
         })
       });
@@ -134,7 +119,7 @@ export class CartSyncService {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            sessionId: this.sessionId,
+            sessionId: this.getSessionId(),
             productId: item.id,
             quantity: item.quantity
           })

@@ -13,7 +13,7 @@ import { fetchProducts, processCheckout, validateCartNotEmpty } from '@/lib/util
 import type { Product } from '@/lib/types';
 
 export default function CartPage() {
-  const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { items, total, itemCount, updateQuantity, removeItem, clearCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -30,7 +30,7 @@ export default function CartPage() {
   }, []);
 
   // Melhor sincronização: usar dados do carrinho como fonte principal
-  const cartItems = cart.items.map(cartItem => {
+  const cartItems = items.map(cartItem => {
     const product = products.find(p => p.id === cartItem.id);
     if (product) {
       return { product, quantity: cartItem.quantity };
@@ -64,7 +64,7 @@ export default function CartPage() {
     }
 
     if (newQuantity <= 0) {
-      removeFromCart(productId);
+      removeItem(productId);
       toast.success('Item removido do carrinho');
     } else {
       updateQuantity(productId, newQuantity);
@@ -93,7 +93,7 @@ export default function CartPage() {
 
   // Aplicar desconto de 5% para pedidos acima de R$ 100
   const discount = subtotal > 100 ? subtotal * 0.05 : 0;
-  const total = subtotal - discount;
+  const finalTotal = subtotal - discount;
 
   if (isLoading) {
     return (
@@ -203,7 +203,7 @@ export default function CartPage() {
                           variant="ghost" 
                           size="icon" 
                           className="ml-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-950"
-                          onClick={() => removeFromCart(product.id)}
+                          onClick={() => removeItem(product.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -243,12 +243,12 @@ export default function CartPage() {
                   
                   <div className="flex justify-between font-medium text-lg">
                     <span className="text-gray-900 dark:text-white">Total</span>
-                    <span className="text-blue-600">€ {total.toFixed(2)}</span>
+                    <span className="text-blue-600">R$ {finalTotal.toFixed(2)}</span>
                   </div>
                   
-                  {subtotal < 50 && (
+                  {subtotal < 100 && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      Adicione mais € {(50 - subtotal).toFixed(2)} para ganhar 5% de desconto
+                      Adicione mais R$ {(100 - subtotal).toFixed(2)} para ganhar 5% de desconto
                     </p>
                   )}
                 </div>

@@ -18,11 +18,11 @@ interface CartProps {
 }
 
 export function Cart({ products, isOpen, onClose }: CartProps) {
-  const { cart, updateQuantity, removeFromCart, clearCart, getItemCount } = useCart();
+  const { items, total, updateQuantity, removeItem, clearCart, itemCount } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // Melhor sincronização: usar dados do carrinho como fonte principal
-  const cartItems = (cart.items || []).map(cartItem => {
+  const cartItems = (items || []).map(cartItem => {
     const product = products.find(p => p.id === cartItem.id);
     if (product) {
       return { product, quantity: cartItem.quantity };
@@ -56,7 +56,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
     }
 
     if (newQuantity <= 0) {
-      removeFromCart(productId);
+      removeItem(productId);
       toast.success('Item removido do carrinho');
     } else {
       updateQuantity(productId, newQuantity);
@@ -92,7 +92,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Carrinho ({getItemCount()})
+              Carrinho ({itemCount})
             </h2>
             <button
               onClick={onClose}
@@ -130,7 +130,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => removeFromCart(product.id)}
+                          onClick={() => removeItem(product.id)}
                           className="h-6 w-6 p-0"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -176,7 +176,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeFromCart(product.id)}
+                          onClick={() => removeItem(product.id)}
                           className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -217,7 +217,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
-                    <span>R$ {cart.total.toFixed(2)}</span>
+                    <span>R$ {total.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Frete:</span>
@@ -226,7 +226,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total:</span>
-                    <span className="text-green-600">R$ {cart.total.toFixed(2)}</span>
+                    <span className="text-green-600">R$ {total.toFixed(2)}</span>
                   </div>
                 </div>
 

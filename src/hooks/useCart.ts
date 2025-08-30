@@ -1,78 +1,98 @@
-'use client'
+import { useCartStore } from '@/stores/cart-store';
+import { useCartService } from '@/lib/services/cart.service';
+import { toast } from 'sonner';
 
-import { useCartStore } from '@/stores/cart-store'
-import { useCartSync } from '@/lib/services/cart-sync.service'
-import { useState, useEffect } from 'react'
-
-interface CartItem {
-  id: string
-  name: string
-  price: number
-  quantity: number
-  imagePath?: string
-  category: string
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  imagePath?: string;
+  quantity: number;
 }
 
-interface CartData {
-  sessionId: string
-  items: CartItem[]
-  total: number
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  imagePath?: string;
 }
 
 export function useCart() {
-  // Use Zustand store for global state management
-  const { items, total, itemCount, addItem, removeItem, updateQuantity, clearCart, getItemCount } = useCartStore()
-  
-  // Use cart sync service
-  const { syncFromBackend, startAutoSync, stopAutoSync, getSessionId } = useCartSync()
-  
-  // Get session ID from sync service
-  const sessionId = getSessionId()
-  
-  // Start auto-sync when component mounts
-  useEffect(() => {
-    // Initial sync from backend
-    syncFromBackend()
+  const { items, total, itemCount } = useCartStore();
+  const cartService = useCartService();
+
+  const addItem = async (product: Product, quantity: number = 1) => {
+    const result = await cartService.addItem(product.id, quantity);
     
-    // Start auto-sync every 10 seconds
-    startAutoSync(10000)
+    if (result.success) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+      throw new Error(result.error);
+    }
     
-    // Cleanup on unmount
-    return () => {
-      stopAutoSync()
+    return result;
+  };
+
+  const removeItem = async (productId: string) => {
+    const result = await cartService.removeItem(productId);
+    
+    if (result.success) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+      throw new Error(result.error);
     }
-  }, [])
+    
+    return result;
+  };
 
-  const addToCart = (product: Omit<CartItem, 'quantity'>) => {
-    addItem(product, 1)
-  }
-
-  const removeFromCart = (productId: string) => {
-    removeItem(productId)
-  }
-
-  const getItemCountForProduct = (productId?: string) => {
-    if (productId) {
-      const item = items.find(item => item.id === productId)
-      return item ? item.quantity : 0
+  const updateQuantity = async (productId: string, quantity: number) => {
+    const result = await cartService.updateQuantity(productId, quantity);
+    
+    if (result.success) {
+      // Não mostrar toast para updates de quantidade (muito verboso)
+    } else {
+      toast.error(result.message);
+      throw new Error(result.error);
     }
-    return getItemCount()
-  }
+    
+    return result;
+  };
 
-  // Create cart object for backward compatibility
-  const cart: CartData = {
-    sessionId,
-    items,
-    total
-  }
+  const clearCart = async () => {
+    const result = await cartService.clearCart();
+    
+    if (result.success) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+      throw new Error(result.error);
+    }
+    
+    return result;
+  };
+
+  const syncCart = async () => {
+    const result = await cartService.syncCart();
+    
+    if (!result.success) {
+      toast.error('Erro ao sincronizar carrinho');
+    }
+    
+    return result;
+  };
 
   return {
-    cart,
-    addToCart,
-    removeFromCart,
+    items,
+    total,
+    itemCount,
+    addItem,
+    removeItem,
     updateQuantity,
     clearCart,
-    getItemCount: getItemCountForProduct,
-    sessionId
-  }
+    syncCart
+  };
 }

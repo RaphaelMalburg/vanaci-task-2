@@ -3,18 +3,11 @@ import { z } from 'zod';
 import { getAllGlobalContext, setGlobalContext } from '../context';
 import type { ToolResult } from '../types';
 import { logger } from '@/lib/logger';
+import { sessionManager } from '@/lib/services/session-manager';
 
-// Função para obter session ID do contexto global
+// Função para obter sessionId usando SessionManager
 function getSessionId(): string {
-  const context = getAllGlobalContext();
-  console.log('🔍 [Cart Tool] Contexto global completo:', context);
-  if (!context.sessionId) {
-    console.error('❌ [Cart Tool] SessionId não encontrado no contexto global!');
-    console.error('❌ [Cart Tool] Contexto disponível:', Object.keys(context));
-    throw new Error('SessionId não encontrado no contexto global. Certifique-se de que o AI Agent definiu o sessionId antes de usar as tools.');
-  }
-  console.log('✅ [Cart Tool] SessionId obtido do contexto:', context.sessionId);
-  return context.sessionId;
+  return sessionManager.getSessionId();
 }
 
 // Função auxiliar para fazer chamadas à API
@@ -241,47 +234,7 @@ export const clearCartTool = tool({
   },
 });
 
-// Tool: Buscar produtos
-export const searchProductsTool = tool({
-  description: 'Busca produtos no catálogo',
-  inputSchema: z.object({
-    query: z.string().describe('Termo de busca para encontrar produtos'),
-  }),
-  execute: async ({ query }: { query: string }) => {
-    try {
-      logger.info('Buscando produtos via API', { query });
-      
-      const products = await apiCall(`/products?search=${encodeURIComponent(query)}`, {
-        method: 'GET'
-      });
-      
-      if (!products || products.length === 0) {
-        return {
-          success: true,
-          message: `Nenhum produto encontrado para "${query}". Tente termos diferentes.`,
-          data: [],
-        } as ToolResult;
-      }
-      
-      const productList = products.map((p: any) => 
-        `- ${p.name} (€${p.price}) - ${p.category}${p.prescription ? ' [Receita]' : ''}`
-      ).join('\n');
-      
-      return {
-        success: true,
-        message: `Encontrei ${products.length} produto(s) para "${query}":\n${productList}`,
-        data: products,
-      } as ToolResult;
-    } catch (error) {
-      logger.error('Erro ao buscar produtos', { error, query });
-      return {
-        success: false,
-        message: `Erro ao buscar produtos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
-        data: null,
-      } as ToolResult;
-    }
-  },
-});
+// Tool search_products removido daqui - está definido em products.ts
 
 // Exportar todas as tools do carrinho
 export const cartTools = {
@@ -290,5 +243,4 @@ export const cartTools = {
   update_cart_quantity: updateCartQuantityTool,
   view_cart: viewCartTool,
   clear_cart: clearCartTool,
-  search_products: searchProductsTool,
 };
