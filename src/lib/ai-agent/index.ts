@@ -414,11 +414,15 @@ export class PharmacyAIAgent {
         toolChoice: requiresTools ? 'required' : 'auto', // Força tools quando necessário
       });
       
-      // Processar tool calls do resultado
+      // Processar tool calls do resultado com suporte a múltiplas execuções
       console.log('🔄 [STREAM] Processando...');
+      let executionCount = 0;
+      const maxExecutions = 3; // Limite para evitar loops infinitos
+      
       for await (const part of result.fullStream) {
         if (part.type === 'tool-call') {
-          console.log(`🛠️ [TOOL] ${part.toolName} chamada`);
+          executionCount++;
+          console.log(`🛠️ [TOOL] ${part.toolName} chamada (execução ${executionCount})`);
           console.log(`📋 [TOOL] Argumentos:`, JSON.stringify((part as any).input, null, 2));
           console.log(`🆔 [TOOL] ID: ${part.toolCallId}`);
           
@@ -438,6 +442,46 @@ export class PharmacyAIAgent {
               content: `Tool ${part.toolName}: ${JSON.stringify(toolResult)}`,
               timestamp: new Date(),
             } as AgentMessage);
+            
+            // Para comandos de "adicionar ao carrinho", verificar se precisamos executar add_to_cart
+            if (part.toolName === 'search_products' && executionCount < maxExecutions) {
+              const userMessage = processedMessage || '';
+              const isAddToCartCommand = /adicionar?|adicione|add.*cart|comprar|colocar.*carrinho/i.test(userMessage);
+              
+              if (isAddToCartCommand && toolResult?.products?.length > 0) {
+                console.log('🔄 [TOOL] Comando de adicionar detectado, forçando add_to_cart');
+                
+                // Extrair quantidade da mensagem
+                const quantityMatch = userMessage.match(/\b(\d+)\b/);
+                const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
+                
+                // Executar add_to_cart automaticamente
+                try {
+                  const addTool = allTools['add_to_cart'];
+                  if (addTool && addTool.execute) {
+                    const addToCartResult = await (addTool.execute as any)({
+                      productId: toolResult.products[0].id,
+                      quantity: quantity
+                    });
+                    
+                    console.log(`✅ [TOOL] add_to_cart executado automaticamente`);
+                    console.log(`📊 [TOOL] Resultado add_to_cart:`, JSON.stringify(addToCartResult, null, 2));
+                    
+                    // Adicionar resultado do add_to_cart à sessão
+                    session.messages.push({
+                      role: 'assistant',
+                      content: `Tool add_to_cart: ${JSON.stringify(addToCartResult)}`,
+                      timestamp: new Date(),
+                    } as AgentMessage);
+                    
+                    executionCount++;
+                  }
+                } catch (error) {
+                  console.error('❌ [TOOL] Erro ao executar add_to_cart automaticamente:', error);
+                }
+              }
+            }
+            
           } catch (error) {
             console.error(`❌ [TOOL] Erro em ${part.toolName}:`, error instanceof Error ? error.message : error);
             
