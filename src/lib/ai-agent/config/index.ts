@@ -15,7 +15,7 @@ export interface LLMConfig {
 // Configurações padrão dos modelos
 const DEFAULT_MODELS = {
   openai: process.env.OPENAI_MODEL || "gpt-4-turbo-preview",
-  google: process.env.GEMINI_MODEL || "gemini-1.5-pro",
+  google: process.env.GEMINI_MODEL || "gemini-2.0-flash",
   anthropic: process.env.ANTHROPIC_MODEL || "claude-3-sonnet-20240229",
   mistral: process.env.MISTRAL_MODEL || "mistral-large-latest",
 };
