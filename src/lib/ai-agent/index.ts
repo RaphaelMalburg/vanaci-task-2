@@ -68,6 +68,7 @@ const SYSTEM_PROMPT = `Você é um assistente virtual especializado da Farmácia
 - **VOCÊ DEVE EXECUTAR AMBAS AS TOOLS NO MESMO TURNO - NÃO PARE APÓS A PRIMEIRA**
 - **APÓS search_products, IMEDIATAMENTE execute add_to_cart com o productId encontrado**
 - **NÃO responda com texto entre as tools - execute ambas em sequência**
+- **AUTOMAÇÃO OBRIGATÓRIA**: Quando detectar comandos como "adicionar", "adicione", "comprar", "colocar no carrinho", você DEVE automaticamente executar search_products seguido de add_to_cart
 
 **OUTRAS REGRAS:**
 - **Para buscar produtos: APENAS search_products**
@@ -443,42 +444,19 @@ export class PharmacyAIAgent {
               timestamp: new Date(),
             } as AgentMessage);
             
-            // Para comandos de "adicionar ao carrinho", verificar se precisamos executar add_to_cart
+            // Log para debug - não executar add_to_cart aqui pois deve ser feito pelo LLM
             if (part.toolName === 'search_products' && executionCount < maxExecutions) {
               const userMessage = processedMessage || '';
               const isAddToCartCommand = /adicionar?|adicione|add.*cart|comprar|colocar.*carrinho/i.test(userMessage);
               
               if (isAddToCartCommand && toolResult?.products?.length > 0) {
-                console.log('🔄 [TOOL] Comando de adicionar detectado, forçando add_to_cart');
+                console.log('🔄 [TOOL] Comando de adicionar detectado - LLM deve executar add_to_cart automaticamente');
+                console.log('📋 [TOOL] Produto encontrado:', toolResult.products[0].id);
                 
                 // Extrair quantidade da mensagem
                 const quantityMatch = userMessage.match(/\b(\d+)\b/);
                 const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
-                
-                // Executar add_to_cart automaticamente
-                try {
-                  const addTool = allTools['add_to_cart'];
-                  if (addTool && addTool.execute) {
-                    const addToCartResult = await (addTool.execute as any)({
-                      productId: toolResult.products[0].id,
-                      quantity: quantity
-                    });
-                    
-                    console.log(`✅ [TOOL] add_to_cart executado automaticamente`);
-                    console.log(`📊 [TOOL] Resultado add_to_cart:`, JSON.stringify(addToCartResult, null, 2));
-                    
-                    // Adicionar resultado do add_to_cart à sessão
-                    session.messages.push({
-                      role: 'assistant',
-                      content: `Tool add_to_cart: ${JSON.stringify(addToCartResult)}`,
-                      timestamp: new Date(),
-                    } as AgentMessage);
-                    
-                    executionCount++;
-                  }
-                } catch (error) {
-                  console.error('❌ [TOOL] Erro ao executar add_to_cart automaticamente:', error);
-                }
+                console.log('📊 [TOOL] Quantidade detectada:', quantity);
               }
             }
             
