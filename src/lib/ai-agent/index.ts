@@ -205,7 +205,7 @@ export class PharmacyAIAgent {
   async processMessage(
     sessionId: string,
     userMessage: string,
-    context?: { cartId?: string; userId?: string; currentPage?: string }
+    context?: { cartId?: string; userId?: string; user?: any; currentPage?: string }
   ): Promise<string> {
     try {
       logger.info('Processando mensagem', { sessionId, messageLength: userMessage.length });
@@ -251,6 +251,11 @@ export class PharmacyAIAgent {
         if (context.cartId) setGlobalContext('cartId', context.cartId);
         if (context.userId) setGlobalContext('userId', context.userId);
         if (context.currentPage) setGlobalContext('currentPage', context.currentPage);
+        // Definir informações do usuário no contexto global
+        if (context.user) {
+          setGlobalContext('user', context.user);
+          console.log('🔑 [AI Agent] Usuário definido no contexto global:', context.user.username);
+        }
       }
       
       const result = await generateText({
@@ -344,7 +349,7 @@ export class PharmacyAIAgent {
   async streamMessage(
     sessionId: string,
     userMessage: string,
-    context?: { cartId?: string; userId?: string; currentPage?: string }
+    context?: { cartId?: string; userId?: string; user?: any; currentPage?: string }
   ) {
     // Validação de entrada
     if (!sessionId || typeof sessionId !== 'string' || sessionId.trim().length === 0) {
@@ -417,7 +422,14 @@ export class PharmacyAIAgent {
       setGlobalContext('sessionId', sessionId);
       if (context) {
         if (context.cartId) setGlobalContext('cartId', context.cartId);
-        if (context.userId) setGlobalContext('userId', context.userId);
+        if (context.userId) {
+          setGlobalContext('userId', context.userId);
+          console.log('👤 [STREAM] UserId definido no contexto global:', context.userId);
+        }
+        if (context.user) {
+          setGlobalContext('user', context.user);
+          console.log('👤 [STREAM] User definido no contexto global:', context.user);
+        }
         if (context.currentPage) setGlobalContext('currentPage', context.currentPage);
       }
       console.log('🔑 SessionId e contexto definidos no contexto global:', sessionId);
@@ -588,7 +600,7 @@ export function getPharmacyAgent(config?: ConfigLLMConfig): PharmacyAIAgent {
 export async function processUserMessage(
   sessionId: string,
   message: string,
-  context?: { cartId?: string; userId?: string; currentPage?: string },
+  context?: { cartId?: string; userId?: string; user?: any; currentPage?: string },
   llmConfig?: ConfigLLMConfig
 ): Promise<string> {
   try {

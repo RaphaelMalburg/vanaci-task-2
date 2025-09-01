@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageCircle, Send, Bot, User, X, Mic, MicOff } from "lucide-react";
 import { useNextjsAudioToTextRecognition } from "nextjs-audio-to-text-recognition";
+import { useAuth } from "@/contexts/auth-context";
 
 // Context para controlar o estado do chat
 const ChatContext = createContext<{
@@ -29,6 +30,7 @@ interface Message {
 
 export function Chat() {
   const { isChatOpen, setIsChatOpen } = useChatContext();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -145,6 +147,10 @@ export function Chat() {
           message: currentInput,
           sessionId: sessionId,
           streaming: true,
+          context: user ? {
+            userId: user.id,
+            user: user
+          } : undefined,
           chatHistory: messages.slice(-10).map((msg) => ({
             role: msg.isUser ? 'user' : 'assistant',
             content: msg.text,
