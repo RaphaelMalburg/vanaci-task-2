@@ -14,13 +14,13 @@ export interface LLMConfig {
 
 // Configurações padrão dos modelos
 const DEFAULT_MODELS = {
-  openai: process.env.OPENAI_MODEL || "gpt-4-turbo-preview",
+  openai: process.env.OPENAI_MODEL || "gpt-4o-mini",
   google: process.env.GEMINI_MODEL || "gemini-2.0-flash",
   anthropic: process.env.ANTHROPIC_MODEL || "claude-3-sonnet-20240229",
   mistral: process.env.MISTRAL_MODEL || "mistral-large-latest",
 };
 
-// Configurações padrão - usando OpenAI temporariamente para debug
+// Configurações padrão - usando OpenAI como provedor principal
 const DEFAULT_CONFIG: LLMConfig = {
   provider: (process.env.DEFAULT_LLM_PROVIDER as LLMConfig["provider"]) || "openai",
   temperature: parseFloat(process.env.LLM_TEMPERATURE || "0.7"),
@@ -66,26 +66,26 @@ export async function createLLMModel(config: Partial<LLMConfig> = {}) {
 }
 
 /**
- * Cria modelo com fallback automático - prioriza Google Gemini
+ * Cria modelo com fallback automático - prioriza OpenAI
  */
 export async function createLLMModelWithFallback(config: Partial<LLMConfig> = {}) {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
   
-  // Tenta Google Gemini primeiro (padrão)
+  // Tenta OpenAI primeiro (padrão)
   try {
-    return await createLLMModel({ ...finalConfig, provider: "google" });
+    return await createLLMModel({ ...finalConfig, provider: "openai" });
   } catch (error) {
-    // Fallback para OpenAI se disponível
-    if (process.env.OPENAI_API_KEY) {
+    // Fallback para Google Gemini se disponível
+    if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
       try {
-        return await createLLMModel({ ...finalConfig, provider: "openai" });
+        return await createLLMModel({ ...finalConfig, provider: "google" });
       } catch (fallbackError) {
         // Se ambos falharem, lança erro
-        throw new Error('Nenhum provider LLM disponível. Verifique GOOGLE_GENERATIVE_AI_API_KEY ou OPENAI_API_KEY.');
+        throw new Error('Nenhum provider LLM disponível. Verifique OPENAI_API_KEY ou GOOGLE_GENERATIVE_AI_API_KEY.');
       }
     }
     
-    throw new Error('Google Gemini não disponível e nenhum fallback configurado. Verifique GOOGLE_GENERATIVE_AI_API_KEY.');
+    throw new Error('OpenAI não disponível e nenhum fallback configurado. Verifique OPENAI_API_KEY.');
   }
 }
 
