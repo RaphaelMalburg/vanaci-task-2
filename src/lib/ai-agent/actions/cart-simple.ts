@@ -4,27 +4,43 @@ import { z } from 'zod';
 import { getGlobalContext } from '../context';
 import type { ToolResult } from '../types';
 import { logger } from '@/lib/logger';
+import { getUserFromLocalStorage } from '@/lib/auth-utils';
 
-// Helper function to get session ID from context
-function getSessionId(): string {
-  const contextSessionId = getGlobalContext('sessionId');
-  if (contextSessionId) {
-    return contextSessionId;
+// Helper function to get user from context or localStorage
+function getUser(): { id: string; username: string } | null {
+  const contextUser = getGlobalContext('user');
+  if (contextUser) {
+    return contextUser;
   }
   
-  // Fallback to a default session ID if not in context
-  return 'default-session';
+  // Fallback to localStorage if not in context
+  const fallbackUser = getUserFromLocalStorage();
+  if (fallbackUser) {
+    return fallbackUser;
+  }
+  
+  return null;
 }
 
-// Helper function for API calls
+// Helper function for API calls with authentication
 async function apiCall(endpoint: string, options: RequestInit = {}) {
   const baseUrl = process.env.NODE_ENV === 'production' 
     ? process.env.NEXT_PUBLIC_APP_URL || 'https://farmacia-vanaci.vercel.app'
     : 'http://localhost:3007';
   
+  // Get user token for authentication
+  const user = getUser();
+  if (!user) {
+    throw new Error('User must be logged in to use cart');
+  }
+  
+  // Simulate JWT token (in production, this would come from localStorage or context)
+  const token = `Bearer ${btoa(JSON.stringify(user))}`;
+  
   const response = await fetch(`${baseUrl}/api${endpoint}`, {
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': token,
       ...options.headers,
     },
     ...options,
@@ -47,17 +63,23 @@ export const addToCartSimpleTool = tool({
   }),
   execute: async ({ productId, quantity }: { productId: string; quantity: number }) => {
     try {
-      const sessionId = getSessionId();
-      logger.info('Adding product to cart via simple API', { productId, quantity, sessionId });
-      
-      const result = await apiCall('/cart-simple', {
-        method: 'POST',
-        body: JSON.stringify({
-          sessionId,
-          productId,
-          quantity
-        })
-      });
+      const user = getUser();
+      if (!user) {
+        return {
+          success: false,
+          message: 'You must be logged in to add products to cart.',
+          data: null,
+        } as ToolResult;
+      }
+      logger.info('Adding product to cart via simple API', { productId, quantity, userId: user.id });
+       
+       const result = await apiCall('/cart', {
+         method: 'POST',
+         body: JSON.stringify({
+           productId,
+           quantity
+         })
+       });
       
       return {
         success: true,
@@ -83,13 +105,20 @@ export const removeFromCartSimpleTool = tool({
   }),
   execute: async ({ productId }: { productId: string }) => {
     try {
-      const sessionId = getSessionId();
-      logger.info('Removing product from cart via simple API', { productId, sessionId });
+      const user = getUser();
+      if (!user) {
+        return {
+          success: false,
+          message: 'You must be logged in to remove products from cart.',
+          data: null,
+        } as ToolResult;
+      }
       
-      const result = await apiCall('/cart-simple', {
+      logger.info('Removing product from cart via simple API', { productId, userId: user.id });
+      
+      const result = await apiCall('/cart', {
         method: 'DELETE',
         body: JSON.stringify({
-          sessionId,
           productId
         })
       });
@@ -119,13 +148,20 @@ export const updateCartQuantitySimpleTool = tool({
   }),
   execute: async ({ productId, quantity }: { productId: string; quantity: number }) => {
     try {
-      const sessionId = getSessionId();
-      logger.info('Updating cart quantity via simple API', { productId, quantity, sessionId });
+      const user = getUser();
+      if (!user) {
+        return {
+          success: false,
+          message: 'You must be logged in to update cart.',
+          data: null,
+        } as ToolResult;
+      }
       
-      const result = await apiCall('/cart-simple', {
+      logger.info('Updating cart quantity via simple API', { productId, quantity, userId: user.id });
+      
+      const result = await apiCall('/cart', {
         method: 'PUT',
         body: JSON.stringify({
-          sessionId,
           productId,
           quantity
         })
@@ -157,13 +193,22 @@ export const viewCartSimpleTool = tool({
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
     try {
-      const sessionId = getSessionId();
-      logger.info('Viewing cart via simple API', { sessionId });
+      const user = getUser();
+      if (!user) {
+        return {
+          success: false,
+          message: 'You must be logged in to view cart.',
+          data: null,
+        } as ToolResult;
+      }
       
-      const cart = await apiCall(`/cart-simple?sessionId=${sessionId}`, {
+      logger.info('Viewing cart via simple API', { userId: user.id });
+      
+      const result = await apiCall('/cart', {
         method: 'GET'
       });
       
+      const cart = result.cart || result;
       const itemCount = cart.items?.length || 0;
       const total = cart.total || 0;
       
@@ -197,13 +242,20 @@ export const clearCartSimpleTool = tool({
   inputSchema: z.object({}),
   execute: async (): Promise<ToolResult> => {
     try {
-      const sessionId = getSessionId();
-      logger.info('Clearing cart via simple API', { sessionId });
+      const user = getUser();
+      if (!user) {
+        return {
+          success: false,
+          message: 'You must be logged in to clear cart.',
+          data: null,
+        } as ToolResult;
+      }
       
-      const result = await apiCall('/cart-simple', {
+      logger.info('Clearing cart via simple API', { userId: user.id });
+      
+      const result = await apiCall('/cart', {
         method: 'DELETE',
         body: JSON.stringify({
-          sessionId,
           clearAll: true
         })
       });

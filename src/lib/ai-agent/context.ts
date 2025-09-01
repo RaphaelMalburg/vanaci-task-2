@@ -6,13 +6,14 @@ interface GlobalContext {
   cartId?: string;
   userId?: string;
   currentPage?: string;
+  user?: { id: string; username: string };
 }
 
 // Contexto global para armazenar dados da sessão
 let globalContext: GlobalContext = {};
 
 // Função para definir variáveis no contexto global
-export function setGlobalContext(key: keyof GlobalContext, value: string): void {
+export function setGlobalContext<T extends keyof GlobalContext>(key: T, value: GlobalContext[T]): void {
   globalContext[key] = value;
   console.log(`🔧 [Global Context] ${key} definido:`, value);
 }
