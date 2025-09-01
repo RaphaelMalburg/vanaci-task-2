@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { MessageCircle, Send, Bot, User, X, Mic, MicOff } from "lucide-react";
 import { useNextjsAudioToTextRecognition } from "nextjs-audio-to-text-recognition";
 import { useAuth } from "@/contexts/auth-context";
+import { useCart } from "@/hooks/useCart";
 
 // Context para controlar o estado do chat
 const ChatContext = createContext<{
@@ -31,6 +32,7 @@ interface Message {
 export function Chat() {
   const { isChatOpen, setIsChatOpen } = useChatContext();
   const { user } = useAuth();
+  const { syncCart } = useCart();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -212,6 +214,24 @@ export function Chat() {
                 } else if (parsed.type === 'tool_call' && parsed.content) {
                   // Tool call - não adicionar ao texto, apenas logar
                   console.log('Tool call executado:', parsed.content);
+                  
+                  // Verificar se é uma ação relacionada ao carrinho
+                   const cartRelatedTools = [
+                     'add_to_cart', 'remove_from_cart', 'update_cart_quantity', 'view_cart', 'clear_cart',
+                     'add_to_cart_simple', 'remove_from_cart_simple', 'update_cart_quantity_simple'
+                   ];
+                   if (parsed.content && parsed.content.toolName && cartRelatedTools.includes(parsed.content.toolName)) {
+                     console.log('🛒 Ação de carrinho detectada, sincronizando UI...', parsed.content.toolName);
+                     // Aguardar um pouco para garantir que a ação foi processada no backend
+                     setTimeout(async () => {
+                       try {
+                         await syncCart();
+                         console.log('✅ Carrinho sincronizado com sucesso após', parsed.content.toolName);
+                       } catch (error) {
+                         console.error('❌ Erro ao sincronizar carrinho:', error);
+                       }
+                     }, 1500);
+                   }
                 } else if (parsed.content && typeof parsed.content === 'string') {
                   // Fallback para conteúdo direto
                   setMessages((prev) =>
