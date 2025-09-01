@@ -10,6 +10,7 @@ import { sessionManager } from './session-manager';
 import { useCartStore } from '@/stores/cart-store';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
+import { getTokenFromLocalStorage } from '@/lib/auth-utils';
 import type { CartItem, CartData } from '@/lib/types';
 
 export interface CartOperationResult {
@@ -51,6 +52,22 @@ export class CartService {
   }
 
   /**
+   * Cria headers com autenticação para requisições HTTP
+   */
+  private getAuthHeaders(): HeadersInit {
+    const token = getTokenFromLocalStorage();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return headers;
+  }
+
+  /**
    * Atualiza os totais do carrinho
    */
   private updateCartTotals(cart: CartData): void {
@@ -77,7 +94,10 @@ export class CartService {
       }
 
       // Se estamos no cliente, fazer requisição HTTP
-      const response = await fetch(`${this.baseUrl}?sessionId=${currentSessionId}`);
+      const response = await fetch(this.baseUrl, {
+        method: 'GET',
+        headers: this.getAuthHeaders()
+      });
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -174,11 +194,8 @@ export class CartService {
 
       const response = await fetch(this.baseUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify({
-          sessionId: currentSessionId,
           productId,
           quantity
         })
@@ -248,11 +265,8 @@ export class CartService {
 
       const response = await fetch(this.baseUrl, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify({
-          sessionId: currentSessionId,
           productId
         })
       });
@@ -329,11 +343,8 @@ export class CartService {
 
       const response = await fetch(this.baseUrl, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: this.getAuthHeaders(),
         body: JSON.stringify({
-          sessionId: currentSessionId,
           productId,
           quantity
         })
@@ -401,8 +412,9 @@ export class CartService {
       const originalItems = [...store.items];
       store.clearCart();
 
-      const response = await fetch(`${this.baseUrl}?sessionId=${currentSessionId}`, {
-        method: 'DELETE'
+      const response = await fetch(this.baseUrl, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders()
       });
 
       if (!response.ok) {
