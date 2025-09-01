@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/auth-context";
 import { LayoutContent } from "@/components/layout-content";
 import { GlobalCart } from "@/components/global-cart";
 import { CartSyncProvider } from "@/components/cart-sync-provider";
+import { CartInitializer } from "@/components/cart-initializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,16 +40,18 @@ export default function RootLayout({
           <AuthProvider>
             <CartProvider>
               <CartSyncProvider>
-                <ChatProvider>
-                <LayoutContent>
-                  <Navigation />
-                  <main className="min-h-screen">
-                    {children}
-                  </main>
-                </LayoutContent>
-                <Chat />
-                <GlobalCart />
-                </ChatProvider>
+                <CartInitializer>
+                  <ChatProvider>
+                  <LayoutContent>
+                    <Navigation />
+                    <main className="min-h-screen">
+                      {children}
+                    </main>
+                  </LayoutContent>
+                  <Chat />
+                  <GlobalCart />
+                  </ChatProvider>
+                </CartInitializer>
               </CartSyncProvider>
             </CartProvider>
           </AuthProvider>
