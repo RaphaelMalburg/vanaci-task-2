@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { generateJWTToken } from '@/lib/auth-utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,14 +34,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Login bem-sucedido
+    // Login bem-sucedido - gerar token JWT
+    const userData = {
+      id: user.id,
+      username: user.username
+    }
+    const token = generateJWTToken(userData)
+    
     return NextResponse.json(
       { 
         message: 'Login realizado com sucesso',
-        user: {
-          id: user.id,
-          username: user.username
-        }
+        user: userData,
+        token: token
       },
       { status: 200 }
     )

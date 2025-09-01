@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { getGlobalContext } from '../context';
 import type { ToolResult } from '../types';
 import { logger } from '@/lib/logger';
-import { getUserFromLocalStorage } from '@/lib/auth-utils';
+import { getUserFromLocalStorage, getTokenFromLocalStorage, generateJWTToken } from '@/lib/auth-utils';
 
 // Helper function to get user from context or localStorage
 function getUser(): { id: string; username: string } | null {
@@ -34,20 +34,33 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     throw new Error('User must be logged in to use cart');
   }
   
-  // Simulate JWT token (in production, this would come from localStorage or context)
-  const token = `Bearer ${btoa(JSON.stringify(user))}`;
+  // Try to get JWT token from localStorage first
+  let token = getTokenFromLocalStorage();
+  
+  // If no token in localStorage, generate a new JWT
+  if (!token) {
+    console.log('🔑 [Cart Tool Simple] Generating new JWT token for user:', user.username);
+    token = generateJWTToken(user);
+  }
   
   const response = await fetch(`${baseUrl}/api${endpoint}`, {
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': token,
+      'Authorization': `Bearer ${token}`,
       ...options.headers,
     },
     ...options,
   });
   
   if (!response.ok) {
-    const error = await response.json();
+    const errorText = await response.text();
+    console.error('❌ [Cart Tool Simple] API Error:', response.status, errorText);
+    let error;
+    try {
+      error = JSON.parse(errorText);
+    } catch {
+      error = { error: response.statusText };
+    }
     throw new Error(error.error || response.statusText);
   }
   

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getAllGlobalContext, setGlobalContext, getGlobalContext } from '../context';
 import type { ToolResult } from '../types';
 import { logger } from '@/lib/logger';
-import { getUserFromLocalStorage } from '@/lib/auth-utils';
+import { getUserFromLocalStorage, getTokenFromLocalStorage, generateJWTToken } from '@/lib/auth-utils';
 
 // Função para obter dados do usuário do contexto global ou localStorage
 function getUser(): { id: string; username: string } | null {
@@ -37,19 +37,27 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
     throw new Error('Usuário deve estar logado para usar o carrinho');
   }
   
-  // Simular token JWT (em produção, isso viria do localStorage ou contexto)
-  const token = `Bearer ${btoa(JSON.stringify(user))}`;
+  // Tentar obter token JWT do localStorage primeiro
+  let token = getTokenFromLocalStorage();
+  
+  // Se não houver token no localStorage, gerar um novo JWT
+  if (!token) {
+    console.log('🔑 [Cart Tool] Gerando novo token JWT para usuário:', user.username);
+    token = generateJWTToken(user);
+  }
   
   const response = await fetch(`${baseUrl}/api${endpoint}`, {
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': token,
+      'Authorization': `Bearer ${token}`,
       ...options.headers,
     },
     ...options,
   });
   
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ [Cart Tool] API Error:', response.status, errorText);
     throw new Error(`API Error: ${response.statusText}`);
   }
   

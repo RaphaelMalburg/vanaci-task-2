@@ -49,8 +49,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const userData = data.user
+        const token = data.token
         setUser(userData)
         localStorage.setItem('user', JSON.stringify(userData))
+        localStorage.setItem('token', token)
         return true
       } else {
         console.error('Erro no login:', data.error)
@@ -76,8 +78,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const userData = data.user
+        const token = data.token
         setUser(userData)
         localStorage.setItem('user', JSON.stringify(userData))
+        localStorage.setItem('token', token)
         return true
       } else {
         console.error('Erro no registro:', data.error)
@@ -92,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null)
     localStorage.removeItem('user')
+    localStorage.removeItem('token')
   }
 
   return (
