@@ -1,27 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { SimpleCartItem, SimpleCartData, getOrCreateSimpleCart, addToSimpleCart, updateSimpleCartQuantity, removeFromSimpleCart, clearSimpleCart } from '@/lib/cart-storage-simple'
+import { getUserFromRequest } from '@/lib/auth-utils'
+import { getOrCreateUserCart, addToUserCart, updateUserCartQuantity, removeFromUserCart, clearUserCart } from '@/lib/cart-storage-user'
 
-// GET - Obter carrinho por session ID
+// GET - Obter carrinho do usuário autenticado
 export async function GET(request: NextRequest) {
   console.log(`🛒 [Cart API GET] INICIANDO requisição`);
   
   try {
-    const { searchParams } = new URL(request.url)
-    const sessionId = searchParams.get('sessionId')
-    console.log(`🔑 [Cart API GET] SessionId recebido: ${sessionId}`);
-    console.log(`🔑 [Cart API GET] URL completa: ${request.url}`);
-    console.log(`🔑 [Cart API GET] Search params:`, Object.fromEntries(searchParams.entries()));
-
-    if (!sessionId) {
-      console.log(`❌ [Cart API GET] SessionId não fornecido`);
+    const user = getUserFromRequest(request)
+    
+    if (!user) {
+      console.log(`❌ [Cart API GET] Usuário não autenticado`);
       return NextResponse.json(
-        { error: 'Session ID é obrigatório' },
-        { status: 400 }
+        { error: 'Usuário não autenticado' },
+        { status: 401 }
       )
     }
 
-    const cart = await getOrCreateSimpleCart(sessionId)
+    console.log(`🔑 [Cart API GET] Usuário autenticado: ${user.id}`);
+    
+    const cart = await getOrCreateUserCart(user.id)
     console.log(`✅ [Cart API GET] Carrinho obtido:`, cart);
 
     return NextResponse.json(cart)
@@ -39,32 +38,29 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   console.log(`🌐 [API DEBUG] POST /api/cart - Requisição recebida`);
   console.log(`🛒 [DEBUG] === INICIANDO Cart API POST ===`);
-  console.log(`🛒 [DEBUG] Request URL: ${request.url}`);
-  console.log(`🛒 [DEBUG] Request method: ${request.method}`);
-  console.log(`🛒 [DEBUG] Request headers:`, Object.fromEntries(request.headers.entries()));
   
   try {
+    const user = getUserFromRequest(request)
+    
+    if (!user) {
+      console.log(`❌ [Cart API POST] Usuário não autenticado`);
+      return NextResponse.json(
+        { error: 'Usuário não autenticado' },
+        { status: 401 }
+      )
+    }
+
     console.log(`📥 [DEBUG] Parseando body da requisição...`);
     const body = await request.json()
     console.log(`📋 [API DEBUG] Body da requisição:`, body);
-    console.log(`📦 [DEBUG] Body completo recebido:`, JSON.stringify(body, null, 2));
-    
-    const { sessionId, productId, quantity = 1 } = body
-    console.log(`📦 [DEBUG] Dados extraídos:`, { sessionId, productId, quantity });
-    console.log(`📦 [DEBUG] Tipos dos dados:`, { 
-      sessionId: typeof sessionId, 
-      productId: typeof productId, 
-      quantity: typeof quantity 
-    });
-    console.log(`📦 [DEBUG] SessionId valor exato: '${sessionId}'`);
-    console.log(`📦 [DEBUG] SessionId length: ${sessionId?.length || 'undefined'}`);
 
-    if (!sessionId || !productId) {
-      console.log(`❌ [DEBUG] Validação falhou - dados obrigatórios não fornecidos`);
-      console.log(`❌ [DEBUG] sessionId presente: ${!!sessionId}`);
-      console.log(`❌ [DEBUG] productId presente: ${!!productId}`);
+    const { productId, quantity = 1 } = body
+    console.log(`🔑 [DEBUG] Dados extraídos: userId=${user.id}, productId=${productId}, quantity=${quantity}`);
+
+    if (!productId) {
+      console.log(`❌ [DEBUG] Product ID obrigatório`);
       return NextResponse.json(
-        { error: 'Session ID e Product ID são obrigatórios' },
+        { error: 'Product ID é obrigatório' },
         { status: 400 }
       )
     }
@@ -94,13 +90,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Obter carrinho atual
-    console.log(`🛒 [DEBUG] Obtendo carrinho atual para sessionId: ${sessionId}`);
-    let cart: SimpleCartData = await getOrCreateSimpleCart(sessionId)
+    console.log(`🛒 [DEBUG] Obtendo carrinho atual para userId: ${user.id}`);
+    let cart = await getOrCreateUserCart(user.id)
     console.log(`🛒 [DEBUG] Carrinho atual:`, JSON.stringify(cart, null, 2));
 
     // Adicionar item ao carrinho usando a função específica
-    console.log(`➕ [DEBUG] Adicionando item ao carrinho usando addToSimpleCart`);
-    const updatedCart = await addToSimpleCart(sessionId, productId, quantity);
+    console.log(`➕ [DEBUG] Adicionando item ao carrinho usando addToUserCart`);
+    const updatedCart = await addToUserCart(user.id, productId, quantity);
     console.log(`✅ [DEBUG] Item adicionado com sucesso`);
 
     const response = {
@@ -125,19 +121,28 @@ export async function POST(request: NextRequest) {
 // PUT - Atualizar quantidade de item no carrinho
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { sessionId, productId, quantity } = body
-
-    if (!sessionId || !productId || quantity === undefined) {
+    const user = getUserFromRequest(request)
+    
+    if (!user) {
       return NextResponse.json(
-        { error: 'Session ID, Product ID e quantity são obrigatórios' },
+        { error: 'Usuário não autenticado' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { productId, quantity } = body
+
+    if (!productId || quantity === undefined) {
+      return NextResponse.json(
+        { error: 'Product ID e quantity são obrigatórios' },
         { status: 400 }
       )
     }
 
     if (quantity <= 0) {
       // Remover item se quantidade for 0 ou negativa
-      const updatedCart = await removeFromSimpleCart(sessionId, productId)
+      const updatedCart = await removeFromUserCart(user.id, productId)
       return NextResponse.json({
         message: 'Item removido do carrinho',
         cart: updatedCart
@@ -163,7 +168,7 @@ export async function PUT(request: NextRequest) {
       }
 
       // Atualizar quantidade
-      const updatedCart = await updateSimpleCartQuantity(sessionId, productId, quantity)
+      const updatedCart = await updateUserCartQuantity(user.id, productId, quantity)
       
       return NextResponse.json({
         message: 'Carrinho atualizado',
@@ -182,33 +187,32 @@ export async function PUT(request: NextRequest) {
 // DELETE - Remover item do carrinho
 export async function DELETE(request: NextRequest) {
   try {
+    const user = getUserFromRequest(request)
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Usuário não autenticado' },
+        { status: 401 }
+      )
+    }
+
     // Tentar obter dados do body primeiro (para clearAll)
-    let sessionId: string | null = null;
     let productId: string | null = null;
     let clearAll = false;
     
     try {
       const body = await request.json();
-      sessionId = body.sessionId;
       productId = body.productId;
       clearAll = body.clearAll || false;
     } catch {
       // Se não conseguir parsear o body, usar query params
       const { searchParams } = new URL(request.url);
-      sessionId = searchParams.get('sessionId');
       productId = searchParams.get('productId');
-    }
-
-    if (!sessionId) {
-      return NextResponse.json(
-        { error: 'Session ID é obrigatório' },
-        { status: 400 }
-      )
     }
 
     // Se clearAll for true, limpar todo o carrinho
     if (clearAll) {
-      const cart = await clearSimpleCart(sessionId);
+      const cart = await clearUserCart(user.id);
       
       return NextResponse.json({
         message: 'Carrinho limpo com sucesso',
@@ -225,7 +229,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Remover item específico
-    const cart = await removeFromSimpleCart(sessionId, productId)
+    const cart = await removeFromUserCart(user.id, productId)
 
     return NextResponse.json({
       message: 'Item removido do carrinho',
