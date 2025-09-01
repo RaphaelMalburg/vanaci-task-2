@@ -38,7 +38,7 @@ export const searchProductsTool = tool({
       }
       
       const productsList = products
-        .map(product => `- ${product.name} - € ${product.price.toFixed(2)} (ID: ${product.id})`)
+        .map(product => `- ${product.name} - €${product.price.toFixed(2)} (ID: ${product.id})`)
         .join('\n');
       
       return {
@@ -80,7 +80,7 @@ export const getProductDetailsTool = tool({
       
       return {
         success: true,
-        message: `Produto: ${product.name}\nPreço: R$ ${product.price.toFixed(2)}\nDescrição: ${product.description || 'Sem descrição'}\nCategoria: ${product.category || 'Sem categoria'}`,
+        message: `Produto: ${product.name}\nPreço: €${product.price.toFixed(2)}\nDescrição: ${product.description || 'Sem descrição'}\nCategoria: ${product.category || 'Sem categoria'}`,
         data: product,
       };
     } catch (error) {
@@ -161,7 +161,7 @@ export const listRecommendedProductsTool = tool({
       }
       
       const productsList = products
-        .map(product => `• ${product.name} - R$ ${product.price.toFixed(2)} (ID: ${product.id})`)
+        .map(product => `• ${product.name} - €${product.price.toFixed(2)} (ID: ${product.id})`)
         .join('\n');
       
       return {
@@ -205,7 +205,7 @@ export const getPromotionalProductsTool = tool({
       }
       
       const productsList = promotionalProducts
-        .map(product => `• ${product.name} - R$ ${product.price.toFixed(2)} (ID: ${product.id})`)
+        .map(product => `• ${product.name} - €${product.price.toFixed(2)} (ID: ${product.id})`)
         .join('\n');
       
       return {

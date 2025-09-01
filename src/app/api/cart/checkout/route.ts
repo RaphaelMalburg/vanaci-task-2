@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getOrCreateCart, deleteCart } from '@/lib/cart-storage'
+import { getOrCreateSimpleCart, clearSimpleCart } from '@/lib/cart-storage-simple'
 
 // POST - Finalizar compra
 export async function POST(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Obter carrinho
-    const cart = await getOrCreateCart(sessionId)
+    const cart = await getOrCreateSimpleCart(sessionId)
     if (!cart || cart.items.length === 0) {
       return NextResponse.json(
         { error: 'Carrinho vazio ou não encontrado' },
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Limpar carrinho após checkout bem-sucedido
-    await deleteCart(sessionId)
+    await clearSimpleCart(sessionId)
 
     return NextResponse.json({
       message: 'Pedido realizado com sucesso',

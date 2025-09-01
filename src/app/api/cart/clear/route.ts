@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { deleteCart } from '@/lib/cart-storage'
+import { clearSimpleCart } from '@/lib/cart-storage-simple'
 
 // POST - Limpar carrinho
 export async function POST(request: NextRequest) {
@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Limpar carrinho
-    await deleteCart(sessionId)
+    await clearSimpleCart(sessionId)
 
     return NextResponse.json({
       message: 'Carrinho limpo com sucesso',
@@ -48,7 +48,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Limpar carrinho
-    await deleteCart(sessionId)
+    await clearSimpleCart(sessionId)
 
     return NextResponse.json({
       message: 'Carrinho limpo com sucesso',

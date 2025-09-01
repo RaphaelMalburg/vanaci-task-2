@@ -8,8 +8,10 @@ import { Moon, Sun, Menu, X, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { useCartStore } from "@/stores/cart-store";
 import { useCartContext } from "@/contexts/cart-context";
+import { useAuth } from "@/contexts/auth-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AuthForm } from "@/components/auth-form";
 
 const navigation = [
   { name: "Início", href: "/" },
@@ -22,7 +24,9 @@ export function Navigation() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showAuthForm, setShowAuthForm] = useState(false);
   const itemCount = useCartStore((state) => state.getItemCount());
+  const { user, logout } = useAuth();
 
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
@@ -86,6 +90,28 @@ export function Navigation() {
             >
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
             </button>
+            
+            {/* Auth Button */}
+            {user ? (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600 dark:text-gray-300">Olá, {user.username}</span>
+                <Button
+                  onClick={logout}
+                  variant="outline"
+                  size="sm"
+                >
+                  Sair
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={() => setShowAuthForm(true)}
+                variant="outline"
+                size="sm"
+              >
+                Entrar
+              </Button>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -143,10 +169,60 @@ export function Navigation() {
                   {item.name}
                 </Link>
               ))}
+              
+              {/* Mobile Auth */}
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                {user ? (
+                  <div className="flex flex-col space-y-2">
+                    <span className="px-3 py-2 text-sm text-gray-600 dark:text-gray-300">Olá, {user.username}</span>
+                    <Button
+                      onClick={() => {
+                        logout();
+                        setIsMenuOpen(false);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="mx-3"
+                    >
+                      Sair
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      setShowAuthForm(true);
+                      setIsMenuOpen(false);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="mx-3"
+                  >
+                    Entrar
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
       </div>
+      
+      {/* Auth Modal */}
+      {showAuthForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Autenticação</h2>
+              <button
+                onClick={() => setShowAuthForm(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <AuthForm onSuccess={() => setShowAuthForm(false)} />
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

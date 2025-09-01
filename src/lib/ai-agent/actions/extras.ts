@@ -5,8 +5,8 @@ import type { ToolResult, StoreInfo, Promotion } from '../types';
 // Função auxiliar para fazer chamadas à API
 async function apiCall(endpoint: string, options: RequestInit = {}) {
   // Usar URL absoluta para funcionar no contexto do servidor
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? 'https://your-domain.com' 
+  const baseUrl = process.env.NODE_ENV === 'production'
+    ? process.env.NEXT_PUBLIC_APP_URL || 'https://vanaci-task-2.vercel.app'
     : 'http://localhost:3007';
   
   const response = await fetch(`${baseUrl}/api${endpoint}`, {

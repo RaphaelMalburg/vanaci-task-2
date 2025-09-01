@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { CartData, getOrCreateCart, saveCart } from '@/lib/cart-storage'
+import { SimpleCartData, removeFromSimpleCart } from '@/lib/cart-storage-simple'
 
 // DELETE - Remover item específico do carrinho
 export async function DELETE(request: NextRequest) {
@@ -14,26 +14,18 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const cart = await getOrCreateCart(sessionId)
-
-    // Verificar se o item existe no carrinho
-    const itemExists = cart.items.some(item => item.id === productId)
-    if (!itemExists) {
+    // Remover item específico do carrinho
+    const success = await removeFromSimpleCart(sessionId, productId)
+    
+    if (!success) {
       return NextResponse.json(
         { error: 'Item não encontrado no carrinho' },
         { status: 404 }
       )
     }
 
-    // Remover item específico
-    cart.items = cart.items.filter(item => item.id !== productId)
-
-    // Salvar carrinho atualizado
-    await saveCart(cart)
-
     return NextResponse.json({
       message: 'Item removido do carrinho com sucesso',
-      cart,
       removedProductId: productId
     })
   } catch (error) {
@@ -58,26 +50,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const cart = await getOrCreateCart(sessionId)
-
-    // Verificar se o item existe no carrinho
-    const itemExists = cart.items.some(item => item.id === productId)
-    if (!itemExists) {
+    // Remover item específico do carrinho
+    const success = await removeFromSimpleCart(sessionId, productId)
+    
+    if (!success) {
       return NextResponse.json(
         { error: 'Item não encontrado no carrinho' },
         { status: 404 }
       )
     }
 
-    // Remover item específico
-    cart.items = cart.items.filter(item => item.id !== productId)
-
-    // Salvar carrinho atualizado
-    await saveCart(cart)
-
     return NextResponse.json({
       message: 'Item removido do carrinho com sucesso',
-      cart,
       removedProductId: productId
     })
   } catch (error) {

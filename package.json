@@ -31,10 +31,11 @@
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
-    "@upstash/redis": "^1.35.3",
+    "@radix-ui/react-tabs": "^1.1.13",
     "ai": "^5.0.25",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "lightningcss": "^1.30.1",
     "lucide-react": "^0.541.0",
     "next": "15.5.0",
     "nextjs-audio-to-text-recognition": "^1.12.3",
@@ -44,6 +45,7 @@
     "react-dom": "19.1.0",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
+    "zod": "^3.23.8",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

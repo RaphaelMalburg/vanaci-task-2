@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { CartItem, CartData, getOrCreateCart, saveCart } from '@/lib/cart-storage'
+import { SimpleCartItem, SimpleCartData, getOrCreateSimpleCart, addToSimpleCart, updateSimpleCartQuantity, removeFromSimpleCart, clearSimpleCart } from '@/lib/cart-storage-simple'
 
 // GET - Obter carrinho por session ID
 export async function GET(request: NextRequest) {
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const cart = await getOrCreateCart(sessionId)
+    const cart = await getOrCreateSimpleCart(sessionId)
     console.log(`✅ [Cart API GET] Carrinho obtido:`, cart);
 
     return NextResponse.json(cart)
@@ -95,56 +95,17 @@ export async function POST(request: NextRequest) {
 
     // Obter carrinho atual
     console.log(`🛒 [DEBUG] Obtendo carrinho atual para sessionId: ${sessionId}`);
-    let cart: CartData = await getOrCreateCart(sessionId)
+    let cart: SimpleCartData = await getOrCreateSimpleCart(sessionId)
     console.log(`🛒 [DEBUG] Carrinho atual:`, JSON.stringify(cart, null, 2));
 
-    // Verificar se item já existe no carrinho
-    console.log(`🔍 [DEBUG] Verificando se produto já existe no carrinho...`);
-    const existingItemIndex = cart.items.findIndex(item => item.id === productId)
-    console.log(`🔍 [DEBUG] Índice do item existente: ${existingItemIndex}`);
-    
-    if (existingItemIndex >= 0) {
-      console.log(`🔄 [DEBUG] Item já existe no carrinho - atualizando quantidade`);
-      console.log(`🔄 [DEBUG] Quantidade atual: ${cart.items[existingItemIndex].quantity}`);
-      // Atualizar quantidade
-      const newQuantity = cart.items[existingItemIndex].quantity + quantity
-      console.log(`🔄 [DEBUG] Nova quantidade calculada: ${newQuantity}`);
-      
-      if (newQuantity > product.stock) {
-        console.log(`❌ [DEBUG] Nova quantidade excede estoque: ${newQuantity} > ${product.stock}`);
-        return NextResponse.json(
-          { error: 'Quantidade excede estoque disponível' },
-          { status: 400 }
-        )
-      }
-      
-      cart.items[existingItemIndex].quantity = newQuantity
-      console.log(`✅ [DEBUG] Quantidade atualizada para: ${newQuantity}`);
-    } else {
-      console.log(`➕ [DEBUG] Adicionando novo item ao carrinho`);
-      const newItem = {
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        imagePath: product.image,
-        category: product.category,
-        quantity
-      };
-      console.log(`➕ [DEBUG] Novo item:`, JSON.stringify(newItem, null, 2));
-      // Adicionar novo item
-      cart.items.push(newItem)
-      console.log(`✅ [DEBUG] Item adicionado. Total de itens no carrinho: ${cart.items.length}`);
-    }
-
-    console.log(`🛒 [DEBUG] Carrinho antes de salvar:`, JSON.stringify(cart, null, 2));
-    // Salvar carrinho
-    console.log(`💾 [DEBUG] Salvando carrinho...`);
-    await saveCart(cart)
-    console.log(`💾 [DEBUG] Carrinho salvo com sucesso`);
+    // Adicionar item ao carrinho usando a função específica
+    console.log(`➕ [DEBUG] Adicionando item ao carrinho usando addToSimpleCart`);
+    const updatedCart = await addToSimpleCart(sessionId, productId, quantity);
+    console.log(`✅ [DEBUG] Item adicionado com sucesso`);
 
     const response = {
       message: 'Item adicionado ao carrinho',
-      cart
+      cart: updatedCart
     };
     console.log(`✅ [DEBUG] Resposta final:`, JSON.stringify(response, null, 2));
     console.log(`✅ [API DEBUG] POST /api/cart - Sucesso, retornando carrinho:`, cart);
@@ -174,11 +135,13 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const cart = await getOrCreateCart(sessionId)
-
     if (quantity <= 0) {
       // Remover item se quantidade for 0 ou negativa
-      cart.items = cart.items.filter(item => item.id !== productId)
+      const updatedCart = await removeFromSimpleCart(sessionId, productId)
+      return NextResponse.json({
+        message: 'Item removido do carrinho',
+        cart: updatedCart
+      })
     } else {
       // Verificar estoque
       const product = await prisma.product.findUnique({
@@ -200,24 +163,13 @@ export async function PUT(request: NextRequest) {
       }
 
       // Atualizar quantidade
-      const itemIndex = cart.items.findIndex(item => item.id === productId)
-      if (itemIndex >= 0) {
-        cart.items[itemIndex].quantity = quantity
-      } else {
-        return NextResponse.json(
-          { error: 'Item não encontrado no carrinho' },
-          { status: 404 }
-        )
-      }
+      const updatedCart = await updateSimpleCartQuantity(sessionId, productId, quantity)
+      
+      return NextResponse.json({
+        message: 'Carrinho atualizado',
+        cart: updatedCart
+      })
     }
-
-    // Salvar carrinho
-    await saveCart(cart)
-
-    return NextResponse.json({
-      message: 'Carrinho atualizado',
-      cart
-    })
   } catch (error) {
     console.error('Erro ao atualizar carrinho:', error)
     return NextResponse.json(
@@ -256,14 +208,11 @@ export async function DELETE(request: NextRequest) {
 
     // Se clearAll for true, limpar todo o carrinho
     if (clearAll) {
-      const cart = await getOrCreateCart(sessionId);
-      cart.items = [];
-      cart.total = 0;
-      await saveCart(cart);
+      const cart = await clearSimpleCart(sessionId);
       
       return NextResponse.json({
         message: 'Carrinho limpo com sucesso',
-        ...cart
+        cart
       });
     }
 
@@ -275,17 +224,12 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const cart = await getOrCreateCart(sessionId)
-
     // Remover item específico
-    cart.items = cart.items.filter(item => item.id !== productId)
-
-    // Salvar carrinho
-    await saveCart(cart)
+    const cart = await removeFromSimpleCart(sessionId, productId)
 
     return NextResponse.json({
       message: 'Item removido do carrinho',
-      ...cart
+      cart
     })
   } catch (error) {
     console.error('Erro ao remover item do carrinho:', error)

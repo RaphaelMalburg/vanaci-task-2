@@ -5,6 +5,7 @@ import { Navigation } from "@/components/navigation";
 import { Chat, ChatProvider } from "@/components/chat";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { CartProvider } from "@/contexts/cart-context";
+import { AuthProvider } from "@/contexts/auth-context";
 import { LayoutContent } from "@/components/layout-content";
 import { GlobalCart } from "@/components/global-cart";
 import { CartSyncProvider } from "@/components/cart-sync-provider";
@@ -35,9 +36,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900 transition-colors duration-300`}
       >
         <ThemeProvider>
-          <CartProvider>
-            <CartSyncProvider>
-              <ChatProvider>
+          <AuthProvider>
+            <CartProvider>
+              <CartSyncProvider>
+                <ChatProvider>
                 <LayoutContent>
                   <Navigation />
                   <main className="min-h-screen">
@@ -46,9 +48,10 @@ export default function RootLayout({
                 </LayoutContent>
                 <Chat />
                 <GlobalCart />
-              </ChatProvider>
-            </CartSyncProvider>
-          </CartProvider>
+                </ChatProvider>
+              </CartSyncProvider>
+            </CartProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
