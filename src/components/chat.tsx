@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, createContext, useContext } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Send, Bot, User, X, Mic, MicOff } from "lucide-react";
+import { MessageCircle, Send, Bot, User, X, Mic, MicOff, Trash2 } from "lucide-react";
 import { useNextjsAudioToTextRecognition } from "nextjs-audio-to-text-recognition";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/hooks/useCart";
@@ -116,6 +116,30 @@ export function Chat() {
       handleStopVoice();
     } else {
       handleStartVoice();
+    }
+  };
+
+  const clearChat = async () => {
+    try {
+      // Limpar mensagens localmente
+      setMessages([
+        {
+          id: "1",
+          text: "Olá! Sou seu assistente virtual da farmácia. Como posso ajudá-lo hoje?",
+          isUser: false,
+          timestamp: new Date(),
+        },
+      ]);
+
+      // Limpar sessão no backend
+      if (sessionId) {
+        await fetch(`/api/ai-chat?sessionId=${sessionId}`, {
+          method: 'DELETE',
+        });
+        console.log('🧹 Chat limpo e sessão resetada');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao limpar chat:', error);
     }
   };
 
@@ -322,13 +346,23 @@ export function Chat() {
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Powered by AI Agent • Sessão: {sessionId.slice(-8)}</p>
           </div>
-          <Button
-            onClick={() => setIsChatOpen(false)}
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Button
+              onClick={clearChat}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+              title="Limpar conversa">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => setIsChatOpen(false)}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {/* Messages Area */}
