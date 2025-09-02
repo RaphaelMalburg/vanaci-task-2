@@ -226,10 +226,58 @@ export const getPromotionalProductsTool = tool({
 });
 
 // Exportar todas as tools de produtos
+// Tool: Redirecionar para página do produto
+export const redirectToProductTool = tool({
+  description: 'Redireciona o usuário para a página específica de um produto',
+  inputSchema: z.object({
+    productId: z.string().describe('ID do produto para redirecionamento'),
+    productName: z.string().describe('Nome do produto mencionado'),
+  }),
+  execute: async ({ productId, productName }: {
+    productId: string;
+    productName: string;
+  }) => {
+    logger.info('Redirecionando para produto', { productId, productName })
+    
+    try {
+      const productService = ProductService.getInstance()
+      const product = await productService.getProductById(productId)
+      
+      if (!product) {
+        return {
+          success: false,
+          message: `Produto com ID ${productId} não encontrado.`,
+          data: { productId, productName },
+        };
+      }
+      
+      return {
+        success: true,
+        message: `🔗 Redirecionando para a página do ${productName}...`,
+        data: { 
+          redirect: true,
+          productId,
+          productName,
+          url: `/products/${productId}`,
+          product
+        },
+      };
+    } catch (error) {
+      logger.error('Erro ao redirecionar para produto', { error, productId, productName })
+      return {
+        success: false,
+        message: `Erro ao redirecionar para ${productName}. Tente novamente.`,
+        data: { productId, productName },
+      };
+    }
+  },
+});
+
 export const productTools = {
   search_products: searchProductsTool,
   get_product_details: getProductDetailsTool,
   list_categories: listCategoriesTool,
   list_recommended_products: listRecommendedProductsTool,
   get_promotional_products: getPromotionalProductsTool,
+  redirect_to_product: redirectToProductTool,
 };

@@ -7,6 +7,7 @@ import { MessageCircle, Send, Bot, User, X, Mic, MicOff, Trash2 } from "lucide-r
 import { useNextjsAudioToTextRecognition } from "nextjs-audio-to-text-recognition";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/hooks/useCart";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 // Context para controlar o estado do chat
@@ -48,6 +49,19 @@ export function Chat() {
   const { isChatOpen, setIsChatOpen } = useChatContext();
   const { user } = useAuth();
   const { syncCart } = useCart();
+  const router = useRouter();
+  
+  // Função para processar redirecionamentos
+  const processRedirect = (toolResult: any) => {
+    if (toolResult && toolResult.data && toolResult.data.redirect && toolResult.data.url) {
+      console.log('🔗 Redirecionamento detectado:', toolResult.data.url);
+      // Aguardar um pouco antes de redirecionar para permitir que o usuário veja a mensagem
+      setTimeout(() => {
+        router.push(toolResult.data.url);
+        console.log('✅ Redirecionando para:', toolResult.data.url);
+      }, 2000);
+    }
+  };
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -273,6 +287,12 @@ export function Chat() {
                          console.error('❌ Erro ao sincronizar carrinho:', error);
                        }
                      }, 1500);
+                   }
+                   
+                   // Verificar se é uma ação de redirecionamento
+                   if (parsed.content && parsed.content.toolName === 'redirect_to_product' && parsed.content.result) {
+                     console.log('🔗 Ação de redirecionamento detectada:', parsed.content.result);
+                     processRedirect(parsed.content.result);
                    }
                 } else if (parsed.content && typeof parsed.content === 'string') {
                   // Fallback para conteúdo direto
