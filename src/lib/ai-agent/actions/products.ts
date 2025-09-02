@@ -38,7 +38,10 @@ export const searchProductsTool = tool({
       }
       
       const productsList = products
-        .map(product => `- ${product.name} - €${product.price.toFixed(2)} (ID: ${product.id})`)
+        .map(product => {
+          const imageInfo = product.image ? ` 📷 [Imagem: ${product.image}]` : '';
+          return `- ${product.name} - €${product.price.toFixed(2)}${imageInfo} (ID: ${product.id})`;
+        })
         .join('\n');
       
       return {
@@ -78,9 +81,11 @@ export const getProductDetailsTool = tool({
       
       logger.info('Detalhes do produto obtidos', { productId, name: product.name })
       
+      const imageInfo = product.image ? `\n📷 Imagem: ${product.image}` : '';
+      
       return {
         success: true,
-        message: `Produto: ${product.name}\nPreço: €${product.price.toFixed(2)}\nDescrição: ${product.description || 'Sem descrição'}\nCategoria: ${product.category || 'Sem categoria'}`,
+        message: `Produto: ${product.name}\nPreço: €${product.price.toFixed(2)}\nDescrição: ${product.description || 'Sem descrição'}\nCategoria: ${product.category || 'Sem categoria'}${imageInfo}`,
         data: product,
       };
     } catch (error) {

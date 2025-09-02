@@ -7,6 +7,7 @@ import { MessageCircle, Send, Bot, User, X, Mic, MicOff, Trash2 } from "lucide-r
 import { useNextjsAudioToTextRecognition } from "nextjs-audio-to-text-recognition";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/hooks/useCart";
+import Image from "next/image";
 
 // Context para controlar o estado do chat
 const ChatContext = createContext<{
@@ -27,6 +28,20 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  images?: string[];
+}
+
+// Função para extrair URLs de imagens das mensagens
+function extractImageUrls(text: string): string[] {
+  const imageRegex = /📷 \[Imagem: ([^\]]+)\]/g;
+  const matches = [];
+  let match;
+  
+  while ((match = imageRegex.exec(text)) !== null) {
+    matches.push(match[1]);
+  }
+  
+  return matches;
 }
 
 export function Chat() {
@@ -229,11 +244,14 @@ export function Chat() {
                 if (parsed.type === 'text' && parsed.content) {
                   // Conteúdo de texto normal
                   setMessages((prev) =>
-                    prev.map((msg) =>
-                      msg.id === assistantMessage.id
-                        ? { ...msg, text: msg.text + parsed.content }
-                        : msg
-                    )
+                    prev.map((msg) => {
+                      if (msg.id === assistantMessage.id) {
+                        const newText = msg.text + parsed.content;
+                        const images = extractImageUrls(newText);
+                        return { ...msg, text: newText, images: images.length > 0 ? images : undefined };
+                      }
+                      return msg;
+                    })
                   );
                 } else if (parsed.type === 'tool_call' && parsed.content) {
                   // Tool call - não adicionar ao texto, apenas logar
@@ -259,11 +277,14 @@ export function Chat() {
                 } else if (parsed.content && typeof parsed.content === 'string') {
                   // Fallback para conteúdo direto
                   setMessages((prev) =>
-                    prev.map((msg) =>
-                      msg.id === assistantMessage.id
-                        ? { ...msg, text: msg.text + parsed.content }
-                        : msg
-                    )
+                    prev.map((msg) => {
+                      if (msg.id === assistantMessage.id) {
+                        const newText = msg.text + parsed.content;
+                        const images = extractImageUrls(newText);
+                        return { ...msg, text: newText, images: images.length > 0 ? images : undefined };
+                      }
+                      return msg;
+                    })
                   );
                 }
                 
@@ -388,6 +409,28 @@ export function Chat() {
                       {message.isUser && <User className="h-5 w-5 mt-0.5 text-white flex-shrink-0" />}
                       <div className="flex-1">
                         <p className="text-sm leading-relaxed">{message.text}</p>
+                        
+                        {/* Renderizar imagens se disponíveis */}
+                        {message.images && message.images.length > 0 && (
+                          <div className="mt-3 grid grid-cols-2 gap-2">
+                            {message.images.map((imageUrl, imgIndex) => (
+                              <div key={imgIndex} className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
+                                <Image
+                                  src={imageUrl}
+                                  alt={`Produto ${imgIndex + 1}`}
+                                  fill
+                                  className="object-cover"
+                                  sizes="(max-width: 768px) 50vw, 25vw"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
                         <p className={`text-xs mt-1 transition-colors duration-300 ${message.isUser ? "text-blue-100 dark:text-blue-200" : "text-gray-500 dark:text-gray-400"}`}>
                           {isClient
                             ? message.timestamp.toLocaleTimeString([], {
