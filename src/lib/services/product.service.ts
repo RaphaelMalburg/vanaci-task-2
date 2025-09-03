@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma'
-import type { Product as PrismaProduct } from '@prisma/client'
 import { logger } from '@/lib/logger'
 import type { Product, DatabaseProduct } from '@/lib/types'
 import { databaseProductToProduct } from '@/lib/types'

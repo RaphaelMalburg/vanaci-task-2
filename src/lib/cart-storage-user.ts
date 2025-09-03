@@ -47,7 +47,7 @@ export async function getOrCreateUserCart(userId: string): Promise<UserCartData>
     // Converter para formato esperado
     const cartData: UserCartData = {
       userId,
-      items: userCart.items.map(item => ({
+      items: userCart.items.map((item: any) => ({
         id: item.productId,
         name: item.name,
         price: item.price,
@@ -55,7 +55,7 @@ export async function getOrCreateUserCart(userId: string): Promise<UserCartData>
         image: item.image || undefined
       })),
       total: userCart.total,
-      itemCount: userCart.items.reduce((sum, item) => sum + item.quantity, 0)
+      itemCount: userCart.items.reduce((sum: number, item: any) => sum + item.quantity, 0)
     }
 
     console.log(`✅ [UserCart] Carrinho obtido:`, cartData)
@@ -272,7 +272,7 @@ async function updateCartTotal(cartId: string): Promise<void> {
       where: { cartId }
     })
 
-    const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0)
 
     await prisma.userCart.update({
       where: { id: cartId },

@@ -72,7 +72,7 @@ export class SessionService {
         if (dbSession) {
           const session: AgentSession = {
             id: sessionId,
-            messages: dbSession.messages.map(msg => ({
+            messages: dbSession.messages.map((msg: any) => ({
               role: msg.role as 'user' | 'assistant' | 'system',
               content: msg.content,
               timestamp: msg.timestamp,
@@ -175,9 +175,9 @@ export class SessionService {
           orderBy: { updatedAt: 'desc' }
         })
 
-        const sessions = dbSessions.map(dbSession => ({
+        const sessions = dbSessions.map((dbSession: any) => ({
           id: dbSession.sessionId,
-          messages: dbSession.messages.map(msg => ({
+          messages: dbSession.messages.map((msg: any) => ({
             role: msg.role as 'user' | 'assistant' | 'system',
             content: msg.content,
             timestamp: msg.timestamp,
@@ -187,7 +187,7 @@ export class SessionService {
         }))
 
         // Sincronizar com memória
-        sessions.forEach(session => {
+        sessions.forEach((session: AgentSession) => {
           this.sessions.set(session.id, session)
         })
 

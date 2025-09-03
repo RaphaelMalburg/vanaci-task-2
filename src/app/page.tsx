@@ -2,42 +2,68 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { BackgroundBeams } from "@/components/ui/background-beams";
+import { Spotlight } from "@/components/ui/spotlight";
+import { Sparkles } from "@/components/ui/sparkles";
+import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
+import Image from "next/image";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 transition-all duration-500">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-800 dark:via-blue-900 dark:to-indigo-900 text-white py-24 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2760%27%20height%3D%2760%27%20viewBox%3D%270%200%2060%2060%27%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%3E%3Cg%20fill%3D%27none%27%20fill-rule%3D%27evenodd%27%3E%3Cg%20fill%3D%27%23ffffff%27%20fill-opacity%3D%270.05%27%3E%3Ccircle%20cx%3D%2730%27%20cy%3D%2730%27%20r%3D%272%27/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        {/* Aceternity Background Effects */}
+        <BackgroundBeams className="absolute inset-0" />
+        <Spotlight className="absolute -top-40 left-0 md:left-60 md:-top-20" fill="white" />
         
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-blue-100 text-sm font-medium mb-6 border border-white/20">
-              Sua farmácia de confiança há mais de 15 anos
-            </div>
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white leading-tight">
-              Farmácia Vanaci
-              <br />
-              <span className="text-4xl md:text-6xl text-blue-100">
-                Cuidando da Sua Saúde
-              </span>
-            </h1>
-            
-            <p className="text-xl md:text-2xl mb-12 text-blue-50 max-w-4xl mx-auto leading-relaxed">
-              Medicamentos de qualidade, atendimento especializado e a confiança que você merece. 
-              <br className="hidden md:block" />Sua saúde é nossa prioridade há mais de 15 anos.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="text-center lg:text-left">
+              <Sparkles className="inline-block mb-6">
+                <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-blue-100 text-sm font-medium border border-white/20">
+                  Sua farmácia de confiança há mais de 15 anos
+                </div>
+              </Sparkles>
+              
+              <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white leading-tight">
+                Farmácia Vanaci
+                <br />
+                <span className="text-4xl md:text-6xl text-blue-100">
+                  Cuidando da Sua Saúde
+                </span>
+              </h1>
+              
+              <p className="text-xl md:text-2xl mb-12 text-blue-50 max-w-4xl mx-auto lg:mx-0 leading-relaxed">
+                Medicamentos de qualidade, atendimento especializado e a confiança que você merece. 
+                <br className="hidden md:block" />Sua saúde é nossa prioridade há mais de 15 anos.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center">
                 <Link href="/products">
-                  <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50 text-lg px-8 py-4 font-semibold shadow-lg border-0">
+                  <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50 text-lg px-8 py-4 font-semibold shadow-lg border-0 hover:scale-105 transition-transform duration-300">
                     Explorar Produtos
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-blue-700 text-lg px-8 py-4 font-semibold">
+                <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-blue-700 text-lg px-8 py-4 font-semibold hover:scale-105 transition-transform duration-300">
                   Falar com Farmacêutico
                 </Button>
               </div>
+            </div>
+            
+            <div className="relative">
+              <div className="relative z-10">
+                <Image
+                  src="/hero.png"
+                  alt="Farmácia Vanaci - Cuidando da sua saúde"
+                  width={800}
+                  height={600}
+                  className="w-full h-auto rounded-2xl shadow-2xl"
+                  priority
+                />
+              </div>
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-2xl blur-2xl opacity-20 animate-pulse"></div>
+            </div>
           </div>
         </div>
         
@@ -93,71 +119,72 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="glass-card group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
-              <CardHeader className="text-center pb-8">
+          <BentoGrid className="max-w-4xl mx-auto">
+            <BentoGridItem
+              title="Produtos de Qualidade Premium"
+              description="Medicamentos rigorosamente selecionados de laboratórios certificados, garantindo eficácia e segurança para sua saúde"
+              header={
                 <div className="w-16 h-16 mx-auto mb-6 bg-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <svg className="w-8 h-8 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                   </svg>
                 </div>
-                <CardTitle className="text-xl font-bold text-foreground mb-3">
-                  Produtos de Qualidade Premium
-                </CardTitle>
-                <CardDescription className="text-muted-foreground leading-relaxed">
-                  Medicamentos rigorosamente selecionados de laboratórios certificados, garantindo eficácia e segurança para sua saúde
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            
-            <Card className="glass-card group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
-              <CardHeader className="text-center pb-8">
+              }
+              className="md:col-span-2"
+            />
+            <BentoGridItem
+              title="Consultoria Farmacêutica"
+              description="Farmacêuticos experientes e qualificados prontos para orientar sobre medicamentos e cuidados com a saúde"
+              header={
                 <div className="w-16 h-16 mx-auto mb-6 bg-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <svg className="w-8 h-8 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
                   </svg>
                 </div>
-                <CardTitle className="text-xl font-bold text-foreground mb-3">
-                  Consultoria Farmacêutica Especializada
-                </CardTitle>
-                <CardDescription className="text-muted-foreground leading-relaxed">
-                  Farmacêuticos experientes e qualificados prontos para orientar sobre medicamentos e cuidados com a saúde
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            
-            <Card className="glass-card group hover:shadow-2xl hover:-translate-y-2 transition-all duration-500">
-              <CardHeader className="text-center pb-8">
+              }
+              className="md:col-span-1"
+            />
+            <BentoGridItem
+              title="Atendimento Ágil"
+              description="Horários estendidos, chat online 24/7 e atendimento personalizado para sua comodidade e bem-estar"
+              header={
                 <div className="w-16 h-16 mx-auto mb-6 bg-primary rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                   <svg className="w-8 h-8 text-primary-foreground" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
                   </svg>
                 </div>
-                <CardTitle className="text-xl font-bold text-foreground mb-3">
-                  Atendimento Ágil e Conveniente
-                </CardTitle>
-                <CardDescription className="text-muted-foreground leading-relaxed">
-                  Horários estendidos, chat online 24/7 e atendimento personalizado para sua comodidade e bem-estar
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          </div>
+              }
+              className="md:col-span-1"
+            />
+          </BentoGrid>
         </div>
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-full text-green-700 dark:text-green-300 text-sm font-medium mb-6">
-              Mais Procurados
+      <section className="py-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+            <div className="text-center lg:text-left">
+              <div className="inline-flex items-center px-4 py-2 bg-green-100 dark:bg-green-900/30 rounded-full text-green-700 dark:text-green-300 text-sm font-medium mb-6">
+                Mais Procurados
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+                Produtos em Destaque
+              </h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed">
+                Seleção especial dos medicamentos mais procurados pelos nossos clientes
+              </p>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
-              Produtos em Destaque
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Seleção especial dos medicamentos mais procurados pelos nossos clientes
-            </p>
+            <div className="relative">
+              <Image
+                src="/pharmacy-team.svg"
+                alt="Equipe farmacêutica especializada"
+                width={600}
+                height={400}
+                className="w-full h-auto rounded-2xl shadow-lg"
+              />
+            </div>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
@@ -245,22 +272,34 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-blue-950/30 dark:to-indigo-950/50 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center px-4 py-2 bg-blue-100 dark:bg-blue-900/50 rounded-full text-blue-700 dark:text-blue-300 text-sm font-medium mb-6">
-              Depoimentos
+      <section className="py-20 bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-blue-950/30 dark:to-indigo-950/50 transition-colors duration-300 relative overflow-hidden">
+        <Sparkles className="absolute inset-0" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
+            <div className="text-center lg:text-left">
+              <div className="inline-flex items-center px-4 py-2 bg-blue-100 dark:bg-blue-900/50 rounded-full text-blue-700 dark:text-blue-300 text-sm font-medium mb-6">
+                Depoimentos
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900 dark:text-white">
+                O Que Dizem Nossos
+                <br />
+                <span className="text-blue-600 dark:text-blue-400">
+                  Clientes
+                </span>
+              </h2>
+              <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed">
+                Experiências reais de quem confia na qualidade e no atendimento da Farmácia Vanaci
+              </p>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-gray-900 dark:text-white">
-              O Que Dizem Nossos
-              <br />
-              <span className="text-blue-600 dark:text-blue-400">
-                Clientes
-              </span>
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
-              Experiências reais de quem confia na qualidade e no atendimento da Farmácia Vanaci
-            </p>
+            <div className="relative">
+              <Image
+                src="/quality-assurance.svg"
+                alt="Garantia de qualidade e confiança"
+                width={600}
+                height={400}
+                className="w-full h-auto rounded-2xl shadow-lg"
+              />
+            </div>
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
