@@ -208,18 +208,27 @@ export function Navigation() {
       
       {/* Auth Modal */}
       {showAuthForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Autenticação</h2>
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowAuthForm(false)}
+        >
+          <div 
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md transform transition-all duration-200 scale-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-6 pb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Autenticação</h2>
               <button
                 onClick={() => setShowAuthForm(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                aria-label="Fechar"
               >
                 <X size={20} />
               </button>
             </div>
-            <AuthForm onSuccess={() => setShowAuthForm(false)} />
+            <div className="px-6 pb-6">
+              <AuthForm onSuccess={() => setShowAuthForm(false)} />
+            </div>
           </div>
         </div>
       )}

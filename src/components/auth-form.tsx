@@ -70,8 +70,7 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <Card className="w-full max-w-md">
+    <Card className="w-full">
         <CardHeader>
           <CardTitle>Farmácia Vanaci</CardTitle>
           <CardDescription>
@@ -183,6 +182,5 @@ export function AuthForm({ onSuccess }: AuthFormProps) {
           )}
         </CardContent>
       </Card>
-    </div>
   )
 }

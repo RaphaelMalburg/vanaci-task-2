@@ -19,7 +19,7 @@ Este documento lista todas as imagens mockadas criadas para a landing page moder
 **Formato:** SVG
 
 ### 3. quality-assurance.svg
-**Localização:** `/public/quality-assurance.svg`
+**Localização:** `/public/.svg`
 **Descrição:** Ilustração focada em qualidade e confiança. Inclui um escudo com marca de verificação (símbolo de qualidade), certificado, frasco de laboratório, microscópio, pílulas e estrelas de avaliação. Representa o compromisso com a qualidade dos produtos.
 **Uso:** Seção de diferenciais ou garantia de qualidade
 **Dimensões:** 500x400px
