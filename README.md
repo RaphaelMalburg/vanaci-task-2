@@ -1,38 +1,205 @@
-# Farmácia Vanaci
+# Farmácia Vanaci - Sistema de E-commerce com IA
 
-Este é um projeto [Next.js](https://nextjs.org) criado com [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Um sistema de e-commerce moderno para farmácia com assistente de IA integrado, construído com Next.js, TypeScript e LangChain.
 
-## Começando
+## 🚀 Funcionalidades
 
-Primeiro, execute o servidor de desenvolvimento:
+- **E-commerce completo**: Catálogo de produtos, carrinho de compras, checkout
+- **Assistente de IA**: Chat inteligente para ajudar clientes com produtos farmacêuticos
+- **Persistência de sessões**: Conversas salvas no banco de dados com fallback em memória
+- **Arquitetura em camadas**: Serviços organizados e type-safe
+- **Interface moderna**: UI responsiva com Tailwind CSS
 
+## 🏗️ Arquitetura do Sistema
+
+### Camada de Serviços
+
+O sistema utiliza uma arquitetura em camadas com serviços especializados:
+
+- **`ProductService`**: Gerenciamento de produtos e catálogo
+- **`CartService`**: Lógica do carrinho de compras
+- **`SessionService`**: Persistência de sessões de chat
+- **`PharmacyAIAgent`**: Assistente de IA com LangChain
+
+### Banco de Dados
+
+Utiliza Prisma ORM com PostgreSQL (Supabase):
+
+- **`Product`**: Produtos da farmácia
+- **`ChatSession`**: Sessões de conversa
+- **`ChatMessage`**: Mensagens do chat
+
+### AI Agent
+
+O assistente de IA (`PharmacyAIAgent`) oferece:
+
+- Recomendações de produtos farmacêuticos
+- Informações sobre medicamentos
+- Suporte ao cliente
+- Integração com carrinho de compras
+- Persistência de contexto de conversa
+
+## 🛠️ Tecnologias
+
+- **Frontend**: Next.js 15, React, TypeScript
+- **Styling**: Tailwind CSS, shadcn/ui
+- **Backend**: Next.js API Routes
+- **Banco de Dados**: PostgreSQL (Supabase) + Prisma ORM
+- **IA**: LangChain, OpenAI GPT
+- **Testes**: Jest, React Testing Library
+
+## 📦 Instalação
+
+1. **Clone o repositório**:
 ```bash
-npm run dev
-# ou
-yarn dev
-# ou
-pnpm dev
-# ou
-bun dev
+git clone <repository-url>
+cd farmacia-vanaci
 ```
 
-Abra [http://localhost:3000](http://localhost:3000) no seu navegador para ver o resultado.
+2. **Instale as dependências**:
+```bash
+npm install
+```
 
-Você pode começar a editar a página modificando `app/page.tsx`. A página é atualizada automaticamente conforme você edita o arquivo.
+3. **Configure as variáveis de ambiente**:
+```bash
+cp .env.example .env.local
+```
 
-Este projeto usa [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) para otimizar e carregar automaticamente [Geist](https://vercel.com/font), uma nova família de fontes da Vercel.
+Configure as seguintes variáveis:
+```env
+# Database
+DATABASE_URL="postgresql://..."
 
-## Saiba Mais
+# OpenAI
+OPENAI_API_KEY="sk-..."
 
-Para saber mais sobre Next.js, consulte os seguintes recursos:
+# LangChain
+LANGCHAIN_TRACING_V2="true"
+LANGCHAIN_API_KEY="..."
+```
 
-- [Documentação do Next.js](https://nextjs.org/docs) - aprenda sobre recursos e API do Next.js.
-- [Aprenda Next.js](https://nextjs.org/learn) - um tutorial interativo do Next.js.
+4. **Configure o banco de dados**:
+```bash
+npx prisma generate
+npx prisma db push
+```
 
-Você pode conferir [o repositório do Next.js no GitHub](https://github.com/vercel/next.js) - seu feedback e contribuições são bem-vindos!
+5. **Execute o projeto**:
+```bash
+npm run dev
+```
 
-## Deploy na Vercel
+Acesse [http://localhost:3000](http://localhost:3000)
 
-A maneira mais fácil de fazer deploy do seu app Next.js é usar a [Plataforma Vercel](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) dos criadores do Next.js.
+## 🔧 Scripts Disponíveis
 
-Confira nossa [documentação de deploy do Next.js](https://nextjs.org/docs/app/building-your-application/deploying) para mais detalhes.
+- `npm run dev` - Servidor de desenvolvimento
+- `npm run build` - Build de produção
+- `npm run start` - Servidor de produção
+- `npm run lint` - Verificação de código
+- `npm run test` - Execução de testes
+- `npm run test:watch` - Testes em modo watch
+
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── app/                    # App Router (Next.js 13+)
+│   ├── api/               # API Routes
+│   ├── cart/              # Página do carrinho
+│   ├── products/          # Páginas de produtos
+│   └── globals.css        # Estilos globais
+├── components/            # Componentes React
+│   ├── ui/               # Componentes base (shadcn/ui)
+│   ├── cart/             # Componentes do carrinho
+│   ├── chat/             # Componentes do chat
+│   └── products/         # Componentes de produtos
+├── lib/                   # Utilitários e configurações
+│   ├── ai-agent/         # Assistente de IA
+│   ├── services/         # Camada de serviços
+│   ├── types/            # Definições de tipos
+│   ├── utils.ts          # Utilitários gerais
+│   └── logger.ts         # Sistema de logs
+└── prisma/               # Schema do banco de dados
+```
+
+## 🤖 Como Usar o Assistente de IA
+
+O assistente está disponível em todas as páginas através do ícone de chat:
+
+1. **Perguntas sobre produtos**: "Qual remédio para dor de cabeça?"
+2. **Adicionar ao carrinho**: "Adicione Dipirona ao meu carrinho"
+3. **Informações gerais**: "Como tomar este medicamento?"
+4. **Suporte**: "Preciso de ajuda com meu pedido"
+
+## 🧪 Testes
+
+O projeto inclui testes para:
+
+- Componentes React
+- Serviços de negócio
+- API Routes
+- Utilitários
+
+Execute os testes:
+```bash
+npm run test
+```
+
+## 🚀 Deploy
+
+### Vercel (Recomendado)
+
+1. Conecte seu repositório na [Vercel](https://vercel.com)
+2. Configure as variáveis de ambiente
+3. Deploy automático a cada push
+
+### Outras Plataformas
+
+O projeto é compatível com qualquer plataforma que suporte Next.js:
+
+- Netlify
+- Railway
+- Heroku
+- AWS
+- Google Cloud
+
+## 🔒 Segurança
+
+- Validação de entrada em todas as APIs
+- Sanitização de dados do usuário
+- Rate limiting no chat de IA
+- Logs de segurança configuráveis
+
+## 📈 Performance
+
+- Server-side rendering (SSR)
+- Static generation quando possível
+- Otimização de imagens automática
+- Code splitting
+- Caching inteligente
+
+## 🤝 Contribuição
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
+3. Commit suas mudanças (`git commit -m 'Adiciona nova feature'`)
+4. Push para a branch (`git push origin feature/nova-feature`)
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para detalhes.
+
+## 📞 Suporte
+
+Para suporte técnico ou dúvidas:
+
+- Abra uma [issue](https://github.com/seu-usuario/farmacia-vanaci/issues)
+- Entre em contato via email
+- Consulte a documentação da API em `/api-docs`
+
+---
+
+**Desenvolvido com ❤️ para Farmácia Vanaci**

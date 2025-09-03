@@ -3,26 +3,13 @@
 import { useState } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
-
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Trash2, Plus, Minus, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  description: string | null;
-  imagePath: string | null;
-  stock: number;
-  prescription: boolean;
-  manufacturer: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { processCheckout, validateCartNotEmpty } from '@/lib/utils/api';
+import type { Product } from '@/lib/types';
 
 interface CartProps {
   products: Product[];
@@ -31,11 +18,11 @@ interface CartProps {
 }
 
 export function Cart({ products, isOpen, onClose }: CartProps) {
-  const { cart, updateQuantity, removeFromCart, clearCart, getItemCount } = useCart();
+  const { items, total, updateQuantity, removeItem, clearCart, itemCount } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // Melhor sincronização: usar dados do carrinho como fonte principal
-  const cartItems = cart.items.map(cartItem => {
+  const cartItems = (items || []).map(cartItem => {
     const product = products.find(p => p.id === cartItem.id);
     if (product) {
       return { product, quantity: cartItem.quantity };
@@ -47,11 +34,11 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
         name: cartItem.name,
         price: cartItem.price,
         category: cartItem.category,
-        description: null,
-        imagePath: cartItem.imagePath || null,
+        description: '',
+        image: cartItem.imagePath || undefined,
         stock: 999, // Assumir disponível se não encontrado
         prescription: false,
-        manufacturer: null,
+        manufacturer: undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       } as Product,
@@ -69,7 +56,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
     }
 
     if (newQuantity <= 0) {
-      removeFromCart(productId);
+      removeItem(productId);
       toast.success('Item removido do carrinho');
     } else {
       updateQuantity(productId, newQuantity);
@@ -77,23 +64,18 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
   };
 
   const handleCheckout = async () => {
-    if (cartItems.length === 0) {
-      toast.error('Carrinho vazio');
+    if (!validateCartNotEmpty(cartItems)) {
       return;
     }
 
     setIsCheckingOut(true);
     
-    // Simular processo de checkout
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simular sucesso do checkout
-      const orderId = Math.random().toString(36).substr(2, 9).toUpperCase();
-      
-      toast.success(`Pedido ${orderId} realizado com sucesso!`);
-      clearCart();
-      onClose();
+      const orderId = await processCheckout();
+      if (orderId) {
+        clearCart();
+        onClose();
+      }
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error('Erro ao processar pedido. Tente novamente.');
@@ -110,7 +92,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Carrinho ({getItemCount()})
+              Carrinho ({itemCount})
             </h2>
             <button
               onClick={onClose}
@@ -148,7 +130,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => removeFromCart(product.id)}
+                          onClick={() => removeItem(product.id)}
                           className="h-6 w-6 p-0"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -160,9 +142,9 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                   return (
                     <div key={product.id} className="flex gap-3 p-3 border rounded-lg">
                       <div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden flex-shrink-0">
-                        {product.imagePath ? (
+                        {product.image ? (
                           <Image
-                            src={product.imagePath}
+                            src={product.image}
                             alt={product.name}
                             fill
                             className="object-cover"
@@ -194,7 +176,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeFromCart(product.id)}
+                          onClick={() => removeItem(product.id)}
                           className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -235,7 +217,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
-                    <span>R$ {cart.total.toFixed(2)}</span>
+                    <span>R$ {total.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Frete:</span>
@@ -244,7 +226,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total:</span>
-                    <span className="text-green-600">R$ {cart.total.toFixed(2)}</span>
+                    <span className="text-green-600">R$ {total.toFixed(2)}</span>
                   </div>
                 </div>
 

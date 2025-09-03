@@ -24,53 +24,53 @@ const products = [
   // ANALGÉSICOS E ANTI-INFLAMATÓRIOS
   {
     name: 'Dipirona 500mg',
-    description: 'Analgésico e antitérmico para dores e febre',
+    description: 'Analgésico e antitérmico potente para alívio de dores de intensidade leve a moderada e redução da febre. Eficaz contra dor de cabeça, dor de dente, dores musculares, cólicas menstruais e febre. Ação rápida com início do efeito em 30-60 minutos. Pode ser usado por adultos e crianças acima de 3 meses (com orientação médica). Comprimidos de fácil deglutição. Posologia: adultos 1-2 comprimidos até 4 vezes ao dia. Não exceder 4g por dia.',
     category: 'Analgésicos',
-    price: 8.50,
+    price: 4.25,
     stock: 150,
     prescription: false,
     manufacturer: 'EMS',
-    imageUrl: '' // Adicionar URL da imagem aqui
+    image: getImagePath('Dipirona 500mg')
   },
   {
     name: 'Ibuprofeno 600mg',
-    description: 'Anti-inflamatório não esteroidal',
+    description: 'Anti-inflamatório não esteroidal (AINE) com ação analgésica, anti-inflamatória e antitérmica. Indicado para dores musculares, articulares, dor de cabeça, dor de dente, cólicas menstruais e processos inflamatórios. Reduz inchaço, vermelhidão e dor. Especialmente eficaz em lesões esportivas e artrite. Duração de ação de 6-8 horas. Tomar com alimento para reduzir irritação gástrica. Posologia: 1 comprimido 2-3 vezes ao dia.',
     category: 'Anti-inflamatórios',
-    price: 12.90,
+    price: 6.45,
     stock: 80,
     prescription: false,
     manufacturer: 'Medley',
-    imageUrl: ''
+    image: getImagePath('Ibuprofeno 600mg')
   },
   {
     name: 'Paracetamol 750mg',
-    description: 'Analgésico e antitérmico',
+    description: 'Analgésico e antitérmico de primeira escolha para dor e febre. Seguro e eficaz para dor de cabeça, dor muscular, dor de dente, dores articulares leves e febre. Não possui ação anti-inflamatória, sendo mais suave para o estômago. Pode ser usado por gestantes e crianças (com orientação médica). Início de ação em 30-60 minutos com duração de 4-6 horas. Posologia: adultos 1 comprimido até 4 vezes ao dia, respeitando intervalo mínimo de 6 horas.',
     category: 'Analgésicos',
-    price: 6.80,
+    price: 3.40,
     stock: 200,
     prescription: false,
     manufacturer: 'Eurofarma',
-    imageUrl: ''
+    image: getImagePath('Paracetamol 750mg')
   },
   {
     name: 'Diclofenaco Sódico 50mg',
-    description: 'Anti-inflamatório para dores musculares',
+    description: 'Anti-inflamatório não esteroidal potente para dores musculares, articulares e inflamações. Muito eficaz em lesões esportivas, tendinites, bursites, artrite e dores nas costas. Reduz significativamente a inflamação, inchaço e dor. Ação prolongada de 8-12 horas. Recomendado para processos inflamatórios agudos e crônicos. Tomar com alimento. Posologia: 1 comprimido 2-3 vezes ao dia. Não usar por mais de 7 dias sem orientação médica.',
     category: 'Anti-inflamatórios',
-    price: 15.40,
+    price: 7.70,
     stock: 60,
     prescription: false,
     manufacturer: 'Voltaren',
-    imageUrl: ''
+    image: getImagePath('Diclofenaco Sódico 50mg')
   },
   {
     name: 'Nimesulida 100mg',
-    description: 'Anti-inflamatório e analgésico',
+    description: 'Anti-inflamatório e analgésico seletivo com excelente perfil de segurança gástrica. Indicado para dores agudas, inflamações, dor de dente, dor pós-operatória e processos inflamatórios. Possui ação anti-inflamatória potente com menor risco de efeitos colaterais gastrointestinais. Início de ação rápido (30 minutos) com duração de 8-12 horas. Posologia: 1 comprimido 2 vezes ao dia após as refeições. Tratamento máximo de 15 dias.',
     category: 'Anti-inflamatórios',
-    price: 18.70,
+    price: 9.35,
     stock: 45,
     prescription: false,
     manufacturer: 'Apsen',
-    imageUrl: ''
+    image: getImagePath('Nimesulida 100mg')
   },
 
   // ANTIBIÓTICOS
@@ -78,93 +78,93 @@ const products = [
     name: 'Amoxicilina 500mg',
     description: 'Antibiótico de amplo espectro',
     category: 'Antibióticos',
-    price: 25.90,
+    price: 12.95,
     stock: 40,
     prescription: true,
     manufacturer: 'Neo Química',
-    imageUrl: ''
+    image: getImagePath('Amoxicilina 500mg')
   },
   {
     name: 'Azitromicina 500mg',
     description: 'Antibiótico para infecções respiratórias',
     category: 'Antibióticos',
-    price: 32.50,
+    price: 16.25,
     stock: 35,
     prescription: true,
     manufacturer: 'Sandoz',
-    imageUrl: ''
+    image: getImagePath('Azitromicina 500mg')
   },
   {
     name: 'Cefalexina 500mg',
     description: 'Antibiótico cefalosporínico',
     category: 'Antibióticos',
-    price: 28.90,
+    price: 14.45,
     stock: 30,
     prescription: true,
     manufacturer: 'Cimed',
-    imageUrl: ''
+    image: getImagePath('Cefalexina 500mg')
   },
   {
     name: 'Ciprofloxacino 500mg',
     description: 'Antibiótico quinolona',
     category: 'Antibióticos',
-    price: 35.80,
+    price: 17.90,
     stock: 25,
     prescription: true,
     manufacturer: 'Eurofarma',
-    imageUrl: ''
+    image: getImagePath('Ciprofloxacino 500mg')
   },
 
   // VITAMINAS E SUPLEMENTOS
   {
     name: 'Vitamina C 1g',
-    description: 'Suplemento vitamínico efervescente',
+    description: 'Suplemento vitamínico efervescente de Vitamina C 1000mg. Fortalece o sistema imunológico, possui ação antioxidante e auxilia na absorção de ferro. Ideal para prevenção de gripes e resfriados, cicatrização de feridas e manutenção da saúde da pele. Comprimidos efervescentes com sabor laranja, de fácil dissolução e absorção. Recomendado para adultos e crianças acima de 12 anos. Tomar 1 comprimido ao dia dissolvido em água.',
     category: 'Vitaminas',
-    price: 22.90,
+    price: 11.45,
     stock: 100,
     prescription: false,
     manufacturer: 'Redoxon',
-    imageUrl: ''
+    image: getImagePath('Vitamina C 1g')
   },
   {
     name: 'Complexo B',
-    description: 'Vitaminas do complexo B',
+    description: 'Suplemento vitamínico completo com todas as vitaminas do complexo B (B1, B2, B3, B5, B6, B7, B9, B12). Essencial para o metabolismo energético, funcionamento do sistema nervoso e formação de glóbulos vermelhos. Auxilia no combate ao cansaço, fadiga e estresse. Melhora a concentração, memória e disposição. Importante para a saúde dos cabelos, pele e unhas. Cápsulas de fácil deglutição. Tomar 1 cápsula ao dia com água.',
     category: 'Vitaminas',
-    price: 18.50,
+    price: 9.25,
     stock: 75,
     prescription: false,
     manufacturer: 'Centrum',
-    imageUrl: ''
+    image: getImagePath('Complexo B')
   },
   {
     name: 'Vitamina D3 2000UI',
-    description: 'Suplemento de vitamina D',
+    description: 'Suplemento de Vitamina D3 (colecalciferol) 2000 UI. Fundamental para a absorção de cálcio e fósforo, fortalecimento dos ossos e dentes. Auxilia no funcionamento do sistema imunológico e muscular. Previne osteoporose, raquitismo e osteomalácia. Especialmente importante para pessoas com pouca exposição solar, idosos e crianças em crescimento. Cápsulas gelatinosas moles para melhor absorção. Tomar 1 cápsula ao dia com alimento.',
     category: 'Vitaminas',
-    price: 35.90,
+    price: 17.95,
     stock: 60,
     prescription: false,
     manufacturer: 'Addera',
-    imageUrl: ''
+    image: getImagePath('Vitamina D3 2000UI')
   },
   {
     name: 'Ômega 3 1000mg',
-    description: 'Suplemento de ácidos graxos',
+    description: 'Suplemento de ácidos graxos essenciais EPA e DHA extraídos de óleo de peixe. Beneficia a saúde cardiovascular, reduzindo triglicerídeos e colesterol. Possui ação anti-inflamatória natural e auxilia no funcionamento cerebral, melhorando memória e concentração. Importante para a saúde ocular e desenvolvimento neurológico. Cápsulas gelatinosas sem sabor residual de peixe. Rico em antioxidantes naturais. Tomar 1-2 cápsulas ao dia com as refeições.',
     category: 'Suplementos',
-    price: 45.90,
+    price: 22.95,
     stock: 50,
     prescription: false,
     manufacturer: 'Vitafor',
-    imageUrl: ''
+    image: getImagePath('Ômega 3 1000mg')
   },
   {
     name: 'Ferro Quelato',
-    description: 'Suplemento de ferro',
+    description: 'Suplemento de ferro quelato de alta biodisponibilidade para tratamento e prevenção da anemia ferropriva. O ferro quelato é melhor absorvido pelo organismo e causa menos efeitos colaterais gastrointestinais. Essencial para a formação de hemoglobina e transporte de oxigênio. Combate fadiga, fraqueza e palidez. Especialmente indicado para gestantes, crianças em crescimento e pessoas com deficiência de ferro. Cápsulas vegetais. Tomar 1 cápsula ao dia com estômago vazio.',
     category: 'Suplementos',
     price: 28.90,
     stock: 40,
     prescription: false,
     manufacturer: 'Noripurum',
-    imageUrl: ''
+    image: getImagePath('Ferro Quelato')
   },
 
   // MEDICAMENTOS PARA PRESSÃO
@@ -172,41 +172,41 @@ const products = [
     name: 'Losartana 50mg',
     description: 'Anti-hipertensivo',
     category: 'Cardiovascular',
-    price: 15.90,
+    price: 7.95,
     stock: 80,
     prescription: true,
     manufacturer: 'EMS',
-    imageUrl: ''
+    image: getImagePath('Losartana 50mg')
   },
   {
     name: 'Enalapril 10mg',
     description: 'Inibidor da ECA',
     category: 'Cardiovascular',
-    price: 12.50,
+    price: 6.25,
     stock: 90,
     prescription: true,
     manufacturer: 'Medley',
-    imageUrl: ''
+    image: getImagePath('Enalapril 10mg')
   },
   {
     name: 'Amlodipina 5mg',
     description: 'Bloqueador de canal de cálcio',
     category: 'Cardiovascular',
-    price: 18.90,
+    price: 9.45,
     stock: 70,
     prescription: true,
     manufacturer: 'Eurofarma',
-    imageUrl: ''
+    image: getImagePath('Amlodipina 5mg')
   },
   {
     name: 'Hidroclorotiazida 25mg',
     description: 'Diurético tiazídico',
     category: 'Cardiovascular',
-    price: 8.90,
+    price: 4.45,
     stock: 100,
     prescription: true,
     manufacturer: 'Neo Química',
-    imageUrl: ''
+    image: getImagePath('Hidroclorotiazida 25mg')
   },
 
   // MEDICAMENTOS PARA DIABETES
@@ -218,59 +218,59 @@ const products = [
     stock: 60,
     prescription: true,
     manufacturer: 'Glifage',
-    imageUrl: ''
+    image: getImagePath('Metformina 850mg')
   },
   {
     name: 'Glibenclamida 5mg',
     description: 'Hipoglicemiante oral',
     category: 'Diabetes',
-    price: 16.50,
+    price: 8.25,
     stock: 45,
     prescription: true,
     manufacturer: 'EMS',
-    imageUrl: ''
+    image: getImagePath('Glibenclamida 5mg')
   },
 
   // MEDICAMENTOS DIGESTIVOS
   {
     name: 'Omeprazol 20mg',
-    description: 'Inibidor da bomba de prótons',
+    description: 'Inibidor da bomba de prótons para tratamento de úlceras, gastrite, esofagite e refluxo gastroesofágico. Reduz significativamente a produção de ácido gástrico, promovendo cicatrização e alívio dos sintomas. Eficaz contra azia, queimação, dor epigástrica e regurgitação ácida. Cápsulas com revestimento entérico para proteção do princípio ativo. Tomar em jejum, 30-60 minutos antes do café da manhã. Posologia: 1 cápsula ao dia. Tratamento usual de 4-8 semanas.',
     category: 'Digestivo',
     price: 25.90,
     stock: 85,
     prescription: false,
     manufacturer: 'Eurofarma',
-    imageUrl: ''
+    image: getImagePath('Omeprazol 20mg')
   },
   {
     name: 'Ranitidina 150mg',
-    description: 'Bloqueador H2',
+    description: 'Bloqueador dos receptores H2 da histamina para redução da acidez gástrica. Indicado para úlceras duodenais, úlceras gástricas, síndrome de Zollinger-Ellison e refluxo gastroesofágico. Alívio rápido de azia, queimação e dor estomacal. Ação prolongada de 8-12 horas. Pode ser usado preventivamente antes de refeições que causam desconforto. Comprimidos revestidos de fácil deglutição. Posologia: 1 comprimido 2 vezes ao dia ou conforme orientação médica.',
     category: 'Digestivo',
     price: 18.50,
     stock: 70,
     prescription: false,
     manufacturer: 'Label',
-    imageUrl: ''
+    image: getImagePath('Ranitidina 150mg')
   },
   {
     name: 'Domperidona 10mg',
-    description: 'Procinético digestivo',
+    description: 'Procinético digestivo que acelera o esvaziamento gástrico e melhora a motilidade intestinal. Indicado para náuseas, vômitos, sensação de empachamento, digestão lenta e refluxo gastroesofágico. Especialmente eficaz em náuseas pós-operatórias e induzidas por medicamentos. Não atravessa a barreira hematoencefálica, causando menos efeitos colaterais neurológicos. Comprimidos de ação rápida. Posologia: 1 comprimido 3-4 vezes ao dia, 15-30 minutos antes das refeições.',
     category: 'Digestivo',
     price: 22.90,
     stock: 55,
     prescription: false,
     manufacturer: 'Motilium',
-    imageUrl: ''
+    image: getImagePath('Domperidona 10mg')
   },
   {
     name: 'Simeticona 40mg',
-    description: 'Antiflatulento',
+    description: 'Antiflatulento que reduz a tensão superficial das bolhas de gás no trato digestivo, facilitando sua eliminação. Alívio rápido de gases, distensão abdominal, cólicas intestinais e desconforto pós-prandial. Não é absorvido pelo organismo, sendo eliminado inalterado. Seguro para uso prolongado e em todas as idades. Especialmente útil após cirurgias abdominais e em bebês com cólicas. Comprimidos mastigáveis com sabor agradável. Posologia: 1-2 comprimidos após as refeições e ao deitar.',
     category: 'Digestivo',
     price: 12.90,
     stock: 90,
     prescription: false,
     manufacturer: 'Luftal',
-    imageUrl: ''
+    image: getImagePath('Simeticona 40mg')
   },
 
   // MEDICAMENTOS RESPIRATÓRIOS
@@ -282,7 +282,7 @@ const products = [
     stock: 30,
     prescription: true,
     manufacturer: 'Aerolin',
-    imageUrl: ''
+    image: getImagePath('Salbutamol 100mcg')
   },
   {
     name: 'Loratadina 10mg',
@@ -292,7 +292,7 @@ const products = [
     stock: 80,
     prescription: false,
     manufacturer: 'Claritin',
-    imageUrl: ''
+    image: getImagePath('Loratadina 10mg')
   },
   {
     name: 'Dextrometorfano 15mg',
@@ -302,17 +302,17 @@ const products = [
     stock: 65,
     prescription: false,
     manufacturer: 'Bisolvon',
-    imageUrl: ''
+    image: getImagePath('Dextrometorfano 15mg')
   },
   {
     name: 'Carbocisteína 250mg',
     description: 'Mucolítico',
     category: 'Respiratório',
-    price: 24.90,
+    price: 12.45,
     stock: 50,
     prescription: false,
     manufacturer: 'Fluimucil',
-    imageUrl: ''
+    image: getImagePath('Carbocisteína 250mg')
   },
 
   // MEDICAMENTOS NEUROLÓGICOS
@@ -324,27 +324,27 @@ const products = [
     stock: 20,
     prescription: true,
     manufacturer: 'Roche',
-    imageUrl: ''
+    image: getImagePath('Rivotril 2mg')
   },
   {
     name: 'Fluoxetina 20mg',
     description: 'Antidepressivo ISRS',
     category: 'Neurológico',
-    price: 32.90,
+    price: 16.45,
     stock: 35,
     prescription: true,
     manufacturer: 'Prozac',
-    imageUrl: ''
+    image: getImagePath('Fluoxetina 20mg')
   },
   {
     name: 'Sertralina 50mg',
     description: 'Antidepressivo ISRS',
     category: 'Neurológico',
-    price: 38.50,
+    price: 19.25,
     stock: 30,
     prescription: true,
     manufacturer: 'Zoloft',
-    imageUrl: ''
+    image: getImagePath('Sertralina 50mg')
   },
 
   // DERMOCOSMÉTICOS
@@ -352,21 +352,21 @@ const products = [
     name: 'Protetor Solar FPS 60',
     description: 'Proteção solar facial',
     category: 'Dermocosmético',
-    price: 55.90,
+    price: 27.95,
     stock: 40,
     prescription: false,
     manufacturer: 'La Roche-Posay',
-    imageUrl: ''
+    image: getImagePath('Protetor Solar FPS 60')
   },
   {
     name: 'Hidratante Facial',
     description: 'Creme hidratante para rosto',
     category: 'Dermocosmético',
-    price: 42.90,
+    price: 21.45,
     stock: 35,
     prescription: false,
     manufacturer: 'Vichy',
-    imageUrl: ''
+    image: getImagePath('Hidratante Facial')
   },
   {
     name: 'Shampoo Anticaspa',
@@ -376,7 +376,7 @@ const products = [
     stock: 50,
     prescription: false,
     manufacturer: 'Selsun',
-    imageUrl: ''
+    image: getImagePath('Shampoo Anticaspa')
   },
 
   // HIGIENE E CUIDADOS
@@ -388,7 +388,7 @@ const products = [
     stock: 200,
     prescription: false,
     manufacturer: 'Antisséptico',
-    imageUrl: ''
+    image: getImagePath('Álcool Gel 70%')
   },
   {
     name: 'Termômetro Digital',
@@ -398,17 +398,17 @@ const products = [
     stock: 25,
     prescription: false,
     manufacturer: 'G-Tech',
-    imageUrl: ''
+    image: getImagePath('Termômetro Digital')
   },
   {
     name: 'Aparelho de Pressão',
     description: 'Monitor de pressão arterial',
     category: 'Equipamentos',
-    price: 89.90,
+    price: 44.95,
     stock: 15,
     prescription: false,
     manufacturer: 'Omron',
-    imageUrl: ''
+    image: getImagePath('Aparelho de Pressão')
   },
   {
     name: 'Fita Teste Glicemia',
@@ -418,7 +418,7 @@ const products = [
     stock: 30,
     prescription: false,
     manufacturer: 'Accu-Chek',
-    imageUrl: ''
+    image: getImagePath('Fita Teste Glicemia')
   },
 
   // MEDICAMENTOS GINECOLÓGICOS
@@ -430,7 +430,7 @@ const products = [
     stock: 40,
     prescription: true,
     manufacturer: 'Bayer',
-    imageUrl: ''
+    image: getImagePath('Anticoncepcional Yasmin')
   },
   {
     name: 'Ácido Fólico 5mg',
@@ -440,7 +440,7 @@ const products = [
     stock: 60,
     prescription: false,
     manufacturer: 'Folifolim',
-    imageUrl: ''
+    image: getImagePath('Ácido Fólico 5mg')
   },
 
   // MEDICAMENTOS PEDIÁTRICOS
@@ -452,7 +452,7 @@ const products = [
     stock: 80,
     prescription: false,
     manufacturer: 'Tylenol',
-    imageUrl: ''
+    image: getImagePath('Paracetamol Gotas')
   },
   {
     name: 'Soro Fisiológico',
@@ -462,7 +462,7 @@ const products = [
     stock: 100,
     prescription: false,
     manufacturer: 'Rinosoro',
-    imageUrl: ''
+    image: getImagePath('Soro Fisiológico')
   },
   {
     name: 'Probiótico Infantil',
@@ -472,7 +472,7 @@ const products = [
     stock: 45,
     prescription: false,
     manufacturer: 'Floratil',
-    imageUrl: ''
+    image: getImagePath('Probiótico Infantil')
   }
 ]
 
@@ -485,14 +485,8 @@ async function main() {
 
   // Inserir produtos
   for (const product of products) {
-    const { imageUrl, ...productData } = product
-    const imagePath = getImagePath(product.name)
-    
     await prisma.product.create({
-      data: {
-        ...productData,
-        imagePath: imagePath // Caminho da imagem no diretório public
-      }
+      data: product
     })
   }
 
@@ -507,7 +501,7 @@ async function main() {
   })
   
   console.log('\n📊 Produtos por categoria:')
-  categories.forEach(cat => {
+  categories.forEach((cat: { category: string; _count: { category: number } }) => {
     console.log(`   ${cat.category}: ${cat._count.category} produtos`)
   })
 }

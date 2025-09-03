@@ -20,7 +20,64 @@ model Product {
   stock        Int
   prescription Boolean @default(false)
   manufacturer String?
-  imagePath    String? // Caminho da imagem no diretório public
+  image        String? // Caminho da imagem no diretório public
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  sessionId String   @unique
+  context   Json?    // Armazena contexto como cartId, userId, currentPage
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  messages  ChatMessage[]
+}
+
+model ChatMessage {
+  id        String      @id @default(cuid())
+  sessionId String
+  role      String      // 'user', 'assistant', 'system'
+  content   String
+  toolCalls Json?       // Armazena tool calls se houver
+  timestamp DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+
+  @@index([sessionId])
+}
+
+model User {
+  id        String     @id @default(cuid())
+  username  String     @unique
+  password  String     // Senha em texto simples para simplicidade (POC)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  carts     UserCart[]
+}
+
+model UserCart {
+  id        String           @id @default(cuid())
+  userId    String
+  items     UserCartItem[]
+  total     Float            @default(0)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId]) // Um carrinho por usuário
+}
+
+model UserCartItem {
+  id         String   @id @default(cuid())
+  cartId     String
+  productId  String
+  name       String
+  price      Float
+  quantity   Int
+  image      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  cart       UserCart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId]) // Evita duplicatas do mesmo produto no carrinho
 }

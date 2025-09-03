@@ -13,19 +13,7 @@ import { useCartStore } from "@/stores/cart-store";
 import { toast } from "sonner";
 import { Cart } from "@/components/Cart";
 
-interface Product {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  category: string;
-  stock: number;
-  prescription: boolean;
-  manufacturer: string | null;
-  imagePath: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { Product } from '@/lib/types';
 
 // Produtos serão carregados do banco de dados
 
@@ -60,6 +48,9 @@ export default function Products() {
 
   // Extrair categorias únicas dos produtos
   const categories = useMemo(() => {
+    if (!products || products.length === 0) {
+      return ['Todos'];
+    }
     const uniqueCategories = [...new Set(products.map(p => p.category))];
     return ['Todos', ...uniqueCategories.sort()];
   }, [products]);
@@ -70,6 +61,10 @@ export default function Products() {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const filteredAndSortedProducts = useMemo(() => {
+    if (!products || products.length === 0) {
+      return [];
+    }
+    
     const filtered = products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (product.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
@@ -111,7 +106,7 @@ export default function Products() {
       id: product.id,
       name: product.name,
       price: product.price,
-      imagePath: product.imagePath || undefined,
+      imagePath: product.image || undefined,
       category: product.category
     });
 
@@ -293,9 +288,9 @@ export default function Products() {
                       <Card key={product.id} className="h-full flex flex-col hover:shadow-lg transition-shadow">
                         <CardHeader>
                           <div className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                            {product.imagePath ? (
+                            {product.image ? (
                               <Image
-                                src={product.imagePath}
+                                src={product.image}
                                 alt={product.name}
                                 fill
                                 className="object-cover"
@@ -382,9 +377,9 @@ export default function Products() {
                 <Card key={product.id} className="h-full flex flex-col hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                      {product.imagePath ? (
+                      {product.image ? (
                         <Image
-                          src={product.imagePath}
+                          src={product.image}
                           alt={product.name}
                           fill
                           className="object-cover"

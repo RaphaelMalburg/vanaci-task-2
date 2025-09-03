@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { text, sessionId } = body;
     
-    console.log('📨 Resposta recebida do n8n:', {
+    console.log('📨 Resposta recebida:', {
       sessionId,
       text,
       timestamp: new Date().toISOString()
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       message: 'Resposta recebida e armazenada com sucesso'
     });
   } catch (error) {
-    console.error('❌ Erro ao processar resposta do n8n:', error);
+    console.error('❌ Erro ao processar resposta:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

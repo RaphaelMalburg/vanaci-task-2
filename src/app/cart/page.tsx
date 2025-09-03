@@ -9,49 +9,28 @@ import { ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowLeft } from 'lucide
 import { toast } from 'sonner';
 import Image from 'next/image';
 import Link from 'next/link';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  description: string | null;
-  imagePath: string | null;
-  stock: number;
-  prescription: boolean;
-  manufacturer: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { fetchProducts, processCheckout, validateCartNotEmpty } from '@/lib/utils/api';
+import type { Product } from '@/lib/types';
 
 export default function CartPage() {
-  const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
+  const { items, total, itemCount, updateQuantity, removeItem, clearCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // Buscar produtos ao carregar a página
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        console.log('[Cart Debug] Buscando produtos para a página do carrinho');
-        const response = await fetch('/api/products');
-        if (!response.ok) throw new Error('Falha ao buscar produtos');
-        const data = await response.json();
-        setProducts(data);
-      } catch (error) {
-        console.error('[Cart Debug] Erro ao buscar produtos:', error);
-        toast.error('Não foi possível carregar os produtos. Tente novamente.');
-      } finally {
-        setIsLoading(false);
-      }
+    const loadProducts = async () => {
+      const products = await fetchProducts();
+      setProducts(products);
+      setIsLoading(false);
     };
 
-    fetchProducts();
+    loadProducts();
   }, []);
 
   // Melhor sincronização: usar dados do carrinho como fonte principal
-  const cartItems = cart.items.map(cartItem => {
+  const cartItems = items.map(cartItem => {
     const product = products.find(p => p.id === cartItem.id);
     if (product) {
       return { product, quantity: cartItem.quantity };
@@ -63,11 +42,11 @@ export default function CartPage() {
         name: cartItem.name,
         price: cartItem.price,
         category: cartItem.category,
-        description: null,
-        imagePath: cartItem.imagePath || null,
+        description: '',
+        image: cartItem.imagePath || undefined,
         stock: 999, // Assumir disponível se não encontrado
         prescription: false,
-        manufacturer: null,
+        manufacturer: undefined,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       } as Product,
@@ -85,7 +64,7 @@ export default function CartPage() {
     }
 
     if (newQuantity <= 0) {
-      removeFromCart(productId);
+      removeItem(productId);
       toast.success('Item removido do carrinho');
     } else {
       updateQuantity(productId, newQuantity);
@@ -93,28 +72,18 @@ export default function CartPage() {
   };
 
   const handleCheckout = async () => {
-    if (cartItems.length === 0) {
-      toast.error('Carrinho vazio');
+    if (!validateCartNotEmpty(cartItems)) {
       return;
     }
 
     setIsCheckingOut(true);
     
-    // Simular processo de checkout
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simular sucesso do checkout
-      const orderId = Math.random().toString(36).substr(2, 9).toUpperCase();
-      
-      toast.success(`Pedido ${orderId} realizado com sucesso!`);
+    const orderId = await processCheckout();
+    if (orderId) {
       clearCart();
-    } catch (error) {
-      console.error('Checkout error:', error);
-      toast.error('Erro ao processar pedido. Tente novamente.');
-    } finally {
-      setIsCheckingOut(false);
     }
+    
+    setIsCheckingOut(false);
   };
 
   const subtotal = cartItems.reduce(
@@ -124,7 +93,7 @@ export default function CartPage() {
 
   // Aplicar desconto de 5% para pedidos acima de R$ 100
   const discount = subtotal > 100 ? subtotal * 0.05 : 0;
-  const total = subtotal - discount;
+  const finalTotal = subtotal - discount;
 
   if (isLoading) {
     return (
@@ -180,9 +149,9 @@ export default function CartPage() {
                   {cartItems.map(({ product, quantity }) => (
                     <div key={product.id} className="flex flex-col sm:flex-row items-start sm:items-center py-4 border-b border-gray-200 dark:border-gray-700 last:border-0">
                       <div className="flex-shrink-0 w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden mr-4 mb-4 sm:mb-0">
-                        {product.imagePath ? (
+                        {product.image ? (
                           <Image 
-                            src={product.imagePath} 
+                            src={product.image} 
                             alt={product.name} 
                             width={80} 
                             height={80} 
@@ -234,7 +203,7 @@ export default function CartPage() {
                           variant="ghost" 
                           size="icon" 
                           className="ml-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-950"
-                          onClick={() => removeFromCart(product.id)}
+                          onClick={() => removeItem(product.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -274,7 +243,7 @@ export default function CartPage() {
                   
                   <div className="flex justify-between font-medium text-lg">
                     <span className="text-gray-900 dark:text-white">Total</span>
-                    <span className="text-blue-600">R$ {total.toFixed(2)}</span>
+                    <span className="text-blue-600">R$ {finalTotal.toFixed(2)}</span>
                   </div>
                   
                   {subtotal < 100 && (

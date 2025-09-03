@@ -3,20 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Cart } from '@/components/Cart';
 import { useCartContext } from '@/contexts/cart-context';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  description: string | null;
-  imagePath: string | null;
-  stock: number;
-  prescription: boolean;
-  manufacturer: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { fetchProducts } from '@/lib/utils/api';
+import type { Product } from '@/lib/types';
 
 export function GlobalCart() {
   const { isCartOpen, closeCart } = useCartContext();
@@ -26,23 +14,15 @@ export function GlobalCart() {
   // Buscar produtos quando o carrinho for aberto
   useEffect(() => {
     if (isCartOpen && products.length === 0) {
-      fetchProducts();
+      loadProducts();
     }
   }, [isCartOpen, products.length]);
 
-  const fetchProducts = async () => {
+  const loadProducts = async () => {
     setIsLoading(true);
-    try {
-      const response = await fetch('/api/products');
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.products || []);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar produtos:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    const products = await fetchProducts();
+    setProducts(products);
+    setIsLoading(false);
   };
 
   return (

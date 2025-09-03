@@ -5,8 +5,11 @@ import { Navigation } from "@/components/navigation";
 import { Chat, ChatProvider } from "@/components/chat";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { CartProvider } from "@/contexts/cart-context";
+import { AuthProvider } from "@/contexts/auth-context";
 import { LayoutContent } from "@/components/layout-content";
 import { GlobalCart } from "@/components/global-cart";
+import { CartSyncProvider } from "@/components/cart-sync-provider";
+import { CartInitializer } from "@/components/cart-initializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,18 +37,24 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900 transition-colors duration-300`}
       >
         <ThemeProvider>
-          <CartProvider>
-            <ChatProvider>
-              <LayoutContent>
-                <Navigation />
-                <main className="min-h-screen">
-                  {children}
-                </main>
-              </LayoutContent>
-              <Chat />
-              <GlobalCart />
-            </ChatProvider>
-          </CartProvider>
+          <AuthProvider>
+            <CartProvider>
+              <CartSyncProvider>
+                <CartInitializer>
+                  <ChatProvider>
+                  <LayoutContent>
+                    <Navigation />
+                    <main className="min-h-screen">
+                      {children}
+                    </main>
+                  </LayoutContent>
+                  <Chat />
+                  <GlobalCart />
+                  </ChatProvider>
+                </CartInitializer>
+              </CartSyncProvider>
+            </CartProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

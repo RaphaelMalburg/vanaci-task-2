@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 export interface CartItem {
   id: string;
@@ -33,7 +32,7 @@ const calculateItemCount = (items: CartItem[]): number => {
   return items.reduce((count, item) => count + item.quantity, 0);
 };
 
-export const useCartStore = create<CartStore>()(persist(
+export const useCartStore = create<CartStore>()(
   (set, get) => ({
     items: [],
     total: 0,
@@ -120,13 +119,5 @@ export const useCartStore = create<CartStore>()(persist(
       const newItemCount = calculateItemCount(items);
       set({ total: newTotal, itemCount: newItemCount });
     }
-  }),
-  {
-    name: 'cart-storage',
-    partialize: (state) => ({ 
-      items: state.items,
-      total: state.total,
-      itemCount: state.itemCount
-    })
-  }
-));
+  })
+);
