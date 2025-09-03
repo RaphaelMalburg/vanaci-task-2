@@ -10,12 +10,14 @@ import { ShoppingCart, ArrowLeft, Package, Clock, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/stores/cart-store';
 import { fetchProductById } from '@/lib/utils/api';
+import { useAuth } from '@/contexts/auth-context';
 import type { Product } from '@/lib/types';
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { addItem, getItemQuantity } = useCartStore();
+  const { user } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +45,11 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (!product) return;
+    
+    if (!user) {
+      toast.error('Você precisa estar logado para adicionar produtos ao carrinho');
+      return;
+    }
     
     if (product.stock <= 0) {
       toast.error('Produto fora de estoque');

@@ -1,103 +1,110 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BackgroundBeams } from "@/components/ui/background-beams";
-import { Spotlight } from "@/components/ui/spotlight";
-import { Sparkles } from "@/components/ui/sparkles";
 import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
 import Image from "next/image";
+import { useAuth } from "@/contexts/auth-context";
+import { useCartStore } from "@/stores/cart-store";
+import { toast } from "sonner";
 
 export default function Home() {
+  const { user } = useAuth();
+  const { addItem } = useCartStore();
+
+  const handleAddToCart = (product: { id: string; name: string; price: number; category: string }) => {
+    if (!user) {
+      toast.error('Você precisa estar logado para adicionar produtos ao carrinho');
+      return;
+    }
+
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      category: product.category
+    });
+
+    toast.success(`${product.name} adicionado ao carrinho!`);
+  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 transition-all duration-500">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 dark:from-blue-800 dark:via-blue-900 dark:to-indigo-900 text-white py-24 overflow-hidden">
-        {/* Aceternity Background Effects */}
-        <BackgroundBeams className="absolute inset-0" />
-        <Spotlight className="absolute -top-40 left-0 md:left-60 md:-top-20" fill="white" />
-        
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="bg-white dark:bg-gray-900 py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
-              <Sparkles className="inline-block mb-6">
-                <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-blue-100 text-sm font-medium border border-white/20">
-                  Sua farmácia de confiança há mais de 15 anos
-                </div>
-              </Sparkles>
+              <div className="inline-flex items-center px-4 py-2 bg-blue-50 dark:bg-blue-900/30 rounded-full text-blue-700 dark:text-blue-300 text-sm font-medium mb-6">
+                Sua farmácia de confiança há mais de 15 anos
+              </div>
               
-              <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white leading-tight">
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gray-900 dark:text-white leading-tight">
                 Farmácia Vanaci
                 <br />
-                <span className="text-4xl md:text-6xl text-blue-100">
+                <span className="text-3xl md:text-5xl text-blue-600 dark:text-blue-400">
                   Cuidando da Sua Saúde
                 </span>
               </h1>
               
-              <p className="text-xl md:text-2xl mb-12 text-blue-50 max-w-4xl mx-auto lg:mx-0 leading-relaxed">
+              <p className="text-lg md:text-xl mb-8 text-gray-600 dark:text-gray-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
                 Medicamentos de qualidade, atendimento especializado e a confiança que você merece. 
-                <br className="hidden md:block" />Sua saúde é nossa prioridade há mais de 15 anos.
+                Sua saúde é nossa prioridade há mais de 15 anos.
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start items-center">
                 <Link href="/products">
-                  <Button size="lg" className="bg-white text-blue-700 hover:bg-blue-50 text-lg px-8 py-4 font-semibold shadow-lg border-0 hover:scale-105 transition-transform duration-300">
+                  <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700 text-lg px-8 py-3 font-medium transition-colors duration-200">
                     Explorar Produtos
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-blue-700 text-lg px-8 py-4 font-semibold hover:scale-105 transition-transform duration-300">
+                <Button size="lg" variant="outline" className="border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white text-lg px-8 py-3 font-medium transition-colors duration-200">
                   Falar com Farmacêutico
                 </Button>
               </div>
             </div>
             
-            <div className="relative">
-              <div className="relative z-10">
-                <Image
-                  src="/hero.png"
-                  alt="Farmácia Vanaci - Cuidando da sua saúde"
-                  width={800}
-                  height={600}
-                  className="w-full h-auto rounded-2xl shadow-2xl"
-                  priority
-                />
-              </div>
-              <div className="absolute -inset-4 bg-gradient-to-r from-blue-400 to-indigo-400 rounded-2xl blur-2xl opacity-20 animate-pulse"></div>
+            <div className="flex justify-center">
+              <Image
+                src="/hero.png"
+                alt="Farmácia Vanaci - Cuidando da sua saúde"
+                width={600}
+                height={450}
+                className="w-full max-w-lg h-auto rounded-lg shadow-lg"
+                priority
+              />
             </div>
           </div>
         </div>
-        
-        {/* Floating Elements */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-white/5 rounded-full blur-xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-32 h-32 bg-blue-400/10 rounded-full blur-2xl animate-pulse delay-1000"></div>
       </section>
 
       {/* Statistics Section */}
-      <section className="py-20 glass-bg">
+      <section className="py-20 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center group">
-              <div className="glass-card rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
-                <div className="text-4xl font-bold text-primary mb-2">15+</div>
-                <div className="text-muted-foreground font-medium">Anos de Experiência</div>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6 mb-4 transition-colors duration-300">
+                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">15+</div>
+                <div className="text-gray-600 dark:text-gray-300 font-medium">Anos de Experiência</div>
               </div>
             </div>
             <div className="text-center group">
-              <div className="glass-card rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
-                <div className="text-4xl font-bold text-primary mb-2">10k+</div>
-                <div className="text-muted-foreground font-medium">Clientes Satisfeitos</div>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6 mb-4 transition-colors duration-300">
+                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">10k+</div>
+                <div className="text-gray-600 dark:text-gray-300 font-medium">Clientes Satisfeitos</div>
               </div>
             </div>
             <div className="text-center group">
-              <div className="glass-card rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
-                <div className="text-4xl font-bold text-primary mb-2">500+</div>
-                <div className="text-muted-foreground font-medium">Produtos Disponíveis</div>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6 mb-4 transition-colors duration-300">
+                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">500+</div>
+                <div className="text-gray-600 dark:text-gray-300 font-medium">Produtos Disponíveis</div>
               </div>
             </div>
             <div className="text-center group">
-              <div className="glass-card rounded-2xl p-6 mb-4 group-hover:scale-105 transition-transform duration-300">
-                <div className="text-4xl font-bold text-primary mb-2">24/7</div>
-                <div className="text-muted-foreground font-medium">Suporte Online</div>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-2xl p-6 mb-4 transition-colors duration-300">
+                <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">24/7</div>
+                <div className="text-gray-600 dark:text-gray-300 font-medium">Suporte Online</div>
               </div>
             </div>
           </div>
@@ -205,7 +212,10 @@ export default function Home() {
                     <span className="text-3xl font-bold text-green-600 dark:text-green-400">€ 4,50</span>
                     <p className="text-sm text-gray-500 dark:text-gray-400">por unidade</p>
                   </div>
-                  <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                  <Button 
+                    onClick={() => handleAddToCart({ id: 'paracetamol-500mg', name: 'Paracetamol 500mg', price: 4.50, category: 'Analgésicos' })}
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-colors duration-300"
+                  >
                     Adicionar
                   </Button>
                 </div>
@@ -229,7 +239,10 @@ export default function Home() {
                     <span className="text-3xl font-bold text-green-600 dark:text-green-400">€ 7,80</span>
                     <p className="text-sm text-gray-500 dark:text-gray-400">por frasco</p>
                   </div>
-                  <Button className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                  <Button 
+                    onClick={() => handleAddToCart({ id: 'vitamina-c-1g', name: 'Vitamina C 1g', price: 7.80, category: 'Vitaminas' })}
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-colors duration-300"
+                  >
                     Adicionar
                   </Button>
                 </div>
@@ -253,7 +266,10 @@ export default function Home() {
                     <span className="text-3xl font-bold text-green-600 dark:text-green-400">€ 3,40</span>
                     <p className="text-sm text-gray-500 dark:text-gray-400">por caixa</p>
                   </div>
-                  <Button className="bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 shadow-lg group-hover:scale-105 transition-transform duration-300">
+                  <Button 
+                    onClick={() => handleAddToCart({ id: 'dipirona-500mg', name: 'Dipirona 500mg', price: 3.40, category: 'Analgésicos' })}
+                    className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-colors duration-300"
+                  >
                     Adicionar
                   </Button>
                 </div>
@@ -263,7 +279,7 @@ export default function Home() {
           
           <div className="text-center mt-12">
             <Link href="/products">
-              <Button size="lg" className="px-10 py-4 text-lg bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 font-semibold">
+              <Button size="lg" className="px-10 py-4 text-lg bg-blue-600 hover:bg-blue-700 text-white shadow-xl transition-all duration-300 font-semibold">
                 Explorar Todos os Produtos
               </Button>
             </Link>
@@ -272,8 +288,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-blue-950/30 dark:to-indigo-950/50 transition-colors duration-300 relative overflow-hidden">
-        <Sparkles className="absolute inset-0" />
+      <section className="py-20 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
             <div className="text-center lg:text-left">
@@ -382,18 +397,14 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="relative py-24 bg-gradient-to-br from-blue-600 via-indigo-700 to-purple-800 dark:from-blue-800 dark:via-indigo-900 dark:to-purple-900 text-white overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2780%27%20height%3D%2780%27%20viewBox%3D%270%200%2080%2080%27%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%3E%3Cg%20fill%3D%27none%27%20fill-rule%3D%27evenodd%27%3E%3Cg%20fill%3D%27%23ffffff%27%20fill-opacity%3D%270.03%27%3E%3Cpath%20d%3D%27M0%200h80v80H0V0zm20%2020v40h40V20H20zm20%2035a15%2015%200%201%201%200-30%2015%2015%200%200%201%200%2030z%27/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-30"></div>
-        <div className="absolute top-10 left-10 w-32 h-32 bg-white/5 rounded-full blur-2xl animate-pulse"></div>
-        <div className="absolute bottom-10 right-10 w-40 h-40 bg-purple-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      <section className="relative py-24 bg-blue-600 dark:bg-blue-800 text-white">
         
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-blue-100 text-sm font-medium mb-8 border border-white/20">
             Atendimento Personalizado
           </div>
           
-          <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent leading-tight">
+          <h2 className="text-4xl md:text-6xl font-bold mb-6 text-white leading-tight">
             Precisa de Ajuda?
             <br />Estamos Aqui!
           </h2>
@@ -411,7 +422,7 @@ export default function Home() {
               </Button>
             </Link>
             
-            <Button size="lg" className="px-10 py-4 text-lg border-2 border-white/30 bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 hover:border-white/50 shadow-xl hover:shadow-2xl transition-all duration-300 font-semibold group">
+            <Button size="lg" className="px-10 py-4 text-lg border-2 border-white bg-transparent text-white hover:bg-white hover:text-blue-600 shadow-xl transition-all duration-300 font-semibold">
               Iniciar Chat Online
             </Button>
           </div>

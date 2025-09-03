@@ -12,6 +12,7 @@ import { ShoppingCart, Search, Filter, Loader2 } from "lucide-react";
 import { useCartStore } from "@/stores/cart-store";
 import { toast } from "sonner";
 import { Cart } from "@/components/Cart";
+import { useAuth } from "@/contexts/auth-context";
 
 import type { Product } from '@/lib/types';
 
@@ -24,6 +25,7 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { addItem, getItemQuantity, getItemCount, items, total } = useCartStore();
+  const { user } = useAuth();
 
   // Fetch produtos do banco de dados
   useEffect(() => {
@@ -95,6 +97,11 @@ export default function Products() {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
+    }
+    
+    if (!user) {
+      toast.error('Você precisa estar logado para adicionar produtos ao carrinho');
+      return;
     }
     
     if (product.stock <= 0) {
