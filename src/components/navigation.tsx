@@ -29,7 +29,7 @@ export function Navigation() {
   const { user, logout } = useAuth();
 
   return (
-    <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
+    <nav className="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -41,7 +41,7 @@ export function Navigation() {
               <span className="font-bold text-xl text-gray-900 dark:text-white transition-colors duration-300">Farmácia Vanaci</span>
             </Link>
           </div>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             {navigation.map((item) => (
@@ -53,62 +53,43 @@ export function Navigation() {
                   pathname === item.href
                     ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 shadow-sm"
                     : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
-                )}
-              >
+                )}>
                 {item.name}
-                {pathname === item.href && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />
-                )}
+                {pathname === item.href && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-full" />}
               </Link>
             ))}
-            
+
             {/* Cart Button */}
             <Link href="/cart">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="relative flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-              >
+              <Button variant="ghost" size="sm" className="relative flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
                 <ShoppingCart className="h-5 w-5" />
                 <span className="hidden sm:inline">Carrinho</span>
                 {itemCount > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                  >
+                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
                     {itemCount}
                   </Badge>
                 )}
               </Button>
             </Link>
-            
+
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300"
-              aria-label="Alternar tema"
-            >
-              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+              aria-label="Alternar tema">
+              {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
             </button>
-            
+
             {/* Auth Button */}
             {user ? (
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-600 dark:text-gray-300">Olá, {user.username}</span>
-                <Button
-                  onClick={logout}
-                  variant="outline"
-                  size="sm"
-                >
+                <Button onClick={logout} variant="outline" size="sm">
                   Sair
                 </Button>
               </div>
             ) : (
-              <Button
-                onClick={() => setShowAuthForm(true)}
-                variant="outline"
-                size="sm"
-              >
+              <Button onClick={() => setShowAuthForm(true)} variant="outline" size="sm">
                 Entrar
               </Button>
             )}
@@ -120,31 +101,25 @@ export function Navigation() {
             <Link href="/cart">
               <button
                 className="relative p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300"
-                aria-label="Carrinho"
-              >
+                aria-label="Carrinho">
                 <ShoppingCart size={20} />
                 {itemCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs"
-                >
-                  {itemCount}
-                </Badge>
-              )}
+                  <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs">
+                    {itemCount}
+                  </Badge>
+                )}
               </button>
             </Link>
             <button
               onClick={toggleTheme}
               className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300"
-              aria-label="Alternar tema"
-            >
-              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+              aria-label="Alternar tema">
+              {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
             </button>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300"
-              aria-label="Menu"
-            >
+              aria-label="Menu">
               {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
@@ -164,12 +139,11 @@ export function Navigation() {
                     pathname === item.href
                       ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300"
                       : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
-                  )}
-                >
+                  )}>
                   {item.name}
                 </Link>
               ))}
-              
+
               {/* Mobile Auth */}
               <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
                 {user ? (
@@ -182,8 +156,7 @@ export function Navigation() {
                       }}
                       variant="outline"
                       size="sm"
-                      className="mx-3"
-                    >
+                      className="mx-3">
                       Sair
                     </Button>
                   </div>
@@ -195,8 +168,7 @@ export function Navigation() {
                     }}
                     variant="outline"
                     size="sm"
-                    className="mx-3"
-                  >
+                    className="mx-3">
                     Entrar
                   </Button>
                 )}
@@ -205,24 +177,17 @@ export function Navigation() {
           </div>
         )}
       </div>
-      
+
       {/* Auth Modal */}
       {showAuthForm && (
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={() => setShowAuthForm(false)}
-        >
-          <div 
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md transform transition-all duration-200 scale-100"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowAuthForm(false)}>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md transform transition-all duration-200 scale-100" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center p-6 pb-4">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Autenticação</h2>
               <button
                 onClick={() => setShowAuthForm(false)}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                aria-label="Fechar"
-              >
+                aria-label="Fechar">
                 <X size={20} />
               </button>
             </div>

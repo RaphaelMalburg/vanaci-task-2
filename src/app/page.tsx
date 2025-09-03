@@ -126,7 +126,7 @@ export default function Home() {
                   </svg>
                 </div>
               }
-              className="md:col-span-2"
+              className="md:col-span-1"
             />
             <BentoGridItem
               title="Consultoria Farmacêutica"
@@ -277,7 +277,7 @@ export default function Home() {
               </p>
             </div>
             <div className="relative">
-              <Image src="/quality-assurance.svg" alt="Garantia de qualidade e confiança" width={600} height={400} className="w-full h-auto rounded-2xl shadow-lg" />
+              <Image src="/quality-assurance.png" alt="Garantia de qualidade e confiança" width={600} height={400} className="w-full h-auto rounded-2xl shadow-lg" />
             </div>
           </div>
 
