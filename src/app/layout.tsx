@@ -11,7 +11,6 @@ import { GlobalCart } from "@/components/global-cart";
 import { CartSyncProvider } from "@/components/cart-sync-provider";
 import { CartInitializer } from "@/components/cart-initializer";
 import { ProductOverlayProvider } from "@/contexts/product-overlay-context";
-import { ProductOverlay } from "@/components/product-overlay";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -51,7 +50,6 @@ export default function RootLayout({
                         {children}
                       </main>
                     </LayoutContent>
-                    <ProductOverlay />
                     <Chat />
                     <GlobalCart />
                     </ChatProvider>

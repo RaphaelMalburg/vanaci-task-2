@@ -296,7 +296,7 @@ export function Chat() {
                      }, 1500);
                    }
 
-                   // Exibir overlay de produtos quando ferramentas de produto forem chamadas
+                   // Preparar sugestões de produtos e redirecionar para a página de produtos
                    const productTools = [
                      'search_products', 'list_recommended_products', 'get_promotional_products'
                    ];
@@ -314,9 +314,11 @@ export function Chat() {
                          toolProducts = fetched;
                        }
                        productOverlay.showProducts({ title: 'Sugestões de produtos', query, products: toolProducts || [] });
+                       setTimeout(() => router.push('/products'), 250);
                      } catch (e) {
-                       console.error('Erro ao preparar overlay de produtos:', e);
+                       console.error('Erro ao preparar sugestões de produtos:', e);
                        productOverlay.showProducts({ title: 'Sugestões de produtos', products: [] });
+                       setTimeout(() => router.push('/products'), 250);
                      }
                    }
                    
