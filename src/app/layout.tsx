@@ -10,6 +10,8 @@ import { LayoutContent } from "@/components/layout-content";
 import { GlobalCart } from "@/components/global-cart";
 import { CartSyncProvider } from "@/components/cart-sync-provider";
 import { CartInitializer } from "@/components/cart-initializer";
+import { ProductOverlayProvider } from "@/contexts/product-overlay-context";
+import { ProductOverlay } from "@/components/product-overlay";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,16 +43,19 @@ export default function RootLayout({
             <CartProvider>
               <CartSyncProvider>
                 <CartInitializer>
-                  <ChatProvider>
-                  <LayoutContent>
-                    <Navigation />
-                    <main className="min-h-screen">
-                      {children}
-                    </main>
-                  </LayoutContent>
-                  <Chat />
-                  <GlobalCart />
-                  </ChatProvider>
+                  <ProductOverlayProvider>
+                    <ChatProvider>
+                    <LayoutContent>
+                      <Navigation />
+                      <main className="min-h-screen">
+                        {children}
+                      </main>
+                    </LayoutContent>
+                    <ProductOverlay />
+                    <Chat />
+                    <GlobalCart />
+                    </ChatProvider>
+                  </ProductOverlayProvider>
                 </CartInitializer>
               </CartSyncProvider>
             </CartProvider>

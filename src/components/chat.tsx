@@ -7,6 +7,8 @@ import { MessageCircle, Send, Bot, User, X, Mic, MicOff, Trash2 } from "lucide-r
 import { useNextjsAudioToTextRecognition } from "nextjs-audio-to-text-recognition";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/hooks/useCart";
+import { useProductOverlay } from "@/contexts/product-overlay-context";
+import { searchProductsApi } from "@/lib/utils/api";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -50,6 +52,7 @@ export function Chat() {
   const { user } = useAuth();
   const { syncCart } = useCart();
   const router = useRouter();
+  const productOverlay = useProductOverlay();
   
   // Função para processar redirecionamentos
   const processRedirect = (toolResult: any) => {
@@ -254,6 +257,9 @@ export function Chat() {
               try {
                 const parsed = JSON.parse(data);
                 console.log('Dados parseados:', parsed);
+                if (parsed?.type === 'tool_call' && parsed?.toolCall && !parsed.content) {
+                  parsed.content = parsed.toolCall;
+                }
                 
                 if (parsed.type === 'text' && parsed.content) {
                   // Conteúdo de texto normal
@@ -267,17 +273,18 @@ export function Chat() {
                       return msg;
                     })
                   );
-                } else if (parsed.type === 'tool_call' && parsed.content) {
+                } else if (parsed.type === 'tool_call' && (parsed.toolCall || parsed.content)) {
                   // Tool call - não adicionar ao texto, apenas logar
-                  console.log('Tool call executado:', parsed.content);
+                  const toolPayload = parsed.toolCall || parsed.content;
+                  console.log('Tool call executado:', toolPayload);
                   
                   // Verificar se é uma ação relacionada ao carrinho
                    const cartRelatedTools = [
                      'add_to_cart', 'remove_from_cart', 'update_cart_quantity', 'view_cart', 'clear_cart',
                      'add_to_cart_simple', 'remove_from_cart_simple', 'update_cart_quantity_simple'
                    ];
-                   if (parsed.content && parsed.content.toolName && cartRelatedTools.includes(parsed.content.toolName)) {
-                     console.log('🛒 Ação de carrinho detectada, sincronizando UI...', parsed.content.toolName);
+                   if (toolPayload && toolPayload.toolName && cartRelatedTools.includes(toolPayload.toolName)) {
+                     console.log('🛒 Ação de carrinho detectada, sincronizando UI...', toolPayload.toolName);
                      // Aguardar um pouco para garantir que a ação foi processada no backend
                      setTimeout(async () => {
                        try {
@@ -288,11 +295,35 @@ export function Chat() {
                        }
                      }, 1500);
                    }
+
+                   // Exibir overlay de produtos quando ferramentas de produto forem chamadas
+                   const productTools = [
+                     'search_products', 'list_recommended_products', 'get_promotional_products'
+                   ];
+                   if (toolPayload && toolPayload.toolName && productTools.includes(toolPayload.toolName)) {
+                     try {
+                       const args = toolPayload.args || {};
+                       const query = args.query || args.symptomOrNeed || undefined;
+                       productOverlay.showLoading({ title: 'Sugestões de produtos', query });
+
+                       // Tentar extrair produtos diretamente do result quando disponível
+                       let toolProducts = toolPayload.result?.data?.products || toolPayload.result?.products;
+                       if (!toolProducts || !Array.isArray(toolProducts)) {
+                         // Fallback: buscar pela API com base no argumento
+                         const fetched = await searchProductsApi({ q: query, limit: 12 });
+                         toolProducts = fetched;
+                       }
+                       productOverlay.showProducts({ title: 'Sugestões de produtos', query, products: toolProducts || [] });
+                     } catch (e) {
+                       console.error('Erro ao preparar overlay de produtos:', e);
+                       productOverlay.showProducts({ title: 'Sugestões de produtos', products: [] });
+                     }
+                   }
                    
                    // Verificar se é uma ação de redirecionamento
-                   if (parsed.content && parsed.content.toolName === 'redirect_to_product' && parsed.content.result) {
-                     console.log('🔗 Ação de redirecionamento detectada:', parsed.content.result);
-                     processRedirect(parsed.content.result);
+                   if (toolPayload && toolPayload.toolName === 'redirect_to_product' && toolPayload.result) {
+                     console.log('🔗 Ação de redirecionamento detectada:', toolPayload.result);
+                     processRedirect(toolPayload.result);
                    }
                 } else if (parsed.content && typeof parsed.content === 'string') {
                   // Fallback para conteúdo direto
