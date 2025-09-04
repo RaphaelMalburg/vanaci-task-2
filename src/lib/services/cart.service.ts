@@ -99,6 +99,14 @@ export class CartService {
         headers: this.getAuthHeaders()
       });
       
+      if (response.status === 401) {
+        return {
+          success: false,
+          message: 'Usuário não autenticado',
+          error: 'AUTHENTICATION_REQUIRED'
+        };
+      }
+      
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -201,6 +209,15 @@ export class CartService {
         })
       });
 
+      if (response.status === 401) {
+        // Rollback optimistic update
+        store.clearCart();
+        originalItems.forEach(originalItem => {
+          store.addItem(originalItem, originalItem.quantity);
+        });
+        throw new Error('Usuário não autenticado');
+      }
+
       if (!response.ok) {
         // Rollback optimistic update
         store.clearCart();
@@ -270,6 +287,15 @@ export class CartService {
           productId
         })
       });
+
+      if (response.status === 401) {
+        // Rollback optimistic update
+        store.clearCart();
+        originalItems.forEach(originalItem => {
+          store.addItem(originalItem, originalItem.quantity);
+        });
+        throw new Error('Usuário não autenticado');
+      }
 
       if (!response.ok) {
         // Rollback optimistic update

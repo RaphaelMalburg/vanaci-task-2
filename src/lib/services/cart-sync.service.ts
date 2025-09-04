@@ -43,11 +43,29 @@ export class CartSyncService {
       return;
     }
 
+    // Check if user is authenticated before attempting sync
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('🔄 [CartSync] Sync cancelado - usuário não autenticado');
+      return;
+    }
+
     const sessionId = this.getSessionId();
     try {
       console.log('🔄 [CartSync] Iniciando sincronização do backend', { sessionId });
-      const response = await fetch(`/api/cart?sessionId=${sessionId}`);
+      const response = await fetch(`/api/cart?sessionId=${sessionId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       console.log('🔄 [CartSync] Resposta da API cart:', { status: response.status, ok: response.ok });
+      
+      if (response.status === 401) {
+        console.log('❌ [CartSync] Usuário não autenticado - parando sincronização automática');
+        this.stopAutoSync();
+        return;
+      }
       
       if (!response.ok) {
         logger.warn('Falha ao sincronizar carrinho do backend', { status: response.status });

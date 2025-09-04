@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useCartSync } from '@/lib/services/cart-sync.service';
+import { useAuth } from '@/contexts/auth-context';
 import { logger } from '@/lib/logger';
 
 interface CartSyncProviderProps {
@@ -10,18 +11,24 @@ interface CartSyncProviderProps {
 
 export function CartSyncProvider({ children }: CartSyncProviderProps) {
   const { startAutoSync, stopAutoSync } = useCartSync();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Iniciar sincronização automática quando o componente monta
-    logger.info('Iniciando sincronização automática do carrinho');
-    startAutoSync(3000); // Sincronizar a cada 3 segundos
+    // Only start sync if user is authenticated
+    if (user) {
+      logger.info('Iniciando sincronização automática do carrinho para usuário autenticado');
+      startAutoSync(5000); // Sincronizar a cada 5 segundos (reduzido de 3s)
+    } else {
+      logger.info('Parando sincronização automática - usuário não autenticado');
+      stopAutoSync();
+    }
 
     // Cleanup: parar sincronização quando o componente desmonta
     return () => {
       logger.info('Parando sincronização automática do carrinho');
       stopAutoSync();
     };
-  }, [startAutoSync, stopAutoSync]);
+  }, [user, startAutoSync, stopAutoSync]); // Add user as dependency
 
   return <>{children}</>;
 }
