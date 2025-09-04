@@ -20,6 +20,29 @@ export async function fetchProducts(): Promise<Product[]> {
 }
 
 /**
+ * Busca produtos por termo e/ou categoria
+ */
+export async function searchProductsApi(params: { q?: string; search?: string; category?: string; limit?: number } = {}): Promise<Product[]> {
+  try {
+    const usp = new URLSearchParams();
+    if (params.q) usp.set('q', params.q);
+    if (params.search) usp.set('search', params.search);
+    if (params.category) usp.set('category', params.category);
+    if (params.limit) usp.set('limit', String(params.limit));
+    const query = usp.toString();
+    const response = await fetch(`/api/products${query ? `?${query}` : ''}`);
+    if (!response.ok) {
+      throw new Error('Falha ao buscar produtos');
+    }
+    const data = await response.json();
+    return data.products || data || [];
+  } catch (error) {
+    console.error('Erro ao buscar produtos:', error);
+    return [];
+  }
+}
+
+/**
  * Utilitário para buscar um produto específico por ID
  */
 export async function fetchProductById(productId: string): Promise<Product | null> {
