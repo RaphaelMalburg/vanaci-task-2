@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BreadcrumbsContainer } from "@/components/breadcrumbs";
-import { ShoppingCart, Search, Filter, Loader2 } from "lucide-react";
+import { ShoppingCart, Search, Filter, Loader2, ChevronDown, ChevronUp, Info, X } from "lucide-react";
 import { useCartStore } from "@/stores/cart-store";
 import { toast } from "sonner";
 import { Cart } from "@/components/Cart";
 import { useAuth } from "@/contexts/auth-context";
+import { useProductOverlay } from "@/contexts/product-overlay-context";
+import { useRouter } from "next/navigation";
 
 import type { Product } from '@/lib/types';
 
@@ -26,6 +28,8 @@ export default function Products() {
   const [error, setError] = useState<string | null>(null);
   const { addItem, getItemQuantity, getItemCount, items, total } = useCartStore();
   const { user } = useAuth();
+  const router = useRouter();
+  const overlay = useProductOverlay();
 
   // Fetch produtos do banco de dados
   useEffect(() => {
@@ -61,6 +65,10 @@ export default function Products() {
   const [sortBy, setSortBy] = useState<SortOption>("name");
   const [showOnlyInStock, setShowOnlyInStock] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const toggleExpanded = (id: string) =>
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const filteredAndSortedProducts = useMemo(() => {
     if (!products || products.length === 0) {
@@ -168,7 +176,7 @@ export default function Products() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300 py-12">
+    <div className="min-h-screen relative bg-gradient-to-br from-sky-100/60 via-white to-emerald-100/60 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 transition-colors duration-300 py-12">
       <BreadcrumbsContainer />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 fade-in">
         {/* Header */}
@@ -226,7 +234,7 @@ export default function Products() {
               placeholder="Buscar produtos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white transition-colors duration-300"
+              className="pl-10 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border-white/40 dark:border-gray-700/40 text-gray-900 dark:text-white transition-colors duration-300"
             />
           </div>
 
@@ -238,10 +246,10 @@ export default function Products() {
             </div>
             
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-48 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white transition-colors duration-300">
+              <SelectTrigger className="w-48 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border-white/40 dark:border-gray-700/40 text-gray-900 dark:text-white transition-colors duration-300">
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+              <SelectContent className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-white/40 dark:border-gray-700/40">
                 {categories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}
@@ -251,10 +259,10 @@ export default function Products() {
             </Select>
 
             <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-              <SelectTrigger className="w-48 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white transition-colors duration-300">
+              <SelectTrigger className="w-48 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border-white/40 dark:border-gray-700/40 text-gray-900 dark:text-white transition-colors duration-300">
                 <SelectValue placeholder="Ordenar por" />
               </SelectTrigger>
-              <SelectContent className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+              <SelectContent className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-white/40 dark:border-gray-700/40">
                 <SelectItem value="name">Nome A-Z</SelectItem>
                 <SelectItem value="price-low">Menor Preço</SelectItem>
                 <SelectItem value="price-high">Maior Preço</SelectItem>
@@ -281,6 +289,60 @@ export default function Products() {
           </p>
         </div>
 
+        {/* SUGESTÕES DO AGENTE (glassmorphism floating panel) */}
+        {overlay.isOpen && (
+          <div className="fixed right-6 top-24 z-30 w-[360px] max-h-[70vh] overflow-hidden">
+            <div className="backdrop-blur-xl bg-white/30 dark:bg-gray-800/40 border border-white/30 dark:border-gray-700/40 rounded-2xl shadow-2xl">
+              <div className="p-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{overlay.title || 'Sugestões de produtos'}</h3>
+                  {overlay.query && (
+                    <p className="text-xs text-gray-600 dark:text-gray-400">para "{overlay.query}"</p>
+                  )}
+                </div>
+                <Button variant="ghost" size="icon" onClick={overlay.hide}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="px-4 pb-2 max-h-[55vh] overflow-y-auto space-y-3">
+                {overlay.isLoading ? (
+                  <div className="text-sm text-gray-600 dark:text-gray-300 p-4">Carregando sugestões...</div>
+                ) : overlay.products.length === 0 ? (
+                  <div className="text-sm text-gray-600 dark:text-gray-300 p-4">Nenhum produto encontrado.</div>
+                ) : (
+                  overlay.products.map((p) => (
+                    <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-md border border-white/30 dark:border-gray-700/40">
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                        {p.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">Sem imagem</div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium truncate text-gray-900 dark:text-gray-100">{p.name}</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400 truncate">R$ {p.price.toFixed(2)}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="secondary" onClick={() => router.push(`/products/${p.id}`)}>
+                          Detalhes
+                        </Button>
+                        <Button size="sm" onClick={() => handleAddToCart(p)}>
+                          Adicionar
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="p-3">
+                <Button variant="outline" className="w-full" onClick={overlay.hide}>Fechar</Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Produtos organizados por categoria */}
         {selectedCategory === 'Todos' ? (
           <div className="space-y-8">
@@ -292,9 +354,9 @@ export default function Products() {
                     const cartQuantity = getItemQuantity(product.id);
                     
                     return (
-                      <Card key={product.id} className="h-full flex flex-col hover:shadow-lg transition-shadow">
+                      <Card key={product.id} className="h-full flex flex-col hover:shadow-2xl transition-shadow bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border border-white/40 dark:border-gray-700/40">
                         <CardHeader>
-                          <div className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
+                          <div onClick={() => router.push(`/products/${product.id}`)} className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer">
                             {product.image ? (
                               <Image
                                 src={product.image}
@@ -311,7 +373,7 @@ export default function Products() {
                           </div>
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex-1">
-                              <CardTitle className="text-lg leading-tight">{product.name}</CardTitle>
+                              <CardTitle className="text-lg leading-tight cursor-pointer hover:underline" onClick={() => router.push(`/products/${product.id}`)}>{product.name}</CardTitle>
                               <Badge variant="outline" className="text-xs mt-1">
                                 {product.category}
                               </Badge>
@@ -325,9 +387,17 @@ export default function Products() {
                         </CardHeader>
                         
                         <CardContent className="flex-1 flex flex-col">
-                          <CardDescription className="mb-4 flex-1 text-sm">
-                            {product.description}
-                          </CardDescription>
+                          <div className="mb-3">
+                            <button className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline" onClick={() => toggleExpanded(product.id)}>
+                              {expanded[product.id] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              {expanded[product.id] ? 'Esconder descrição' : 'Ver descrição'}
+                            </button>
+                            {expanded[product.id] && (
+                              <CardDescription className="mt-2 text-sm">
+                                {product.description}
+                              </CardDescription>
+                            )}
+                          </div>
                           
                           <div className="space-y-3">
                             <div className="flex items-center gap-2">
@@ -342,6 +412,9 @@ export default function Products() {
                               }`}>
                                 {product.stock > 0 ? `Em estoque (${product.stock})` : "Fora de estoque"}
                               </span>
+                              <Button variant="ghost" size="sm" onClick={() => router.push(`/products/${product.id}`)}>
+                                <Info className="h-4 w-4 mr-1" /> Detalhes
+                              </Button>
                             </div>
                             
                             {product.stock > 0 ? (
@@ -381,9 +454,9 @@ export default function Products() {
               const cartQuantity = getItemQuantity(product.id);
               
               return (
-                <Card key={product.id} className="h-full flex flex-col hover:shadow-lg transition-shadow">
+                <Card key={product.id} className="h-full flex flex-col hover:shadow-2xl transition-shadow bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border border-white/40 dark:border-gray-700/40">
                   <CardHeader>
-                    <div className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
+                    <div onClick={() => router.push(`/products/${product.id}`)} className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer">
                       {product.image ? (
                         <Image
                           src={product.image}
@@ -400,7 +473,7 @@ export default function Products() {
                     </div>
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
-                        <CardTitle className="text-lg leading-tight">{product.name}</CardTitle>
+                        <CardTitle className="text-lg leading-tight cursor-pointer hover:underline" onClick={() => router.push(`/products/${product.id}`)}>{product.name}</CardTitle>
                         <Badge variant="outline" className="text-xs mt-1">
                           {product.category}
                         </Badge>
@@ -414,9 +487,17 @@ export default function Products() {
                   </CardHeader>
                   
                   <CardContent className="flex-1 flex flex-col">
-                    <CardDescription className="mb-4 flex-1 text-sm">
-                      {product.description}
-                    </CardDescription>
+                    <div className="mb-3">
+                      <button className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline" onClick={() => toggleExpanded(product.id)}>
+                        {expanded[product.id] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        {expanded[product.id] ? 'Esconder descrição' : 'Ver descrição'}
+                      </button>
+                      {expanded[product.id] && (
+                        <CardDescription className="mt-2 text-sm">
+                          {product.description}
+                        </CardDescription>
+                      )}
+                    </div>
                     
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
@@ -431,6 +512,9 @@ export default function Products() {
                         }`}>
                           {product.stock > 0 ? `Em estoque (${product.stock})` : "Fora de estoque"}
                         </span>
+                        <Button variant="ghost" size="sm" onClick={() => router.push(`/products/${product.id}`)}>
+                          <Info className="h-4 w-4 mr-1" /> Detalhes
+                        </Button>
                       </div>
                       
                       {product.stock > 0 ? (
