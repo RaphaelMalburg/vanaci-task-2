@@ -54,7 +54,7 @@ export default function CartPage() {
     };
   }).filter(item => item.quantity > 0);
 
-  const handleQuantityChange = (productId: string, newQuantity: number) => {
+  const handleQuantityChange = async (productId: string, newQuantity: number) => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
@@ -63,11 +63,14 @@ export default function CartPage() {
       return;
     }
 
-    if (newQuantity <= 0) {
-      removeItem(productId);
-      toast.success('Item removido do carrinho');
-    } else {
-      updateQuantity(productId, newQuantity);
+    try {
+      if (newQuantity <= 0) {
+        await removeItem(productId);
+      } else {
+        await updateQuantity(productId, newQuantity);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar quantidade:', error);
     }
   };
 
@@ -136,7 +139,13 @@ export default function CartPage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={clearCart}
+                    onClick={async () => {
+                      try {
+                        await clearCart();
+                      } catch (error) {
+                        console.error('Erro ao limpar carrinho:', error);
+                      }
+                    }}
                     className="text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-950"
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
@@ -203,7 +212,13 @@ export default function CartPage() {
                           variant="ghost" 
                           size="icon" 
                           className="ml-2 text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-950"
-                          onClick={() => removeItem(product.id)}
+                          onClick={async () => {
+                            try {
+                              await removeItem(product.id);
+                            } catch (error) {
+                              console.error('Erro ao remover item:', error);
+                            }
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
