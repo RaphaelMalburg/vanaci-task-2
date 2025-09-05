@@ -116,43 +116,63 @@ export function ProductOverlay() {
                     return (
                     <div 
                       key={product.id} 
-                      className={`flex gap-3 p-3 border rounded-lg transition-all duration-500 transform ${
+                      className={`relative flex gap-4 p-4 border rounded-xl transition-all duration-500 transform hover:shadow-lg ${
                         animateProducts ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
                       } ${
                         isOnPromotion 
                           ? 'bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/10 dark:to-yellow-900/10 border-orange-200 dark:border-orange-800 shadow-md' 
-                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                       }`}
                       style={{ animationDelay }}
                     >
                       {isOnPromotion && (
-                        <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                        <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg z-10">
                           <Star className="h-3 w-3" />
                           Oferta
                         </div>
                       )}
-                      <div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden flex-shrink-0">
+                      <div className="relative w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
                         {product.image ? (
-                          <Image src={product.image} alt={product.name} fill className="object-cover" sizes="64px" />
+                          <Image src={product.image} alt={product.name} fill className="object-cover" sizes="80px" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">Sem imagem</div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex flex-col gap-3">
                           <div className="min-w-0">
-                            <div className="font-medium text-sm text-gray-900 dark:text-white truncate">{product.name}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{product.description}</div>
-                            <div className="mt-2 flex items-center gap-2">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <h3 className="font-semibold text-base text-gray-900 dark:text-white truncate cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                  {product.name}
+                                </h3>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs">
+                                <div className="space-y-2">
+                                  <div className="font-medium text-gray-900 dark:text-gray-100">{product.name}</div>
+                                  {product.description && (
+                                    <div className="text-sm text-gray-600 dark:text-gray-300">{product.description}</div>
+                                  )}
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">Categoria: {product.category}</div>
+                                  {typeof product.stock === 'number' && (
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">Estoque: {product.stock} unidades</div>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{product.description}</p>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
                               <Badge 
                                 variant="outline" 
-                                className={`text-xs ${
+                                className={`text-sm font-medium ${
                                   isOnPromotion 
                                     ? 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700' 
-                                    : ''
+                                    : 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-700'
                                 }`}
                               >
-                                {isOnPromotion && <Gift className="h-3 w-3 mr-1" />}
+                                {isOnPromotion && <Gift className="h-4 w-4 mr-1" />}
                                 R$ {product.price.toFixed(2)}
                               </Badge>
                               {product.prescription && (
@@ -165,38 +185,12 @@ export function ProductOverlay() {
                                 </Badge>
                               )}
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2 ml-2">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  className="text-sm"
-                                >
-                                  Detalhes
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent className="max-w-xs text-left">
-                                <div className="space-y-1">
-                                  <div className="font-medium text-gray-900 dark:text-gray-100">{product.name}</div>
-                                  {product.description && (
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">{product.description}</div>
-                                  )}
-                                  <div className="text-xs text-gray-600 dark:text-gray-300">Categoria: {product.category}</div>
-                                  <div className="text-xs text-gray-600 dark:text-gray-300">Preço: R$ {product.price.toFixed(2)}</div>
-                                  {typeof product.stock === 'number' && (
-                                    <div className="text-xs text-gray-600 dark:text-gray-300">Estoque: {product.stock}</div>
-                                  )}
-                                </div>
-                              </TooltipContent>
-                            </Tooltip>
                             <Button 
                               size="sm" 
-                              className={`text-sm transition-all duration-200 ${
+                              className={`transition-all duration-200 ${
                                 isOnPromotion 
                                   ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-md hover:shadow-lg' 
-                                  : ''
+                                  : 'bg-blue-600 hover:bg-blue-700 text-white'
                               }`}
                               onClick={() => handleAdd(product)} 
                               disabled={!!loadingById[product.id]}
@@ -204,10 +198,14 @@ export function ProductOverlay() {
                               {loadingById[product.id] ? <ButtonLoading /> : (
                                 isOnPromotion ? (
                                   <>
-                                    <Gift className="h-3 w-3 mr-1" />
+                                    <Gift className="h-4 w-4 mr-2" />
                                     Aproveitar
                                   </>
-                                ) : 'Adicionar'
+                                ) : (
+                                  <>
+                                    Adicionar
+                                  </>
+                                )
                               )}
                             </Button>
                           </div>
