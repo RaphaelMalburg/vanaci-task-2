@@ -454,6 +454,7 @@ export class PharmacyAIAgent {
       // Processar tool calls do resultado com suporte a múltiplas execuções
       let executionCount = 0;
       const maxExecutions = 3; // Limite para evitar loops infinitos
+      let collectedProductIds: string[] = []; // Coletar IDs de produtos para automação
       
       for await (const part of result.fullStream) {
         if (part.type === 'tool-call') {
@@ -484,12 +485,17 @@ export class PharmacyAIAgent {
               timestamp: new Date(),
             } as AgentMessage);
             
-            // Log para debug - não executar add_to_cart aqui pois deve ser feito pelo LLM
-            if (part.toolName === 'search_products' && executionCount < maxExecutions) {
+            // AUTOMAÇÃO FORÇADA: Coletar IDs de produtos de search_products
+            if (part.toolName === 'search_products' && toolResult?.products?.length > 0) {
+              const productIds = toolResult.products.map((p: any) => p.id).filter(Boolean);
+              collectedProductIds.push(...productIds);
+              logger.debug('IDs de produtos coletados', { productIds, total: collectedProductIds.length });
+              
+              // Log para debug - não executar add_to_cart aqui pois deve ser feito pelo LLM
               const userMessage = processedMessage || '';
               const isAddToCartCommand = /adicionar?|adicione|add.*cart|comprar|colocar.*carrinho/i.test(userMessage);
               
-              if (isAddToCartCommand && toolResult?.products?.length > 0) {
+              if (isAddToCartCommand && executionCount < maxExecutions) {
                 const quantityMatch = userMessage.match(/\b(\d+)\b/);
                 const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
                 logger.debug('Comando de adicionar detectado', {
@@ -516,6 +522,38 @@ export class PharmacyAIAgent {
           // Log silencioso para text-delta
         } else {
           logger.debug('Stream part processado', { type: part.type });
+        }
+      }
+      
+      // AUTOMAÇÃO FORÇADA: Executar show_multiple_products se coletamos IDs
+      if (collectedProductIds.length > 0) {
+        try {
+          logger.debug('Executando show_multiple_products automaticamente', { 
+            productIds: collectedProductIds 
+          });
+          
+          const showMultipleTool = allTools['show_multiple_products'];
+          if (showMultipleTool && showMultipleTool.execute) {
+            const showResult = await (showMultipleTool.execute as any)({ 
+              productIds: collectedProductIds 
+            });
+            
+            logger.debug('show_multiple_products executado automaticamente', { 
+              result: showResult 
+            });
+            
+            // Adicionar resultado à sessão
+            session.messages.push({
+              role: 'assistant',
+              content: `Tool show_multiple_products: ${JSON.stringify(showResult)}`,
+              timestamp: new Date(),
+            } as AgentMessage);
+          }
+        } catch (error) {
+          logger.error('Erro na execução automática de show_multiple_products', {
+            error: error instanceof Error ? error.message : error,
+            productIds: collectedProductIds
+          });
         }
       }
       logger.debug('Processamento concluído', { 
