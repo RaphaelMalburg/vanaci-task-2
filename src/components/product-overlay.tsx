@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -10,17 +10,38 @@ import { useProductOverlay } from "@/contexts/product-overlay-context";
 import { useCart } from "@/hooks/useCart";
 import type { Product } from "@/lib/types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Sparkles, Gift, Clock, Star } from "lucide-react";
 
 export function ProductOverlay() {
   const { isOpen, isLoading, title, query, products, hide } = useProductOverlay();
   const { addItem } = useCart();
   const [loadingById, setLoadingById] = useState<Record<string, boolean>>({});
+  const [showPromotions, setShowPromotions] = useState(false);
+  const [animateProducts, setAnimateProducts] = useState(false);
 
   const headerTitle = useMemo(() => {
     if (title) return title;
     if (query) return `Resultados para "${query}"`;
     return "Recomendações";
   }, [title, query]);
+
+  // Animação de entrada dos produtos
+  useEffect(() => {
+    if (products.length > 0 && !isLoading) {
+      setAnimateProducts(false);
+      const timer = setTimeout(() => setAnimateProducts(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [products, isLoading]);
+
+  // Verificar se há promoções ativas
+  const hasPromotions = useMemo(() => {
+    return products.some(product => 
+      product.category === 'Vitaminas' || 
+      product.name.toLowerCase().includes('vitamina') ||
+      product.price < 20 // Produtos em promoção
+    );
+  }, [products]);
 
   const handleAdd = async (product: Product) => {
     if (loadingById[product.id]) return;
@@ -37,8 +58,35 @@ export function ProductOverlay() {
     <Sheet open={isOpen} onOpenChange={(o) => (!o ? hide() : undefined)}>
       <SheetContent side="right" className="sm:max-w-xl w-full bg-white dark:bg-gray-900 border-l dark:border-gray-800">
         <div className="flex flex-col h-full">
-          <SheetHeader>
-            <SheetTitle className="text-gray-900 dark:text-white">{headerTitle}</SheetTitle>
+          <SheetHeader className="relative">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-gray-900 dark:text-white flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-blue-500" />
+                {headerTitle}
+              </SheetTitle>
+              {hasPromotions && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPromotions(!showPromotions)}
+                  className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                >
+                  <Gift className="h-4 w-4 mr-1" />
+                  Promoções
+                </Button>
+              )}
+            </div>
+            {showPromotions && hasPromotions && (
+              <div className="mt-3 p-3 bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/20 dark:to-yellow-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center gap-2 text-orange-700 dark:text-orange-300 text-sm font-medium mb-1">
+                  <Gift className="h-4 w-4" />
+                  Ofertas Especiais Disponíveis!
+                </div>
+                <p className="text-xs text-orange-600 dark:text-orange-400">
+                  Produtos em destaque com preços especiais. Aproveite enquanto durarem os estoques!
+                </p>
+              </div>
+            )}
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto mt-4">
@@ -61,8 +109,28 @@ export function ProductOverlay() {
             ) : (
               <TooltipProvider>
                 <div className="space-y-4">
-                  {products.map((product) => (
-                    <div key={product.id} className="flex gap-3 p-3 border rounded-lg bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  {products.map((product, index) => {
+                    const isOnPromotion = product.category === 'Vitaminas' || product.name.toLowerCase().includes('vitamina') || product.price < 20;
+                    const animationDelay = animateProducts ? `${index * 100}ms` : '0ms';
+                    
+                    return (
+                    <div 
+                      key={product.id} 
+                      className={`flex gap-3 p-3 border rounded-lg transition-all duration-500 transform ${
+                        animateProducts ? 'translate-x-0 opacity-100' : 'translate-x-4 opacity-0'
+                      } ${
+                        isOnPromotion 
+                          ? 'bg-gradient-to-r from-orange-50 to-yellow-50 dark:from-orange-900/10 dark:to-yellow-900/10 border-orange-200 dark:border-orange-800 shadow-md' 
+                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      }`}
+                      style={{ animationDelay }}
+                    >
+                      {isOnPromotion && (
+                        <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                          <Star className="h-3 w-3" />
+                          Oferta
+                        </div>
+                      )}
                       <div className="relative w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden flex-shrink-0">
                         {product.image ? (
                           <Image src={product.image} alt={product.name} fill className="object-cover" sizes="64px" />
@@ -76,9 +144,25 @@ export function ProductOverlay() {
                             <div className="font-medium text-sm text-gray-900 dark:text-white truncate">{product.name}</div>
                             <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{product.description}</div>
                             <div className="mt-2 flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">R$ {product.price.toFixed(2)}</Badge>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${
+                                  isOnPromotion 
+                                    ? 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-700' 
+                                    : ''
+                                }`}
+                              >
+                                {isOnPromotion && <Gift className="h-3 w-3 mr-1" />}
+                                R$ {product.price.toFixed(2)}
+                              </Badge>
                               {product.prescription && (
                                 <Badge variant="destructive" className="text-xs">Receita</Badge>
+                              )}
+                              {isOnPromotion && (
+                                <Badge className="text-xs bg-orange-500 text-white">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  Oferta
+                                </Badge>
                               )}
                             </div>
                           </div>
@@ -107,14 +191,31 @@ export function ProductOverlay() {
                                 </div>
                               </TooltipContent>
                             </Tooltip>
-                            <Button size="sm" className="text-sm" onClick={() => handleAdd(product)} disabled={!!loadingById[product.id]}>
-                              {loadingById[product.id] ? <ButtonLoading /> : 'Adicionar'}
+                            <Button 
+                              size="sm" 
+                              className={`text-sm transition-all duration-200 ${
+                                isOnPromotion 
+                                  ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-md hover:shadow-lg' 
+                                  : ''
+                              }`}
+                              onClick={() => handleAdd(product)} 
+                              disabled={!!loadingById[product.id]}
+                            >
+                              {loadingById[product.id] ? <ButtonLoading /> : (
+                                isOnPromotion ? (
+                                  <>
+                                    <Gift className="h-3 w-3 mr-1" />
+                                    Aproveitar
+                                  </>
+                                ) : 'Adicionar'
+                              )}
                             </Button>
                           </div>
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </TooltipProvider>
             )}
