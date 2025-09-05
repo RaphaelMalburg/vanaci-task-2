@@ -66,9 +66,9 @@ export class Logger {
   }
 }
 
-// Instância global configurada para desenvolvimento
+// Instância global configurada para produção
 export const logger = Logger.getInstance({
-  level: process.env.NODE_ENV === 'development' ? LogLevel.DEBUG : LogLevel.INFO,
+  level: process.env.NODE_ENV === 'development' ? LogLevel.WARN : LogLevel.ERROR,
   enableConsole: true,
-  prefix: 'AI-Agent'
+  prefix: 'Farmacia'
 })

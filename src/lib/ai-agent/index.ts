@@ -268,7 +268,7 @@ export class PharmacyAIAgent {
         // Definir informações do usuário no contexto global
         if (context.user) {
           setGlobalContext('user', context.user);
-          console.log('🔑 [AI Agent] Usuário definido no contexto global:', context.user.username);
+          logger.debug('Usuário definido no contexto global', { username: context.user.username });
         }
       }
       
@@ -290,22 +290,18 @@ export class PharmacyAIAgent {
 
       // Processar tool calls se existirem
       if (result.toolCalls && result.toolCalls.length > 0) {
-        console.log('🔧 [DEBUG] Tool calls detectados:', result.toolCalls.length);
-        console.log('🔧 [DEBUG] Tool calls completos:', JSON.stringify(result.toolCalls, null, 2));
+        logger.debug('Tool calls detectados', { count: result.toolCalls.length });
         
         for (const toolCall of result.toolCalls) {
-          console.log(`🛠️ [DEBUG] Executando tool: ${toolCall.toolName}` );
-          console.log(`🆔 [DEBUG] Tool Call ID: ${toolCall.toolCallId}`);
+          logger.debug('Executando tool', { toolName: toolCall.toolName, toolCallId: toolCall.toolCallId });
           
           try {
-            console.log(`⏳ [DEBUG] Iniciando execução da tool ${toolCall.toolName}...`);
             const tool = allTools[toolCall.toolName as keyof typeof allTools];
             if (!tool || !tool.execute) {
               throw new Error(`Tool ${toolCall.toolName} não encontrada ou não executável`);
             }
             const toolResult = await (tool.execute as any)((toolCall as any).args);
-            console.log(`✅ [DEBUG] Tool ${toolCall.toolName} executado com sucesso:`);
-            console.log(`📊 [DEBUG] Resultado completo:`, JSON.stringify(toolResult, null, 2));
+            logger.debug('Tool executado com sucesso', { toolName: toolCall.toolName });
             
             // Adicionar resultado da tool à sessão
             session.messages.push({
@@ -313,10 +309,11 @@ export class PharmacyAIAgent {
               content: `Tool ${toolCall.toolName}: ${JSON.stringify(toolResult)}`,
               timestamp: new Date(),
             } as AgentMessage);
-            console.log(`💾 [DEBUG] Resultado da tool ${toolCall.toolName} adicionado à sessão`);
           } catch (error) {
-            console.error(`❌ [DEBUG] Erro ao executar tool ${toolCall.toolName}:`, error);
-            console.error(`❌ [DEBUG] Stack trace:`, error instanceof Error ? error.stack : 'Sem stack trace');
+            logger.error('Erro ao executar tool', { 
+              toolName: toolCall.toolName, 
+              error: error instanceof Error ? error.message : 'Erro desconhecido'
+            });
             
             // Adicionar erro da tool à sessão
             session.messages.push({
@@ -324,13 +321,9 @@ export class PharmacyAIAgent {
               content: `Tool ${toolCall.toolName} Error: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
               timestamp: new Date(),
             } as AgentMessage);
-            console.log(`💾 [DEBUG] Erro da tool ${toolCall.toolName} adicionado à sessão`);
           }
         }
-        console.log(`🏁 [DEBUG] Processamento de ${result.toolCalls.length} tool calls concluído`);
-      } else {
-        console.log('🔧 [DEBUG] Nenhuma tool call detectada no resultado');
-        console.log('🔧 [DEBUG] Resultado completo:', JSON.stringify(result, null, 2));
+        logger.debug('Processamento de tool calls concluído', { count: result.toolCalls.length });
       }
 
       // Adicionar resposta do assistente
@@ -395,17 +388,17 @@ export class PharmacyAIAgent {
         const rewriteResult = await conditionalRewriteMessage(userMessage, this.llmConfig);
         processedMessage = rewriteResult.message;
         if (rewriteResult.wasRewritten) {
-          console.log('✏️ Mensagem reescrita:', processedMessage);
+          logger.debug('Mensagem reescrita', { original: userMessage, rewritten: processedMessage });
         }
       }
       
       const session = await this.getSession(sessionId);
-      console.log('📋 Sessão obtida, mensagens existentes:', session.messages.length);
+      logger.debug('Sessão obtida', { sessionId, messageCount: session.messages.length });
       
       // Atualizar contexto se fornecido
       if (context) {
         await this.sessionService.updateSessionContext(sessionId, { ...session.context, ...context });
-        console.log('🔄 Contexto atualizado:', context);
+        logger.debug('Contexto atualizado', { sessionId, context });
       }
 
       // Adicionar mensagem do usuário
@@ -416,21 +409,18 @@ export class PharmacyAIAgent {
       };
       await this.sessionService.addMessage(sessionId, userMsg);
       session.messages.push(userMsg);
-      console.log('➕ Mensagem do usuário adicionada à sessão');
+      logger.debug('Mensagem do usuário adicionada', { sessionId });
 
       // Preparar mensagens para o LLM
       const messages: CoreMessage[] = [
         { role: 'system', content: SYSTEM_PROMPT },
         ...this.convertMessages(session.messages),
       ];
-      console.log('📨 Mensagens preparadas para LLM:', messages.length);
-      console.log('📨 Última mensagem:', messages[messages.length - 1]);
+      logger.debug('Mensagens preparadas para LLM', { count: messages.length });
 
       // Gerar resposta com streaming (usando fallback)
       const llmModel = await createLLMModelWithFallback(this.llmConfig);
-      console.log('🤖 Modelo LLM criado com fallback:', !!llmModel);
-      console.log('🔧 Tools disponíveis:', Object.keys(allTools));
-      console.log('🌡️ Temperatura configurada:', this.llmConfig.temperature || 0.7);
+      logger.debug('Modelo LLM criado', { hasModel: !!llmModel, toolCount: Object.keys(allTools).length });
 
       // Definir sessionId no contexto global para as tools
       setGlobalContext('sessionId', sessionId);
@@ -438,23 +428,24 @@ export class PharmacyAIAgent {
         if (context.cartId) setGlobalContext('cartId', context.cartId);
         if (context.userId) {
           setGlobalContext('userId', context.userId);
-          console.log('👤 [STREAM] UserId definido no contexto global:', context.userId);
+          logger.debug('UserId definido no contexto', { userId: context.userId });
         }
         if (context.user) {
           setGlobalContext('user', context.user);
-          console.log('👤 [STREAM] User definido no contexto global:', context.user);
+          logger.debug('User definido no contexto', { user: context.user });
         }
         if (context.currentPage) setGlobalContext('currentPage', context.currentPage);
       }
-      console.log('🔑 SessionId e contexto definidos no contexto global:', sessionId);
+      logger.debug('Contexto global configurado', { sessionId });
 
-      console.log('🚀 [STREAM] Iniciando processamento...');
-      console.log('🔧 [CONFIG] Tools disponíveis:', Object.keys(allTools).length);
-      console.log('💬 [USER] Mensagem:', processedMessage);
-      
       // Detectar se a mensagem requer tools obrigatoriamente
       const requiresTools = this.shouldForceToolUsage(processedMessage);
-      console.log('🎯 [TOOL-DETECTION] Mensagem requer tools:', requiresTools);
+      logger.debug('Iniciando processamento', { 
+        sessionId, 
+        message: processedMessage, 
+        requiresTools, 
+        toolCount: Object.keys(allTools).length 
+      });
       
       const result = streamText({
         model: llmModel,
@@ -465,26 +456,30 @@ export class PharmacyAIAgent {
       });
       
       // Processar tool calls do resultado com suporte a múltiplas execuções
-      console.log('🔄 [STREAM] Processando...');
       let executionCount = 0;
       const maxExecutions = 3; // Limite para evitar loops infinitos
       
       for await (const part of result.fullStream) {
         if (part.type === 'tool-call') {
           executionCount++;
-          console.log(`🛠️ [TOOL] ${part.toolName} chamada (execução ${executionCount})`);
-          console.log(`📋 [TOOL] Argumentos:`, JSON.stringify((part as any).input, null, 2));
-          console.log(`🆔 [TOOL] ID: ${part.toolCallId}`);
+          logger.debug('Tool call executada', {
+            toolName: part.toolName,
+            execution: executionCount,
+            toolCallId: part.toolCallId,
+            args: (part as any).input
+          });
           
           try {
-            console.log(`⏳ [TOOL] Executando ${part.toolName}...`);
+            logger.debug('Executando tool', { toolName: part.toolName });
             const tool = allTools[part.toolName as keyof typeof allTools];
             if (!tool || !tool.execute) {
               throw new Error(`Tool ${part.toolName} não encontrada ou não executável`);
             }
             const toolResult = await (tool.execute as any)((part as any).input);
-            console.log(`✅ [TOOL] ${part.toolName} executada com sucesso`);
-            console.log(`📊 [TOOL] Resultado:`, JSON.stringify(toolResult, null, 2));
+            logger.debug('Tool executada com sucesso', { 
+              toolName: part.toolName, 
+              result: toolResult 
+            });
             
             // Adicionar resultado da tool à sessão
             session.messages.push({
@@ -499,18 +494,20 @@ export class PharmacyAIAgent {
               const isAddToCartCommand = /adicionar?|adicione|add.*cart|comprar|colocar.*carrinho/i.test(userMessage);
               
               if (isAddToCartCommand && toolResult?.products?.length > 0) {
-                console.log('🔄 [TOOL] Comando de adicionar detectado - LLM deve executar add_to_cart automaticamente');
-                console.log('📋 [TOOL] Produto encontrado:', toolResult.products[0].id);
-                
-                // Extrair quantidade da mensagem
                 const quantityMatch = userMessage.match(/\b(\d+)\b/);
                 const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
-                console.log('📊 [TOOL] Quantidade detectada:', quantity);
+                logger.debug('Comando de adicionar detectado', {
+                  productId: toolResult.products[0].id,
+                  quantity
+                });
               }
             }
             
           } catch (error) {
-            console.error(`❌ [TOOL] Erro em ${part.toolName}:`, error instanceof Error ? error.message : error);
+            logger.error('Erro na execução da tool', {
+              toolName: part.toolName,
+              error: error instanceof Error ? error.message : error
+            });
             
             // Adicionar erro da tool à sessão
             session.messages.push({
@@ -522,11 +519,13 @@ export class PharmacyAIAgent {
         } else if (part.type === 'text-delta') {
           // Log silencioso para text-delta
         } else {
-          console.log(`🔄 [STREAM] Tipo: ${part.type}`);
+          logger.debug('Stream part processado', { type: part.type });
         }
       }
-      console.log('🏁 [STREAM] Processamento concluído');
-      console.log(`📊 [SESSION] Total de mensagens: ${session.messages.length}`);
+      logger.debug('Processamento concluído', { 
+        sessionId, 
+        totalMessages: session.messages.length 
+      });
 
       return result;
     } catch (error) {
@@ -541,8 +540,7 @@ export class PharmacyAIAgent {
         } : error
       });
       
-      console.error('❌ Erro ao processar mensagem com streaming:', error);
-      console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível');
+      // Error já logado pelo logger.error acima
       
       // Re-throw validation errors as-is
       if (error instanceof Error && error.message.includes('validação')) {
