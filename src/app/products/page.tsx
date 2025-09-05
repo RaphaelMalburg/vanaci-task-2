@@ -179,6 +179,62 @@ export default function Products() {
     <div className="min-h-screen relative bg-gradient-to-br from-sky-100/60 via-white to-emerald-100/60 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 transition-colors duration-300 py-12">
       <BreadcrumbsContainer />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 fade-in">
+        {/* Agent Suggestions - full width section pushing content down */}
+        {overlay.isOpen && (
+          <div className="mb-8">
+            <div className="rounded-2xl border border-white/40 dark:border-gray-700/40 bg-white/70 dark:bg-gray-800/60 backdrop-blur-md shadow-xl">
+              <div className="p-4 md:p-6 flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">{overlay.title || 'Sugestões de produtos'}</h3>
+                  {overlay.query && (
+                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">para "{overlay.query}"</p>
+                  )}
+                </div>
+                <Button variant="ghost" size="icon" onClick={overlay.hide}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <div className="px-4 md:px-6 pb-4 md:pb-6">
+                {overlay.isLoading ? (
+                  <div className="text-sm text-gray-600 dark:text-gray-300 p-4">Carregando sugestões...</div>
+                ) : overlay.products.length === 0 ? (
+                  <div className="text-sm text-gray-600 dark:text-gray-300 p-4">Nenhum produto encontrado.</div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {overlay.products.map((p) => (
+                      <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border border-white/40 dark:border-gray-700/40">
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                          {p.image ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">Sem imagem</div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium truncate text-gray-900 dark:text-gray-100">{p.name}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 truncate">R$ {p.price.toFixed(2)}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="secondary" onClick={() => router.push(`/products/${p.id}`)}>
+                            Detalhes
+                          </Button>
+                          <Button size="sm" onClick={() => handleAddToCart(p)}>
+                            Adicionar
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-3 md:p-4">
+                <Button variant="outline" className="w-full" onClick={overlay.hide}>Fechar</Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center mb-12 slide-up">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-8">
@@ -289,59 +345,7 @@ export default function Products() {
           </p>
         </div>
 
-        {/* SUGESTÕES DO AGENTE (glassmorphism floating panel) */}
-        {overlay.isOpen && (
-          <div className="fixed right-6 top-24 z-30 w-[360px] max-h-[70vh] overflow-hidden">
-            <div className="backdrop-blur-xl bg-white/30 dark:bg-gray-800/40 border border-white/30 dark:border-gray-700/40 rounded-2xl shadow-2xl">
-              <div className="p-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{overlay.title || 'Sugestões de produtos'}</h3>
-                  {overlay.query && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400">para "{overlay.query}"</p>
-                  )}
-                </div>
-                <Button variant="ghost" size="icon" onClick={overlay.hide}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="px-4 pb-2 max-h-[55vh] overflow-y-auto space-y-3">
-                {overlay.isLoading ? (
-                  <div className="text-sm text-gray-600 dark:text-gray-300 p-4">Carregando sugestões...</div>
-                ) : overlay.products.length === 0 ? (
-                  <div className="text-sm text-gray-600 dark:text-gray-300 p-4">Nenhum produto encontrado.</div>
-                ) : (
-                  overlay.products.map((p) => (
-                    <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/50 dark:bg-gray-800/50 backdrop-blur-md border border-white/30 dark:border-gray-700/40">
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-                        {p.image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">Sem imagem</div>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium truncate text-gray-900 dark:text-gray-100">{p.name}</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400 truncate">R$ {p.price.toFixed(2)}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" variant="secondary" onClick={() => router.push(`/products/${p.id}`)}>
-                          Detalhes
-                        </Button>
-                        <Button size="sm" onClick={() => handleAddToCart(p)}>
-                          Adicionar
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-              <div className="p-3">
-                <Button variant="outline" className="w-full" onClick={overlay.hide}>Fechar</Button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Former floating suggestions panel removed in favor of full-width section above */}
 
         {/* Produtos organizados por categoria */}
         {selectedCategory === 'Todos' ? (
