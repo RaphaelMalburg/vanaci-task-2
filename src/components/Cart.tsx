@@ -20,6 +20,7 @@ interface CartProps {
 export function Cart({ products, isOpen, onClose }: CartProps) {
   const { items, total, updateQuantity, removeItem, clearCart, itemCount } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [loadingById, setLoadingById] = useState<Record<string, { removing?: boolean; updating?: boolean }>>({});
 
   // Melhor sincronização: usar dados do carrinho como fonte principal
   const cartItems = (items || []).map(cartItem => {
@@ -46,7 +47,7 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
     };
   }).filter(item => item.quantity > 0);
 
-  const handleQuantityChange = (productId: string, newQuantity: number) => {
+  const handleQuantityChange = async (productId: string, newQuantity: number) => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
@@ -55,11 +56,16 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
       return;
     }
 
-    if (newQuantity <= 0) {
-      removeItem(productId);
-      toast.success('Item removido do carrinho');
-    } else {
-      updateQuantity(productId, newQuantity);
+    setLoadingById(prev => ({ ...prev, [productId]: { ...prev[productId], updating: true } }));
+    try {
+      if (newQuantity <= 0) {
+        await removeItem(productId);
+        toast.success('Item removido do carrinho');
+      } else {
+        await updateQuantity(productId, newQuantity);
+      }
+    } finally {
+      setLoadingById(prev => ({ ...prev, [productId]: { ...prev[productId], updating: false } }));
     }
   };
 
@@ -176,10 +182,23 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeItem(product.id)}
+                          onClick={async () => {
+                            if (loadingById[product.id]?.removing) return;
+                            setLoadingById(prev => ({ ...prev, [product.id]: { ...prev[product.id], removing: true } }));
+                            try {
+                              await removeItem(product.id);
+                            } finally {
+                              setLoadingById(prev => ({ ...prev, [product.id]: { ...prev[product.id], removing: false } }));
+                            }
+                          }}
+                          disabled={!!loadingById[product.id]?.removing}
                           className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          {loadingById[product.id]?.removing ? (
+                            <span className="inline-block h-3 w-3 rounded-full border-2 border-gray-400 border-t-transparent animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
                         </Button>
 
                         <div className="flex items-center gap-1">
@@ -187,9 +206,14 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                             variant="outline"
                             size="sm"
                             onClick={() => handleQuantityChange(product.id, quantity - 1)}
+                            disabled={!!loadingById[product.id]?.updating}
                             className="h-6 w-6 p-0"
                           >
-                            <Minus className="h-3 w-3" />
+                            {loadingById[product.id]?.updating ? (
+                              <span className="inline-block h-3 w-3 rounded-full border-2 border-gray-400 border-t-transparent animate-spin" />
+                            ) : (
+                              <Minus className="h-3 w-3" />
+                            )}
                           </Button>
                           <span className="text-sm font-medium min-w-[20px] text-center">
                             {quantity}
@@ -198,9 +222,14 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                             variant="outline"
                             size="sm"
                             onClick={() => handleQuantityChange(product.id, quantity + 1)}
+                            disabled={!!loadingById[product.id]?.updating}
                             className="h-6 w-6 p-0"
                           >
-                            <Plus className="h-3 w-3" />
+                            {loadingById[product.id]?.updating ? (
+                              <span className="inline-block h-3 w-3 rounded-full border-2 border-gray-400 border-t-transparent animate-spin" />
+                            ) : (
+                              <Plus className="h-3 w-3" />
+                            )}
                           </Button>
                         </div>
 
