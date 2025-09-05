@@ -11,6 +11,7 @@ import { useProductOverlay } from "@/contexts/product-overlay-context";
 import { searchProductsApi } from "@/lib/utils/api";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import type { Product } from "@/lib/types";
 
 // Context para controlar o estado do chat
 const ChatContext = createContext<{
@@ -237,6 +238,11 @@ export function Chat() {
 
       const decoder = new TextDecoder();
       let done = false;
+      // Acumuladores para sugestões ao longo do streaming
+      const aggregatedProducts = new Map<string, Product>();
+      let hasProductSuggestions = false;
+      let suggestionsQuery: string | undefined = undefined;
+      let loadingShown = false;
 
       while (!done) {
         const { value, done: readerDone } = await reader.read();
@@ -296,7 +302,7 @@ export function Chat() {
                      }, 1500);
                    }
 
-                   // Preparar sugestões de produtos e redirecionar para a página de produtos
+                   // Preparar sugestões de produtos (acumular durante o streaming)
                    const productTools = [
                      'search_products', 'list_recommended_products', 'get_promotional_products'
                    ];
@@ -304,21 +310,33 @@ export function Chat() {
                      try {
                        const args = toolPayload.args || {};
                        const query = args.query || args.symptomOrNeed || undefined;
-                       productOverlay.showLoading({ title: 'Sugestões de produtos', query });
+                       if (!loadingShown) {
+                         productOverlay.showLoading({ title: 'Sugestões de produtos', query });
+                         loadingShown = true;
+                       }
 
                        // Tentar extrair produtos diretamente do result quando disponível
                        let toolProducts = toolPayload.result?.data?.products || toolPayload.result?.products;
+                       if (toolProducts && !Array.isArray(toolProducts)) {
+                         toolProducts = [toolProducts];
+                       }
                        if (!toolProducts || !Array.isArray(toolProducts)) {
                          // Fallback: buscar pela API com base no argumento
                          const fetched = await searchProductsApi({ q: query, limit: 12 });
                          toolProducts = fetched;
                        }
-                       productOverlay.showProducts({ title: 'Sugestões de produtos', query, products: toolProducts || [] });
-                       setTimeout(() => router.push('/products'), 250);
+                       if (Array.isArray(toolProducts)) {
+                         for (const p of toolProducts) {
+                           if (p && (p.id !== undefined && p.id !== null)) {
+                             aggregatedProducts.set(String(p.id), p as Product);
+                           }
+                         }
+                       }
+                       hasProductSuggestions = true;
+                       if (!suggestionsQuery) suggestionsQuery = query;
                      } catch (e) {
                        console.error('Erro ao preparar sugestões de produtos:', e);
-                       productOverlay.showProducts({ title: 'Sugestões de produtos', products: [] });
-                       setTimeout(() => router.push('/products'), 250);
+                       hasProductSuggestions = true;
                      }
                    }
                    
@@ -342,6 +360,12 @@ export function Chat() {
                 }
                 
                 if (parsed.type === 'end') {
+                  // Ao final da resposta, exibir todas as sugestões agregadas de uma vez
+                  if (hasProductSuggestions) {
+                    const products = Array.from(aggregatedProducts.values());
+                    productOverlay.showProducts({ title: 'Sugestões de produtos', query: suggestionsQuery, products });
+                    setTimeout(() => router.push('/products'), 250);
+                  }
                   done = true;
                   break;
                 }
