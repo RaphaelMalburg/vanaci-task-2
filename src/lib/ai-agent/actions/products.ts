@@ -273,6 +273,75 @@ export const redirectToProductTool = tool({
   },
 });
 
+// Tool: Mostrar múltiplos produtos no overlay
+export const showMultipleProductsTool = tool({
+  description: 'Exibe múltiplos produtos específicos no overlay de produtos',
+  inputSchema: z.object({
+    productIds: z.array(z.string()).min(1).max(10).describe('Lista de IDs dos produtos para exibir'),
+    title: z.string().optional().describe('Título personalizado para o overlay'),
+    query: z.string().optional().describe('Query de busca relacionada'),
+  }),
+  execute: async ({ productIds, title, query }: {
+    productIds: string[];
+    title?: string;
+    query?: string;
+  }) => {
+    logger.info('Exibindo múltiplos produtos no overlay', { productIds, title, query })
+    
+    try {
+      const productService = ProductService.getInstance()
+      const products = []
+      
+      // Buscar cada produto por ID
+      for (const productId of productIds) {
+        try {
+          const product = await productService.getProductById(productId)
+          if (product) {
+            products.push(product)
+          } else {
+            logger.warn('Produto não encontrado', { productId })
+          }
+        } catch (error) {
+          logger.warn('Erro ao buscar produto', { productId, error })
+        }
+      }
+      
+      if (products.length === 0) {
+        return {
+          success: false,
+          message: 'Nenhum dos produtos especificados foi encontrado.',
+          data: { productIds, products: [] },
+        };
+      }
+      
+      const foundCount = products.length;
+      const totalCount = productIds.length;
+      const displayTitle = title || `Produtos Selecionados (${foundCount}/${totalCount})`;
+      
+      logger.info('Produtos encontrados para overlay', { foundCount, totalCount })
+      
+      const productsList = products
+        .map(product => `• ${product.name} - €${product.price.toFixed(2)}`)  
+        .join('\n');
+      
+      return {
+        success: true,
+        message: `📦 Exibindo ${foundCount} produto(s) no overlay:\n\n${productsList}`,
+        data: { 
+          products, 
+          title: displayTitle,
+          query,
+          showInOverlay: true,
+          productIds 
+        },
+      };
+    } catch (error) {
+      logger.error('Erro ao exibir múltiplos produtos', { productIds, error: error instanceof Error ? error.message : error })
+      throw new Error(`Erro ao exibir produtos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
+  },
+});
+
 export const productTools = {
   search_products: searchProductsTool,
   get_product_details: getProductDetailsTool,
@@ -280,4 +349,5 @@ export const productTools = {
   list_recommended_products: listRecommendedProductsTool,
   get_promotional_products: getPromotionalProductsTool,
   redirect_to_product: redirectToProductTool,
+  show_multiple_products: showMultipleProductsTool,
 };

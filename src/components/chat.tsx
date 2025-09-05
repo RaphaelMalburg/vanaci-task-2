@@ -321,6 +321,25 @@ export function Chat() {
                        setTimeout(() => router.push('/products'), 250);
                      }
                    }
+
+                   // Processar ferramenta de múltiplos produtos
+                   if (toolPayload && toolPayload.toolName === 'show_multiple_products') {
+                     try {
+                       const result = toolPayload.result;
+                       if (result && result.data && result.data.showInOverlay) {
+                         const { products, title, query } = result.data;
+                         productOverlay.showProducts({ 
+                           title: title || 'Produtos Selecionados', 
+                           query, 
+                           products: products || [] 
+                         });
+                         setTimeout(() => router.push('/products'), 250);
+                         console.log('✅ Múltiplos produtos exibidos no overlay:', products?.length || 0);
+                       }
+                     } catch (e) {
+                       console.error('Erro ao processar múltiplos produtos:', e);
+                     }
+                   }
                    
                    // Verificar se é uma ação de redirecionamento
                    if (toolPayload && toolPayload.toolName === 'redirect_to_product' && toolPayload.result) {
