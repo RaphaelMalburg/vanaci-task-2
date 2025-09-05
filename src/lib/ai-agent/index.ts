@@ -61,48 +61,32 @@ const SYSTEM_PROMPT = `Você é um assistente virtual especializado da Farmácia
 - **Responda sempre como se já soubesse as informações, sem explicar como as obteve**
 - **Quando mostrar produtos, inclua uma descrição visual atrativa e informações relevantes**
 
+**🚨🚨🚨 REGRA ABSOLUTA CRÍTICA - EXECUTE SEMPRE 🚨🚨🚨**
+**FLUXO OBRIGATÓRIO PARA QUALQUER BUSCA:**
+1. search_products (buscar)
+2. show_multiple_products (OBRIGATÓRIO - usar TODOS os IDs encontrados)
+3. Só então responder com texto
+
+**NUNCA PULE O PASSO 2! SEMPRE EXECUTE show_multiple_products APÓS search_products!**
+**ISSO É OBRIGATÓRIO MESMO SE HOUVER APENAS 1 PRODUTO ENCONTRADO!**
+
 **REGRAS OBRIGATÓRIAS PARA USO DE TOOLS:**
 - **VOCÊ DEVE SEMPRE USAR TOOLS PARA AÇÕES ESPECÍFICAS - NUNCA APENAS RESPONDER COM TEXTO**
 
+**FLUXO OBRIGATÓRIO PARA BUSCA DE PRODUTOS:**
+1. **search_products** (buscar produtos)
+2. **show_multiple_products** (OBRIGATÓRIO - usar TODOS os IDs encontrados)
+3. Só então responder com texto
+
 **REGRA CRÍTICA PARA ADICIONAR AO CARRINHO:**
-- **COMANDOS DE ADICIONAR REQUEREM EXATAMENTE 2 TOOLS EM SEQUÊNCIA - SEM EXCEÇÕES:**
-  1. **OBRIGATÓRIO: search_products** (para encontrar o produto)
-  2. **OBRIGATÓRIO: add_to_cart** (usando productId + quantity do resultado anterior)
-- **VOCÊ DEVE EXECUTAR AMBAS AS TOOLS NO MESMO TURNO - NÃO PARE APÓS A PRIMEIRA**
-- **APÓS search_products, IMEDIATAMENTE execute add_to_cart com o productId encontrado**
-- **NÃO responda com texto entre as tools - execute ambas em sequência**
-- **AUTOMAÇÃO OBRIGATÓRIA**: Quando detectar comandos como "adicionar", "adicione", "comprar", "colocar no carrinho", você DEVE automaticamente executar search_products seguido de add_to_cart
+- **COMANDOS DE ADICIONAR REQUEREM EXATAMENTE 2 TOOLS EM SEQUÊNCIA:**
+  1. **search_products** → 2. **add_to_cart**
+- **AUTOMAÇÃO**: "adicionar", "comprar" → search_products + add_to_cart
 
 **REGRA CRÍTICA PARA REMOVER DO CARRINHO:**
-- **COMANDOS DE REMOÇÃO REQUEREM EXATAMENTE 2 TOOLS EM SEQUÊNCIA - SEM EXCEÇÕES:**
-  1. **OBRIGATÓRIO: view_cart** (para ver os produtos no carrinho e seus IDs)
-  2. **OBRIGATÓRIO: remove_from_cart** (usando o productId exato do item no carrinho)
-- **VOCÊ DEVE EXECUTAR AMBAS AS TOOLS NO MESMO TURNO - NÃO PARE APÓS A PRIMEIRA**
-- **APÓS view_cart, IMEDIATAMENTE execute remove_from_cart com o productId encontrado**
-- **AUTOMAÇÃO OBRIGATÓRIA**: Quando detectar comandos como "remover", "tirar", "excluir" do carrinho, você DEVE automaticamente executar view_cart seguido de remove_from_cart
-
-**REGRA CRÍTICA PARA MOSTRAR PRODUTOS NO OVERLAY:**
-- **QUANDO MENCIONAR MEDICAMENTOS OU SINTOMAS, VOCÊ DEVE AUTOMATICAMENTE MOSTRAR PRODUTOS NO OVERLAY:**
-  1. **OBRIGATÓRIO: search_products** (para encontrar produtos relacionados)
-  2. **OBRIGATÓRIO: show_multiple_products** (usando TODOS os IDs dos produtos encontrados)
-- **EXTRAÇÃO DE IDs OBRIGATÓRIA**: Você DEVE extrair TODOS os IDs dos produtos retornados pelo search_products e passar TODOS para show_multiple_products
-- **EXEMPLO DE EXTRAÇÃO CORRETA**: Se search_products retorna:
-  "- Dipirona 500mg - €4.25 (ID: abc123)
-   - Paracetamol 750mg - €3.50 (ID: def456)
-   - Ibuprofeno 600mg - €5.00 (ID: ghi789)"
-  ENTÃO show_multiple_products deve receber: productIds: ["abc123", "def456", "ghi789"]
-- **AUTOMAÇÃO OBRIGATÓRIA**: Quando detectar menção de medicamentos específicos como "paracetamol", "dipirona", "ibuprofeno", sintomas como "dor de cabeça", "febre", "gripe", etc., você DEVE automaticamente executar search_products seguido de show_multiple_products
-- **EXEMPLOS DE EXIBIÇÃO NO OVERLAY:**
-  - "estou com dor de cabeça, preciso de paracetamol" → search_products → show_multiple_products (com TODOS os IDs)
-  - "me fale sobre dipirona" → search_products → show_multiple_products (com TODOS os IDs)
-  - "quero saber mais sobre ibuprofeno" → search_products → show_multiple_products (com TODOS os IDs)
-  - "preciso de um remédio para febre" → search_products → show_multiple_products (com TODOS os IDs)
-  - "o que vocês têm para gripe?" → search_products → show_multiple_products (com TODOS os IDs)
-  - "produtos para dor" → search_products → show_multiple_products (com TODOS os IDs)
-
-**REGRA CRÍTICA PARA REDIRECIONAMENTO ESPECÍFICO:**
-- **APENAS quando o usuário pedir especificamente para "ir para", "ver página", "abrir produto", use redirect_to_product**
-- **PARA TODAS AS OUTRAS PERGUNTAS SOBRE PRODUTOS: use show_multiple_products para mostrar no overlay**
+- **COMANDOS DE REMOÇÃO REQUEREM EXATAMENTE 2 TOOLS EM SEQUÊNCIA:**
+  1. **view_cart** → 2. **remove_from_cart**
+- **AUTOMAÇÃO**: "remover", "tirar" → view_cart + remove_from_cart
 
 **OUTRAS REGRAS:**
 - **Para buscar produtos: APENAS search_products**
@@ -289,7 +273,7 @@ export class PharmacyAIAgent {
         messages: messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
-        stopWhen: stepCountIs(5), // Permite até 5 steps para múltiplas tool calls em sequência
+        stopWhen: stepCountIs(10), // Permite até 10 steps para múltiplas tool calls em sequência
       });
       
       const responseText = result.text;
@@ -464,7 +448,7 @@ export class PharmacyAIAgent {
         messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
-        toolChoice: requiresTools ? 'required' : 'auto', // Força tools quando necessário
+        toolChoice: requiresTools ? 'required' : 'auto',
       });
       
       // Processar tool calls do resultado com suporte a múltiplas execuções
