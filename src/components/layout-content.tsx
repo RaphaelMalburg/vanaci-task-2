@@ -7,7 +7,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
   
   return (
     <div className={`transition-all duration-300 ease-in-out ${
-      isChatOpen ? 'mr-[400px] sm:mr-[500px]' : 'mr-0'
+      isChatOpen ? 'sm:mr-[400px] md:mr-[500px]' : 'mr-0'
     }`}>
       {children}
     </div>

@@ -405,7 +405,7 @@ export function Chat() {
 
       {/* Painel lateral do chat */}
       <div
-        className={`fixed top-0 right-0 h-full w-[400px] sm:w-[500px] bg-white dark:bg-gray-900 border-l dark:border-gray-700 shadow-xl transition-transform duration-300 ease-in-out z-40 flex flex-col ${
+        className={`fixed top-0 right-0 h-full w-full sm:w-[400px] md:w-[500px] bg-white dark:bg-gray-900 border-l dark:border-gray-700 shadow-xl transition-transform duration-300 ease-in-out z-40 flex flex-col ${
           isChatOpen ? "translate-x-0" : "translate-x-full"
         }`}>
         {/* Header */}

@@ -242,12 +242,12 @@ export default function Products() {
 
         {/* Header */}
         <div className="text-center mb-12 slide-up">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-8">
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4 transition-colors duration-300">
+          <div className="flex flex-col gap-4 items-center justify-between mb-8">
+            <div className="flex-1 text-center">
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4 transition-colors duration-300">
                 Nossos Produtos
               </h1>
-              <p className="text-xl text-gray-600 dark:text-gray-300 transition-colors duration-300">
+              <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 transition-colors duration-300">
                 Produtos de qualidade para sua saúde e bem-estar
               </p>
             </div>
@@ -255,7 +255,7 @@ export default function Products() {
             <Button
               onClick={() => setIsCartOpen(true)}
               variant="outline"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               <ShoppingCart className="h-4 w-4" />
               Carrinho ({getItemCount()})
@@ -300,14 +300,14 @@ export default function Products() {
           </div>
 
           {/* Filters Row */}
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-center">
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Filtros:</span>
             </div>
             
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-48 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border-white/40 dark:border-gray-700/40 text-gray-900 dark:text-white transition-colors duration-300">
+              <SelectTrigger className="w-full sm:w-48 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border-white/40 dark:border-gray-700/40 text-gray-900 dark:text-white transition-colors duration-300">
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-white/40 dark:border-gray-700/40">
@@ -320,7 +320,7 @@ export default function Products() {
             </Select>
 
             <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-              <SelectTrigger className="w-48 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border-white/40 dark:border-gray-700/40 text-gray-900 dark:text-white transition-colors duration-300">
+              <SelectTrigger className="w-full sm:w-48 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border-white/40 dark:border-gray-700/40 text-gray-900 dark:text-white transition-colors duration-300">
                 <SelectValue placeholder="Ordenar por" />
               </SelectTrigger>
               <SelectContent className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-white/40 dark:border-gray-700/40">
@@ -358,7 +358,7 @@ export default function Products() {
             {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
               <div key={category}>
                 <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">{category}</h2>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {categoryProducts.map((product) => {
                     const cartQuantity = getItemQuantity(product.id);
                     
@@ -458,7 +458,7 @@ export default function Products() {
             ))}
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredAndSortedProducts.map((product) => {
               const cartQuantity = getItemQuantity(product.id);
               
