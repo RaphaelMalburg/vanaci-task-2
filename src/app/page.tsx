@@ -7,27 +7,32 @@ import { Badge } from "@/components/ui/badge";
 import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
 import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
-import { useCartStore } from "@/stores/cart-store";
+import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 
 export default function Home() {
   const { user } = useAuth();
-  const { addItem } = useCartStore();
+  const { addItem } = useCart();
 
-  const handleAddToCart = (product: { id: string; name: string; price: number; category: string }) => {
+  const handleAddToCart = async (product: { id: string; name: string; price: number; category: string }) => {
     if (!user) {
       toast.error("Você precisa estar logado para adicionar produtos ao carrinho");
       return;
     }
 
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      category: product.category,
-    });
+    try {
+      await addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        category: product.category,
+      });
 
-    toast.success(`${product.name} adicionado ao carrinho!`);
+      toast.success(`${product.name} adicionado ao carrinho!`);
+    } catch (error) {
+      console.error('Erro ao adicionar produto ao carrinho:', error);
+      toast.error('Erro ao adicionar produto ao carrinho. Tente novamente.');
+    }
   };
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 transition-all duration-500">

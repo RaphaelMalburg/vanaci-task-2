@@ -85,6 +85,15 @@ export function useCart() {
     return result;
   };
 
+  const getItemQuantity = (productId: string): number => {
+    const item = items.find(item => item.id === productId);
+    return item ? item.quantity : 0;
+  };
+
+  const getItemCount = (): number => {
+    return itemCount;
+  };
+
   return {
     items,
     total,
@@ -93,6 +102,8 @@ export function useCart() {
     removeItem,
     updateQuantity,
     clearCart,
-    syncCart
+    syncCart,
+    getItemQuantity,
+    getItemCount
   };
 }

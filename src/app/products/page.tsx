@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BreadcrumbsContainer } from "@/components/breadcrumbs";
 import { ShoppingCart, Search, Filter, Loader2, ChevronDown, ChevronUp, Info, X } from "lucide-react";
-import { useCartStore } from "@/stores/cart-store";
+import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 import { Cart } from "@/components/Cart";
 import { useAuth } from "@/contexts/auth-context";
@@ -26,7 +26,7 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { addItem, getItemQuantity, getItemCount, items, total } = useCartStore();
+  const { addItem, getItemQuantity, getItemCount, items, total } = useCart();
   const { user } = useAuth();
   const router = useRouter();
   const overlay = useProductOverlay();
@@ -101,7 +101,7 @@ export default function Products() {
     return filtered;
   }, [products, searchTerm, selectedCategory, sortBy, showOnlyInStock]);
 
-  const handleAddToCart = (product: Product, event?: React.MouseEvent) => {
+  const handleAddToCart = async (product: Product, event?: React.MouseEvent) => {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -117,15 +117,20 @@ export default function Products() {
       return;
     }
 
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      imagePath: product.image || undefined,
-      category: product.category
-    });
+    try {
+      await addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        imagePath: product.image || undefined,
+        category: product.category
+      });
 
-    toast.success(`${product.name} adicionado ao carrinho!`);
+      toast.success(`${product.name} adicionado ao carrinho!`);
+    } catch (error) {
+      console.error('Erro ao adicionar produto ao carrinho:', error);
+      toast.error('Erro ao adicionar produto ao carrinho. Tente novamente.');
+    }
   };
 
   // Agrupar produtos por categoria

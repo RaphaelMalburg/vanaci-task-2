@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, ArrowLeft, Package, Clock, Shield } from 'lucide-react';
 import { toast } from 'sonner';
-import { useCartStore } from '@/stores/cart-store';
+import { useCart } from '@/hooks/useCart';
 import { fetchProductById } from '@/lib/utils/api';
 import { useAuth } from '@/contexts/auth-context';
 import type { Product } from '@/lib/types';
@@ -16,7 +16,7 @@ import type { Product } from '@/lib/types';
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { addItem, getItemQuantity } = useCartStore();
+  const { addItem, getItemQuantity } = useCart();
   const { user } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,7 +43,7 @@ export default function ProductDetailPage() {
     loadProduct();
   }, [productId]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!product) return;
     
     if (!user) {
@@ -56,15 +56,20 @@ export default function ProductDetailPage() {
       return;
     }
 
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      imagePath: product.image || undefined,
-      category: product.category
-    });
+    try {
+      await addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        imagePath: product.image || undefined,
+        category: product.category
+      });
 
-    toast.success(`${product.name} adicionado ao carrinho!`);
+      toast.success(`${product.name} adicionado ao carrinho!`);
+    } catch (error) {
+      console.error('Erro ao adicionar produto ao carrinho:', error);
+      toast.error('Erro ao adicionar produto ao carrinho. Tente novamente.');
+    }
   };
 
 
