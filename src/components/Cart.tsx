@@ -5,7 +5,7 @@ import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Trash2, Plus, Minus, CreditCard } from 'lucide-react';
+import { ShoppingCart, Trash2, Plus, Minus, CreditCard, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import { processCheckout, validateCartNotEmpty } from '@/lib/utils/api';
@@ -18,9 +18,8 @@ interface CartProps {
 }
 
 export function Cart({ products, isOpen, onClose }: CartProps) {
-  const { items, total, updateQuantity, removeItem, clearCart, itemCount } = useCart();
+  const { items, total, updateQuantity, removeItem, clearCart, itemCount, isItemLoading, isLoading } = useCart();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [loadingById, setLoadingById] = useState<Record<string, { removing?: boolean; updating?: boolean }>>({});
 
   // Melhor sincronização: usar dados do carrinho como fonte principal
   const cartItems = (items || []).map(cartItem => {
@@ -56,7 +55,6 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
       return;
     }
 
-    setLoadingById(prev => ({ ...prev, [productId]: { ...prev[productId], updating: true } }));
     try {
       if (newQuantity <= 0) {
         await removeItem(productId);
@@ -64,8 +62,18 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
       } else {
         await updateQuantity(productId, newQuantity);
       }
-    } finally {
-      setLoadingById(prev => ({ ...prev, [productId]: { ...prev[productId], updating: false } }));
+    } catch (error) {
+      console.error('Erro ao atualizar quantidade:', error);
+      toast.error('Erro ao atualizar quantidade');
+    }
+  };
+
+  const handleRemoveItem = async (productId: string) => {
+    try {
+      await removeItem(productId);
+    } catch (error) {
+      console.error('Erro ao remover item:', error);
+      toast.error('Erro ao remover item do carrinho');
     }
   };
 
@@ -136,10 +144,15 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => removeItem(product.id)}
+                          onClick={() => handleRemoveItem(product.id)}
+                          disabled={isItemLoading(product.id)}
                           className="h-6 w-6 p-0"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          {isItemLoading(product.id) ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
                         </Button>
                       </div>
                     );
@@ -182,20 +195,12 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={async () => {
-                            if (loadingById[product.id]?.removing) return;
-                            setLoadingById(prev => ({ ...prev, [product.id]: { ...prev[product.id], removing: true } }));
-                            try {
-                              await removeItem(product.id);
-                            } finally {
-                              setLoadingById(prev => ({ ...prev, [product.id]: { ...prev[product.id], removing: false } }));
-                            }
-                          }}
-                          disabled={!!loadingById[product.id]?.removing}
+                          onClick={() => handleRemoveItem(product.id)}
+                          disabled={isItemLoading(product.id)}
                           className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
                         >
-                          {loadingById[product.id]?.removing ? (
-                            <span className="inline-block h-3 w-3 rounded-full border-2 border-gray-400 border-t-transparent animate-spin" />
+                          {isItemLoading(product.id) ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
                             <Trash2 className="h-3 w-3" />
                           )}
@@ -206,11 +211,11 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                             variant="outline"
                             size="sm"
                             onClick={() => handleQuantityChange(product.id, quantity - 1)}
-                            disabled={!!loadingById[product.id]?.updating}
+                            disabled={isItemLoading(product.id)}
                             className="h-6 w-6 p-0"
                           >
-                            {loadingById[product.id]?.updating ? (
-                              <span className="inline-block h-3 w-3 rounded-full border-2 border-gray-400 border-t-transparent animate-spin" />
+                            {isItemLoading(product.id) ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
                             ) : (
                               <Minus className="h-3 w-3" />
                             )}
@@ -222,11 +227,11 @@ export function Cart({ products, isOpen, onClose }: CartProps) {
                             variant="outline"
                             size="sm"
                             onClick={() => handleQuantityChange(product.id, quantity + 1)}
-                            disabled={!!loadingById[product.id]?.updating}
+                            disabled={isItemLoading(product.id)}
                             className="h-6 w-6 p-0"
                           >
-                            {loadingById[product.id]?.updating ? (
-                              <span className="inline-block h-3 w-3 rounded-full border-2 border-gray-400 border-t-transparent animate-spin" />
+                            {isItemLoading(product.id) ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
                             ) : (
                               <Plus className="h-3 w-3" />
                             )}

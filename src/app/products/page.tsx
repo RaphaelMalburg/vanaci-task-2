@@ -26,7 +26,7 @@ export default function Products() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { addItem, getItemQuantity, getItemCount, items, total } = useCart();
+  const { addItem, getItemCount, getItemQuantity, total, isItemLoading } = useCart();
   const { user } = useAuth();
   const router = useRouter();
   const overlay = useProductOverlay();
@@ -442,11 +442,16 @@ export default function Products() {
                             <Button
                               size="sm"
                               onClick={(e) => handleAddToCart(product, e)}
-                              disabled={product.stock <= 0}
+                              disabled={product.stock <= 0 || isItemLoading(product.id)}
                               className="w-full"
                             >
-                              <ShoppingCart className="h-4 w-4 mr-2" />
-                              {product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
+                              {isItemLoading(product.id) ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <ShoppingCart className="h-4 w-4 mr-2" />
+                              )}
+                              {isItemLoading(product.id) ? 'Adicionando...' : 
+                               product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
                             </Button>
                           </div>
                         </CardContent>
@@ -542,11 +547,16 @@ export default function Products() {
                       <Button
                         size="sm"
                         onClick={(e) => handleAddToCart(product, e)}
-                        disabled={product.stock <= 0}
+                        disabled={product.stock <= 0 || isItemLoading(product.id)}
                         className="w-full"
                       >
-                        <ShoppingCart className="h-4 w-4 mr-2" />
-                        {product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
+                        {isItemLoading(product.id) ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                        )}
+                        {isItemLoading(product.id) ? 'Adicionando...' : 
+                         product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
                       </Button>
                     </div>
                   </CardContent>

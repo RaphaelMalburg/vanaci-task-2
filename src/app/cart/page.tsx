@@ -5,7 +5,7 @@ import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -13,7 +13,7 @@ import { fetchProducts, processCheckout, validateCartNotEmpty } from '@/lib/util
 import type { Product } from '@/lib/types';
 
 export default function CartPage() {
-  const { items, total, itemCount, updateQuantity, removeItem, clearCart } = useCart();
+  const { items, total, itemCount, updateQuantity, removeItem, clearCart, isItemLoading, isLoading: cartLoading } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -195,8 +195,13 @@ export default function CartPage() {
                             size="icon" 
                             className="h-8 w-8 rounded-none"
                             onClick={() => handleQuantityChange(product.id, quantity - 1)}
+                            disabled={isItemLoading(product.id)}
                           >
-                            <Minus className="h-3 w-3" />
+                            {isItemLoading(product.id) ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Minus className="h-3 w-3" />
+                            )}
                           </Button>
                           <span className="w-8 text-center text-sm">{quantity}</span>
                           <Button 
@@ -204,8 +209,13 @@ export default function CartPage() {
                             size="icon" 
                             className="h-8 w-8 rounded-none"
                             onClick={() => handleQuantityChange(product.id, quantity + 1)}
+                            disabled={isItemLoading(product.id)}
                           >
-                            <Plus className="h-3 w-3" />
+                            {isItemLoading(product.id) ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Plus className="h-3 w-3" />
+                            )}
                           </Button>
                         </div>
                         <Button 
@@ -219,8 +229,13 @@ export default function CartPage() {
                               console.error('Erro ao remover item:', error);
                             }
                           }}
+                          disabled={isItemLoading(product.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          {isItemLoading(product.id) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </div>

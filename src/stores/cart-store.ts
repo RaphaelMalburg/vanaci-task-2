@@ -14,6 +14,10 @@ interface CartStore {
   total: number;
   itemCount: number;
   
+  // Loading states
+  isLoading: boolean;
+  loadingItems: Set<string>; // IDs dos itens sendo processados
+  
   // Actions
   addItem: (item: Omit<CartItem, 'quantity'>, quantity?: number) => void;
   removeItem: (id: string) => void;
@@ -22,6 +26,11 @@ interface CartStore {
   getItemCount: () => number;
   getItemQuantity: (id: string) => number;
   calculateTotal: () => void;
+  
+  // Loading actions
+  setLoading: (loading: boolean) => void;
+  setItemLoading: (itemId: string, loading: boolean) => void;
+  isItemLoading: (itemId: string) => boolean;
 }
 
 const calculateCartTotal = (items: CartItem[]): number => {
@@ -37,6 +46,8 @@ export const useCartStore = create<CartStore>()(
     items: [],
     total: 0,
     itemCount: 0,
+    isLoading: false,
+    loadingItems: new Set<string>(),
 
     addItem: (item, quantity = 1) => {
       const { items } = get();
@@ -118,6 +129,28 @@ export const useCartStore = create<CartStore>()(
       const newTotal = calculateCartTotal(items);
       const newItemCount = calculateItemCount(items);
       set({ total: newTotal, itemCount: newItemCount });
+    },
+    
+    setLoading: (loading) => {
+      set({ isLoading: loading });
+    },
+    
+    setItemLoading: (itemId, loading) => {
+      const { loadingItems } = get();
+      const newLoadingItems = new Set(loadingItems);
+      
+      if (loading) {
+        newLoadingItems.add(itemId);
+      } else {
+        newLoadingItems.delete(itemId);
+      }
+      
+      set({ loadingItems: newLoadingItems });
+    },
+    
+    isItemLoading: (itemId) => {
+      const { loadingItems } = get();
+      return loadingItems.has(itemId);
     }
   })
 );

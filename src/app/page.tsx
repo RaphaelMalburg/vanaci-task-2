@@ -9,10 +9,11 @@ import Image from "next/image";
 import { useAuth } from "@/contexts/auth-context";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
+import { ShoppingCart, Loader2 } from 'lucide-react';
 
 export default function Home() {
   const { user } = useAuth();
-  const { addItem } = useCart();
+  const { addItem, isItemLoading } = useCart();
 
   const handleAddToCart = async (product: { id: string; name: string; price: number; category: string }) => {
     if (!user) {
@@ -198,8 +199,14 @@ export default function Home() {
                   </div>
                   <Button
                     onClick={() => handleAddToCart({ id: "paracetamol-500mg", name: "Paracetamol 500mg", price: 4.5, category: "Analgésicos" })}
+                    disabled={isItemLoading("paracetamol-500mg")}
                     className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-colors duration-300">
-                    Adicionar
+                    {isItemLoading("paracetamol-500mg") ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                    )}
+                    {isItemLoading("paracetamol-500mg") ? 'Adicionando...' : 'Adicionar'}
                   </Button>
                 </div>
               </CardContent>
@@ -222,8 +229,14 @@ export default function Home() {
                   </div>
                   <Button
                     onClick={() => handleAddToCart({ id: "vitamina-c-1g", name: "Vitamina C 1g", price: 7.8, category: "Vitaminas" })}
+                    disabled={isItemLoading("vitamina-c-1g")}
                     className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-colors duration-300">
-                    Adicionar
+                    {isItemLoading("vitamina-c-1g") ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                    )}
+                    {isItemLoading("vitamina-c-1g") ? 'Adicionando...' : 'Adicionar'}
                   </Button>
                 </div>
               </CardContent>
@@ -246,8 +259,14 @@ export default function Home() {
                   </div>
                   <Button
                     onClick={() => handleAddToCart({ id: "dipirona-500mg", name: "Dipirona 500mg", price: 3.4, category: "Analgésicos" })}
+                    disabled={isItemLoading("dipirona-500mg")}
                     className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-colors duration-300">
-                    Adicionar
+                    {isItemLoading("dipirona-500mg") ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                    )}
+                    {isItemLoading("dipirona-500mg") ? 'Adicionando...' : 'Adicionar'}
                   </Button>
                 </div>
               </CardContent>

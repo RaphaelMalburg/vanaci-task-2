@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, ArrowLeft, Package, Clock, Shield } from 'lucide-react';
+import { ShoppingCart, ArrowLeft, Package, Clock, Shield, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useCart } from '@/hooks/useCart';
 import { fetchProductById } from '@/lib/utils/api';
@@ -16,7 +16,7 @@ import type { Product } from '@/lib/types';
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { addItem, getItemQuantity } = useCart();
+  const { addItem, getItemQuantity, isItemLoading } = useCart();
   const { user } = useAuth();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -230,12 +230,17 @@ export default function ProductDetailPage() {
 
             <Button
               onClick={handleAddToCart}
-              disabled={product.stock <= 0}
+              disabled={product.stock <= 0 || isItemLoading(product.id)}
               className="w-full"
               size="lg"
             >
-              <ShoppingCart className="h-5 w-5 mr-2" />
-              {product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
+              {isItemLoading(product.id) ? (
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-5 w-5 mr-2" />
+              )}
+              {isItemLoading(product.id) ? 'Adicionando...' : 
+               product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
             </Button>
           </div>
         </div>

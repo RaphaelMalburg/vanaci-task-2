@@ -20,59 +20,92 @@ export interface Product {
 }
 
 export function useCart() {
-  const { items, total, itemCount } = useCartStore();
+  const { 
+    items, 
+    total, 
+    itemCount, 
+    isLoading, 
+    loadingItems, 
+    setLoading, 
+    setItemLoading, 
+    isItemLoading 
+  } = useCartStore();
   const cartService = useCartService();
 
   const addItem = async (product: Product, quantity: number = 1) => {
-    const result = await cartService.addItem(product.id, quantity);
+    setItemLoading(product.id, true);
     
-    if (result.success) {
-      toast.success(result.message);
-    } else {
-      toast.error(result.message);
-      throw new Error(result.error);
+    try {
+      const result = await cartService.addItem(product.id, quantity);
+      
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+        throw new Error(result.error);
+      }
+      
+      return result;
+    } finally {
+      setItemLoading(product.id, false);
     }
-    
-    return result;
   };
 
   const removeItem = async (productId: string) => {
-    const result = await cartService.removeItem(productId);
+    setItemLoading(productId, true);
     
-    if (result.success) {
-      toast.success(result.message);
-    } else {
-      toast.error(result.message);
-      throw new Error(result.error);
+    try {
+      const result = await cartService.removeItem(productId);
+      
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+        throw new Error(result.error);
+      }
+      
+      return result;
+    } finally {
+      setItemLoading(productId, false);
     }
-    
-    return result;
   };
 
   const updateQuantity = async (productId: string, quantity: number) => {
-    const result = await cartService.updateQuantity(productId, quantity);
+    setItemLoading(productId, true);
     
-    if (result.success) {
-      // Não mostrar toast para updates de quantidade (muito verboso)
-    } else {
-      toast.error(result.message);
-      throw new Error(result.error);
+    try {
+      const result = await cartService.updateQuantity(productId, quantity);
+      
+      if (result.success) {
+        // Não mostrar toast para updates de quantidade (muito verboso)
+      } else {
+        toast.error(result.message);
+        throw new Error(result.error);
+      }
+      
+      return result;
+    } finally {
+      setItemLoading(productId, false);
     }
-    
-    return result;
   };
 
   const clearCart = async () => {
-    const result = await cartService.clearCart();
+    setLoading(true);
     
-    if (result.success) {
-      toast.success(result.message);
-    } else {
-      toast.error(result.message);
-      throw new Error(result.error);
+    try {
+      const result = await cartService.clearCart();
+      
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+        throw new Error(result.error);
+      }
+      
+      return result;
+    } finally {
+      setLoading(false);
     }
-    
-    return result;
   };
 
   const syncCart = async () => {
@@ -98,12 +131,15 @@ export function useCart() {
     items,
     total,
     itemCount,
+    isLoading,
+    loadingItems,
     addItem,
     removeItem,
     updateQuantity,
     clearCart,
     syncCart,
     getItemQuantity,
-    getItemCount
+    getItemCount,
+    isItemLoading
   };
 }

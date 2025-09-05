@@ -14,8 +14,7 @@ import { Sparkles, Gift, Clock, Star, ShoppingCart, Info, Package, Heart } from 
 
 export function ProductOverlay() {
   const { isOpen, isLoading, title, query, products, hide } = useProductOverlay();
-  const { addItem } = useCart();
-  const [loadingById, setLoadingById] = useState<Record<string, boolean>>({});
+  const { addItem, isItemLoading } = useCart();
   const [showPromotions, setShowPromotions] = useState(false);
   const [animateProducts, setAnimateProducts] = useState(false);
 
@@ -44,13 +43,10 @@ export function ProductOverlay() {
   }, [products]);
 
   const handleAdd = async (product: Product) => {
-    if (loadingById[product.id]) return;
-    setLoadingById((s) => ({ ...s, [product.id]: true }));
     try {
       await addItem({ id: product.id, name: product.name, price: product.price, category: product.category, imagePath: product.image }, 1);
-    } catch {}
-    finally {
-      setLoadingById((s) => ({ ...s, [product.id]: false }));
+    } catch (error) {
+      console.error('Erro ao adicionar produto:', error);
     }
   };
 
@@ -257,9 +253,9 @@ export function ProductOverlay() {
                                   : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0'
                               }`}
                               onClick={() => handleAdd(product)} 
-                              disabled={!!loadingById[product.id]}
+                              disabled={isItemLoading(product.id)}
                             >
-                              {loadingById[product.id] ? (
+                              {isItemLoading(product.id) ? (
                                 <ButtonLoading />
                               ) : (
                                 <>
