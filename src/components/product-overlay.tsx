@@ -129,9 +129,9 @@ export function ProductOverlay() {
                       )}
                       
                       {/* Seção da imagem com nome do produto */}
-                      <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                      <div className="flex flex-col items-center gap-3 flex-shrink-0">
                         {/* Nome do produto acima da imagem */}
-                        <h3 className="font-semibold text-sm text-gray-900 dark:text-white text-center line-clamp-2 leading-tight min-h-[2.5rem] flex items-center">
+                        <h3 className="font-bold text-sm text-gray-900 dark:text-white text-center line-clamp-2 leading-tight min-h-[2.5rem] flex items-center px-2">
                           {product.name}
                         </h3>
                         
@@ -147,14 +147,14 @@ export function ProductOverlay() {
                             </Badge>
                           </div>
                           
-                          <div className="relative w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl overflow-hidden shadow-md group-hover:shadow-lg transition-all duration-300">
+                          <div className="relative w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl overflow-hidden shadow-md group-hover:shadow-lg transition-all duration-300 flex-shrink-0">
                             {product.image ? (
                               <Image 
                                 src={product.image} 
                                 alt={product.name} 
                                 fill 
-                                className="object-cover group-hover:scale-110 transition-transform duration-300" 
-                                sizes="96px" 
+                                className="object-contain p-1 group-hover:scale-105 transition-transform duration-300" 
+                                sizes="80px" 
                               />
                             ) : (
                               <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
