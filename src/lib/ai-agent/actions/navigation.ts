@@ -14,12 +14,12 @@ export const redirectToProductTool = tool({
       logger.debug('Buscando produto para navegação:', { productIdentifier });
       
       // Usar URL absoluta para funcionar no contexto do servidor
-      const baseUrl = process.env.NODE_ENV === 'production'
-        ? process.env.NEXT_PUBLIC_APP_URL || 'https://vanaci-task-2.vercel.app'
-        : 'http://localhost:3007';
+      const BASE_URL = process.env.NODE_ENV === 'production'
+  ? process.env.NEXT_PUBLIC_APP_URL || 'https://farmacia-vanaci.vercel.app'
+  : 'http://localhost:3000';
       
       // Primeiro, tentar buscar por ID direto
-      let response = await fetch(`${baseUrl}/api/products/${productIdentifier}`);
+      let response = await fetch(`${BASE_URL}/api/products/${productIdentifier}`);
       let product = null;
       
       if (response.ok) {
@@ -28,7 +28,7 @@ export const redirectToProductTool = tool({
       } else {
         // Se não encontrar por ID, buscar por nome
         logger.debug('Produto não encontrado por ID, buscando por nome');
-        const searchResponse = await fetch(`${baseUrl}/api/products?search=${encodeURIComponent(productIdentifier)}&limit=1`);
+        const searchResponse = await fetch(`${BASE_URL}/api/products?search=${encodeURIComponent(productIdentifier)}&limit=1`);
         
         if (searchResponse.ok) {
           const searchResults = await searchResponse.json();

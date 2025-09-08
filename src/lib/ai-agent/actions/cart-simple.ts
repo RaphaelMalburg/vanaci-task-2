@@ -26,7 +26,7 @@ function getUser(): { id: string; username: string } | null {
 async function apiCall(endpoint: string, options: RequestInit = {}) {
   const baseUrl = process.env.NODE_ENV === 'production' 
     ? process.env.NEXT_PUBLIC_APP_URL || 'https://farmacia-vanaci.vercel.app'
-    : 'http://localhost:3007';
+    : 'http://localhost:3000';
   
   // Get user token for authentication
   const user = getUser();
