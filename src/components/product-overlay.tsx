@@ -128,37 +128,48 @@ export function ProductOverlay() {
                         </div>
                       )}
                       
-                      {/* Indicador de categoria */}
-                      <div className="absolute top-3 left-3 z-10">
-                        <Badge 
-                          variant="secondary" 
-                          className="text-xs bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-sm"
-                        >
-                          <Package className="h-3 w-3 mr-1" />
-                          {product.category}
-                        </Badge>
-                      </div>
-                      <div className="relative w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl overflow-hidden flex-shrink-0 shadow-md group-hover:shadow-lg transition-all duration-300">
-                        {product.image ? (
-                          <Image 
-                            src={product.image} 
-                            alt={product.name} 
-                            fill 
-                            className="object-cover group-hover:scale-110 transition-transform duration-300" 
-                            sizes="96px" 
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-                            <Package className="h-6 w-6 mb-1" />
-                            <span className="text-xs text-center">Sem imagem</span>
-                          </div>
-                        )}
+                      {/* Seção da imagem com nome do produto */}
+                      <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                        {/* Nome do produto acima da imagem */}
+                        <h3 className="font-semibold text-sm text-gray-900 dark:text-white text-center line-clamp-2 leading-tight min-h-[2.5rem] flex items-center">
+                          {product.name}
+                        </h3>
                         
-                        {/* Overlay de hover na imagem */}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center">
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <div className="bg-white/90 dark:bg-gray-800/90 rounded-full p-1.5 shadow-lg">
-                              <Info className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                        <div className="relative">
+                          {/* Indicador de categoria */}
+                          <div className="absolute -top-2 -right-2 z-10">
+                            <Badge 
+                              variant="secondary" 
+                              className="text-xs bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-0 shadow-sm"
+                            >
+                              <Package className="h-3 w-3 mr-1" />
+                              {product.category}
+                            </Badge>
+                          </div>
+                          
+                          <div className="relative w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl overflow-hidden shadow-md group-hover:shadow-lg transition-all duration-300">
+                            {product.image ? (
+                              <Image 
+                                src={product.image} 
+                                alt={product.name} 
+                                fill 
+                                className="object-cover group-hover:scale-110 transition-transform duration-300" 
+                                sizes="96px" 
+                              />
+                            ) : (
+                              <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                                <Package className="h-6 w-6 mb-1" />
+                                <span className="text-xs text-center">Sem imagem</span>
+                              </div>
+                            )}
+                            
+                            {/* Overlay de hover na imagem */}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <div className="bg-white/90 dark:bg-gray-800/90 rounded-full p-1.5 shadow-lg">
+                                  <Info className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -167,42 +178,8 @@ export function ProductOverlay() {
                         <div className="flex flex-col gap-3">
                           <div className="min-w-0 space-y-2">
                             <div className="flex items-start justify-between gap-2">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <h3 className="font-bold text-lg text-gray-900 dark:text-white line-clamp-2 cursor-help hover:text-blue-600 dark:hover:text-blue-400 transition-colors leading-tight">
-                                    {product.name}
-                                  </h3>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-sm p-4">
-                                  <div className="space-y-3">
-                                    <div className="font-bold text-base text-gray-900 dark:text-gray-100">{product.name}</div>
-                                    {product.description && (
-                                      <div className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{product.description}</div>
-                                    )}
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                                        <div className="font-medium text-gray-900 dark:text-gray-100">Categoria</div>
-                                        <div className="text-gray-600 dark:text-gray-400">{product.category}</div>
-                                      </div>
-                                      {typeof product.stock === 'number' && (
-                                        <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                                          <div className="font-medium text-gray-900 dark:text-gray-100">Estoque</div>
-                                          <div className="text-gray-600 dark:text-gray-400">{product.stock} unidades</div>
-                                        </div>
-                                      )}
-                                    </div>
-                                    {product.prescription && (
-                                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-2 rounded text-xs">
-                                        <div className="font-medium text-red-700 dark:text-red-300">⚠️ Medicamento controlado</div>
-                                        <div className="text-red-600 dark:text-red-400">Necessária apresentação de receita médica</div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                              
                               {/* Botão de favorito */}
-                              <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+                              <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 ml-auto">
                                 <Heart className="h-4 w-4 text-gray-400 hover:text-red-500 transition-colors" />
                               </button>
                             </div>
