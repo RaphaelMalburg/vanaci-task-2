@@ -153,26 +153,44 @@ export const listRecommendedProductsTool = tool({
     
     try {
       const productService = ProductService.getInstance()
-      const products = await productService.getAllProducts({ search: symptomOrNeed, limit })
       
-      logger.info('Produtos recomendados encontrados', { count: products.length })
+      // Mapear sintomas/necessidades para termos de busca mais específicos
+      const searchTerms = getSearchTermsForSymptom(symptomOrNeed.toLowerCase());
       
-      if (products.length === 0) {
+      let allProducts: any[] = [];
+      
+      // Buscar por cada termo
+      for (const term of searchTerms) {
+        const products = await productService.getAllProducts({ search: term, limit: limit * 2 });
+        allProducts.push(...products);
+      }
+      
+      // Remover duplicatas e limitar resultados
+      const uniqueProducts = allProducts.filter((product, index, self) => 
+        index === self.findIndex(p => p.id === product.id)
+      ).slice(0, limit);
+      
+      logger.info('Produtos recomendados encontrados', { count: uniqueProducts.length, searchTerms })
+      
+      if (uniqueProducts.length === 0) {
         return {
           success: true,
-          message: `Não encontrei produtos específicos para "${symptomOrNeed}". Recomendo consultar um farmacêutico ou médico para orientação adequada.`,
+          message: `Não foram encontrados produtos específicos recomendados para "${symptomOrNeed}". É importante considerar consultar um farmacêutico ou um médico para obter orientações adequadas sobre que tomar nesse caso. Se precisar de mais alguma informação ou ajuda, estou à disposição!`,
           data: { products: [], symptomOrNeed },
         };
       }
       
-      const productsList = products
-        .map(product => `• ${product.name} - €${product.price.toFixed(2)} (ID: ${product.id})`)
+      const productsList = uniqueProducts
+        .map(product => {
+          const imageInfo = product.image ? ` 📷 [Imagem: ${product.image}]` : '';
+          return `• ${product.name} - €${product.price.toFixed(2)}${imageInfo} (ID: ${product.id})`;
+        })
         .join('\n');
       
       return {
         success: true,
         message: `Produtos recomendados para "${symptomOrNeed}":\n\n${productsList}\n\n⚠️ Importante: Consulte sempre um profissional de saúde antes de usar medicamentos.`,
-        data: { products, symptomOrNeed },
+        data: { products: uniqueProducts, symptomOrNeed },
       };
     } catch (error) {
       logger.error('Erro ao buscar recomendações', { symptomOrNeed, error: error instanceof Error ? error.message : error })
@@ -180,6 +198,54 @@ export const listRecommendedProductsTool = tool({
     }
   },
 });
+
+// Função auxiliar para mapear sintomas para termos de busca
+function getSearchTermsForSymptom(symptom: string): string[] {
+  const symptomMap: Record<string, string[]> = {
+    // Dores
+    'dor': ['dor', 'analgésico', 'paracetamol', 'ibuprofeno'],
+    'dor de cabeça': ['dor', 'analgésico', 'paracetamol', 'ibuprofeno', 'aspirina'],
+    'dor no joelho': ['dor', 'anti-inflamatório', 'ibuprofeno', 'voltaren', 'momendol'],
+    'dor muscular': ['dor', 'anti-inflamatório', 'ibuprofeno', 'voltaren', 'momendol'],
+    'dor nas costas': ['dor', 'anti-inflamatório', 'ibuprofeno', 'voltaren'],
+    'dor articular': ['dor', 'anti-inflamatório', 'ibuprofeno', 'voltaren'],
+    'dor de garganta': ['garganta', 'strepsils', 'anti-inflamatório'],
+    
+    // Gripes e constipações
+    'gripe': ['gripe', 'constipação', 'ben-u-gripe', 'griponal'],
+    'constipação': ['gripe', 'constipação', 'ben-u-gripe', 'griponal'],
+    'tosse': ['tosse', 'gripe', 'antigrippine'],
+    'febre': ['febre', 'paracetamol', 'ibuprofeno', 'dor'],
+    
+    // Digestivo
+    'enjoo': ['enjoo', 'vomidrine', 'digestivo'],
+    'náusea': ['enjoo', 'vomidrine', 'digestivo'],
+    'diarreia': ['diarreia', 'imodium', 'digestivo'],
+    'obstipação': ['obstipação', 'laevolac', 'dulcolax'],
+    'prisão de ventre': ['obstipação', 'laevolac', 'dulcolax'],
+    
+    // Pele
+    'acne': ['acne', 'borbulhas', 'pasta', 'sérum'],
+    'borbulhas': ['acne', 'borbulhas', 'pasta', 'sérum'],
+    'pele oleosa': ['oleosa', 'acne', 'gel', 'sérum'],
+    
+    // Promoções
+    'promoção': ['promoção', 'desconto', 'oferta'],
+    'promoções': ['promoção', 'desconto', 'oferta'],
+    'desconto': ['promoção', 'desconto', 'oferta'],
+    'ofertas': ['promoção', 'desconto', 'oferta'],
+  };
+  
+  // Buscar correspondências exatas primeiro
+  for (const [key, terms] of Object.entries(symptomMap)) {
+    if (symptom.includes(key)) {
+      return terms;
+    }
+  }
+  
+  // Se não encontrar correspondência, usar o termo original
+  return [symptom];
+}
 
 // Tool: Produtos mais vendidos (best sellers)
 export const getBestSellersTool = tool({
@@ -255,42 +321,82 @@ export const getBestSellersTool = tool({
 export const getPromotionalProductsTool = tool({
   description: 'Lista produtos em promoção ou com desconto',
   inputSchema: z.object({
-    limit: z.number().min(1).max(20).default(10).describe('Número máximo de produtos'),
+    limit: z.number().min(1).max(20).default(8).describe('Número máximo de produtos promocionais'),
+    category: z.string().optional().describe('Categoria específica para promoções'),
   }),
-  execute: async ({ limit }) => {
-    logger.info('Buscando produtos promocionais', { limit })
+  execute: async ({ limit, category }: { limit: number; category?: string }) => {
+    logger.info('Buscando produtos promocionais', { limit, category })
     
     try {
       const productService = ProductService.getInstance()
-      const products = await productService.getAllProducts({ limit: limit * 2 })
       
-      // Simular produtos em promoção (ordenar por preço e pegar os mais baratos)
+      // Buscar produtos por categoria se especificada
+      const searchOptions: any = { limit: limit * 3 };
+      if (category) {
+        searchOptions.category = category;
+      }
+      
+      const products = await productService.getAllProducts(searchOptions);
+      
+      // Simular promoções com produtos reais, priorizando certas categorias
       const promotionalProducts = products
-        .sort((a, b) => a.price - b.price)
+        .filter(product => {
+            // Priorizar certas categorias para promoções
+            const promotionCategories = ['Analgésicos', 'Vitaminas', 'Cuidados de Pele', 'Digestivo'];
+            return !category || promotionCategories.includes(product.category || '');
+          })
+        .sort(() => Math.random() - 0.5) // Embaralhar
         .slice(0, limit)
+        .map(product => {
+          // Diferentes tipos de desconto baseados na categoria
+          let discountPercent = 15; // Desconto padrão
+          
+          if (product.category === 'Analgésicos') discountPercent = 20;
+           if (product.category === 'Vitaminas') discountPercent = 25;
+           if (product.category === 'Cuidados de Pele') discountPercent = 30;
+          
+          const originalPrice = product.price;
+          const discountedPrice = Number((originalPrice * (1 - discountPercent / 100)).toFixed(2));
+          
+          return {
+            ...product,
+            originalPrice,
+            price: discountedPrice,
+            discount: discountPercent,
+            savings: Number((originalPrice - discountedPrice).toFixed(2)),
+          };
+        });
       
       logger.info('Produtos promocionais encontrados', { count: promotionalProducts.length })
       
       if (promotionalProducts.length === 0) {
         return {
           success: true,
-          message: 'Não há produtos em promoção no momento.',
+          message: category 
+            ? `Não há produtos em promoção na categoria "${category}" no momento. Mas temos outras ofertas disponíveis!`
+            : 'Não há produtos em promoção no momento, mas em breve teremos novas ofertas!',
           data: { products: [] },
         };
       }
       
       const productsList = promotionalProducts
-        .map(product => `• ${product.name} - €${product.price.toFixed(2)} (ID: ${product.id})`)
+        .map(product => {
+          const imageInfo = product.image ? ` 📷 [Imagem: ${product.image}]` : '';
+          const categoryInfo = product.category ? ` [${product.category}]` : '';
+          return `🏷️ ${product.name}${categoryInfo} - €${product.price} (antes €${product.originalPrice}) - ${product.discount}% OFF (Poupa €${product.savings})${imageInfo} (ID: ${product.id})`;
+        })
         .join('\n');
+      
+      const totalSavings = promotionalProducts.reduce((sum, p) => sum + p.savings, 0);
       
       return {
         success: true,
-        message: `🏷️ Produtos em destaque (${promotionalProducts.length}):\n\n${productsList}`,
-        data: { products: promotionalProducts },
+        message: `🎉 Produtos em Promoção${category ? ` - ${category}` : ''}:\n\n${productsList}\n\n💰 Poupança total disponível: €${totalSavings.toFixed(2)}\n💡 Aproveite estas ofertas especiais!`,
+        data: { products: promotionalProducts, totalSavings },
       };
     } catch (error) {
       logger.error('Erro ao buscar produtos promocionais', { error: error instanceof Error ? error.message : error })
-      throw new Error(`Erro ao buscar promoções: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      throw new Error(`Erro ao buscar produtos promocionais: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   },
 });
