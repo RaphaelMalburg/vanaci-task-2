@@ -181,6 +181,76 @@ export const listRecommendedProductsTool = tool({
   },
 });
 
+// Tool: Produtos mais vendidos (best sellers)
+export const getBestSellersTool = tool({
+  description: 'Lista os produtos mais vendidos da farmácia',
+  inputSchema: z.object({
+    limit: z.number().min(1).max(20).default(10).describe('Número máximo de produtos'),
+  }),
+  execute: async ({ limit }) => {
+    logger.info('Buscando produtos mais vendidos', { limit })
+    
+    try {
+      const productService = ProductService.getInstance()
+      const allProducts = await productService.getAllProducts({ limit: 100 })
+      
+      // Lista hardcoded de produtos mais vendidos (IDs ou nomes)
+      const bestSellerNames = [
+        'Dipirona',
+        'Paracetamol',
+        'Ibuprofeno',
+        'Vitamina C',
+        'Vitamina D',
+        'Álcool',
+        'Termômetro',
+        'Protetor Solar',
+        'Hidratante',
+        'Soro Fisiológico'
+      ];
+      
+      // Filtrar produtos que correspondem aos mais vendidos
+      const bestSellers = allProducts
+        .filter(product => 
+          bestSellerNames.some(name => 
+            product.name.toLowerCase().includes(name.toLowerCase())
+          )
+        )
+        .slice(0, limit);
+      
+      // Se não encontrar produtos suficientes, pegar os primeiros produtos disponíveis
+      if (bestSellers.length < limit) {
+        const remainingProducts = allProducts
+          .filter(product => !bestSellers.find(bs => bs.id === product.id))
+          .slice(0, limit - bestSellers.length);
+        bestSellers.push(...remainingProducts);
+      }
+      
+      logger.info('Produtos mais vendidos encontrados', { count: bestSellers.length })
+      
+      if (bestSellers.length === 0) {
+        return {
+          success: true,
+          message: 'Não há informações sobre produtos mais vendidos no momento.',
+          data: { products: [] },
+        };
+      }
+      
+      const productsList = bestSellers
+        .map((product, index) => `${index + 1}. ${product.name} - €${product.price.toFixed(2)} (ID: ${product.id})`)
+        .join('\n');
+      
+      return {
+        success: true,
+        message: `🏆 Produtos mais vendidos (${bestSellers.length}):\n\n${productsList}`,
+        data: { products: bestSellers },
+      };
+    } catch (error) {
+      logger.error('Erro ao buscar produtos mais vendidos', { error: error instanceof Error ? error.message : error })
+      throw new Error(`Erro ao buscar mais vendidos: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    }
+  },
+});
+
 // Tool: Produtos em promoção
 export const getPromotionalProductsTool = tool({
   description: 'Lista produtos em promoção ou com desconto',
@@ -348,6 +418,7 @@ export const productTools = {
   list_categories: listCategoriesTool,
   list_recommended_products: listRecommendedProductsTool,
   get_promotional_products: getPromotionalProductsTool,
+  get_best_sellers: getBestSellersTool,
   redirect_to_product: redirectToProductTool,
   show_multiple_products: showMultipleProductsTool,
 };

@@ -298,13 +298,26 @@ export function Chat() {
 
                    // Preparar sugestões de produtos e redirecionar para a página de produtos
                    const productTools = [
-                     'search_products', 'list_recommended_products', 'get_promotional_products'
+                     'search_products', 'list_recommended_products', 'get_promotional_products', 'get_best_sellers'
                    ];
                    if (toolPayload && toolPayload.toolName && productTools.includes(toolPayload.toolName)) {
                      try {
                        const args = toolPayload.args || {};
                        const query = args.query || args.symptomOrNeed || undefined;
-                       productOverlay.showLoading({ title: 'Sugestões de produtos', query });
+                       
+                       // Definir título baseado no tipo de ferramenta
+                       let overlayTitle = 'Sugestões de produtos';
+                       if (toolPayload.toolName === 'get_promotional_products') {
+                         overlayTitle = '🏷️ Produtos em Promoção';
+                       } else if (toolPayload.toolName === 'get_best_sellers') {
+                         overlayTitle = '🏆 Produtos Mais Vendidos';
+                       } else if (toolPayload.toolName === 'list_recommended_products') {
+                         overlayTitle = '💊 Produtos Recomendados';
+                       } else if (query) {
+                         overlayTitle = `Resultados para "${query}"`;
+                       }
+                       
+                       productOverlay.showLoading({ title: overlayTitle, query });
 
                        // Tentar extrair produtos diretamente do result quando disponível
                        let toolProducts = toolPayload.result?.data?.products || toolPayload.result?.products;
@@ -313,7 +326,7 @@ export function Chat() {
                          const fetched = await searchProductsApi({ q: query, limit: 12 });
                          toolProducts = fetched;
                        }
-                       productOverlay.showProducts({ title: 'Sugestões de produtos', query, products: toolProducts || [] });
+                       productOverlay.showProducts({ title: overlayTitle, query, products: toolProducts || [] });
                        setTimeout(() => router.push('/products'), 250);
                      } catch (e) {
                        console.error('Erro ao preparar sugestões de produtos:', e);
