@@ -1,7 +1,7 @@
 // Script para manter a aplicação Vercel aquecida e evitar cold starts
 const https = require("https");
 
-const VERCEL_URL = "https://vanaci-task-2.vercel.app";
+const VERCEL_URL = "https://farmacia-vanaci.vercel.app";
 const WARMUP_INTERVAL = 10 * 60 * 1000; // 5 minutos
 const ENDPOINTS_TO_WARM = ["/api/warmup", "/api/products", "/api/cart", "/api/navigation"];
 
