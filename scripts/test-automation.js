@@ -5,7 +5,7 @@
  * o funcionamento do agente AI e suas principais funcionalidades.
  */
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://localhost:3007';
 
 // Função para fazer requisições HTTP
 async function makeRequest(endpoint, method = 'GET', body = null) {
