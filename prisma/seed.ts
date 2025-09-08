@@ -2,477 +2,672 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-// Mapeamento de produtos para imagens específicas
-const imageMapping: { [key: string]: string } = {
-  'Álcool Gel 70%': '/imagensRemedios/alcool.png',
-  'Shampoo Anticaspa': '/imagensRemedios/anticaspa.png',
-  'Soro Fisiológico': '/imagensRemedios/fisiologica.png',
-  'Fita Teste Glicemia': '/imagensRemedios/glicemia.png',
-  'Hidratante Facial': '/imagensRemedios/hidratante.png',
-  'Aparelho de Pressão': '/imagensRemedios/pressao.png',
-  'Protetor Solar FPS 60': '/imagensRemedios/protetorsolar.png',
-  'Termômetro Digital': '/imagensRemedios/termometro.png'
-}
-
-// Função para obter caminho da imagem
-function getImagePath(productName: string): string {
-  return imageMapping[productName] || '/imagensRemedios/remedio.png'
-}
-
-// Mock de produtos farmacêuticos divididos por categorias
+// Produtos baseados em TODAS as imagens reais disponíveis
 const products = [
   // ANALGÉSICOS E ANTI-INFLAMATÓRIOS
   {
-    name: 'Dipirona 500mg',
-    description: 'Analgésico e antitérmico potente para alívio de dores de intensidade leve a moderada e redução da febre. Eficaz contra dor de cabeça, dor de dente, dores musculares, cólicas menstruais e febre. Ação rápida com início do efeito em 30-60 minutos. Pode ser usado por adultos e crianças acima de 3 meses (com orientação médica). Comprimidos de fácil deglutição. Posologia: adultos 1-2 comprimidos até 4 vezes ao dia. Não exceder 4g por dia.',
+    name: 'Paracetamol 500mg Dor e Febre',
+    description: 'Analgésico e antitérmico eficaz para alívio de dores leves a moderadas e redução da febre. Indicado para dor de cabeça, dor de dente, dores musculares e febre. Seguro para uso em adultos e crianças.',
     category: 'Analgésicos',
-    price: 4.25,
+    price: 4.50,
     stock: 150,
     prescription: false,
-    manufacturer: 'EMS',
-    image: getImagePath('Dipirona 500mg')
+    manufacturer: 'Genérico',
+    image: '/imagensRemedios/Paracetamol-500-mg-Dor-e-Febre.png'
   },
   {
-    name: 'Ibuprofeno 600mg',
-    description: 'Anti-inflamatório não esteroidal (AINE) com ação analgésica, anti-inflamatória e antitérmica. Indicado para dores musculares, articulares, dor de cabeça, dor de dente, cólicas menstruais e processos inflamatórios. Reduz inchaço, vermelhidão e dor. Especialmente eficaz em lesões esportivas e artrite. Duração de ação de 6-8 horas. Tomar com alimento para reduzir irritação gástrica. Posologia: 1 comprimido 2-3 vezes ao dia.',
-    category: 'Anti-inflamatórios',
-    price: 6.45,
-    stock: 80,
-    prescription: false,
-    manufacturer: 'Medley',
-    image: getImagePath('Ibuprofeno 600mg')
-  },
-  {
-    name: 'Paracetamol 750mg',
-    description: 'Analgésico e antitérmico de primeira escolha para dor e febre. Seguro e eficaz para dor de cabeça, dor muscular, dor de dente, dores articulares leves e febre. Não possui ação anti-inflamatória, sendo mais suave para o estômago. Pode ser usado por gestantes e crianças (com orientação médica). Início de ação em 30-60 minutos com duração de 4-6 horas. Posologia: adultos 1 comprimido até 4 vezes ao dia, respeitando intervalo mínimo de 6 horas.',
+    name: 'Benuron 500mg',
+    description: 'Analgésico e antipirético à base de paracetamol. Eficaz no tratamento de dores e febre, com ação rápida e duradoura.',
     category: 'Analgésicos',
-    price: 3.40,
-    stock: 200,
+    price: 5.25,
+    stock: 120,
     prescription: false,
-    manufacturer: 'Eurofarma',
-    image: getImagePath('Paracetamol 750mg')
+    manufacturer: 'Benuron',
+    image: '/imagensRemedios/Benuron-500-mg.png'
   },
   {
-    name: 'Diclofenaco Sódico 50mg',
-    description: 'Anti-inflamatório não esteroidal potente para dores musculares, articulares e inflamações. Muito eficaz em lesões esportivas, tendinites, bursites, artrite e dores nas costas. Reduz significativamente a inflamação, inchaço e dor. Ação prolongada de 8-12 horas. Recomendado para processos inflamatórios agudos e crônicos. Tomar com alimento. Posologia: 1 comprimido 2-3 vezes ao dia. Não usar por mais de 7 dias sem orientação médica.',
-    category: 'Anti-inflamatórios',
-    price: 7.70,
-    stock: 60,
-    prescription: false,
-    manufacturer: 'Voltaren',
-    image: getImagePath('Diclofenaco Sódico 50mg')
-  },
-  {
-    name: 'Nimesulida 100mg',
-    description: 'Anti-inflamatório e analgésico seletivo com excelente perfil de segurança gástrica. Indicado para dores agudas, inflamações, dor de dente, dor pós-operatória e processos inflamatórios. Possui ação anti-inflamatória potente com menor risco de efeitos colaterais gastrointestinais. Início de ação rápido (30 minutos) com duração de 8-12 horas. Posologia: 1 comprimido 2 vezes ao dia após as refeições. Tratamento máximo de 15 dias.',
-    category: 'Anti-inflamatórios',
-    price: 9.35,
-    stock: 45,
-    prescription: false,
-    manufacturer: 'Apsen',
-    image: getImagePath('Nimesulida 100mg')
-  },
-
-  // ANTIBIÓTICOS
-  {
-    name: 'Amoxicilina 500mg',
-    description: 'Antibiótico de amplo espectro',
-    category: 'Antibióticos',
-    price: 12.95,
-    stock: 40,
-    prescription: true,
-    manufacturer: 'Neo Química',
-    image: getImagePath('Amoxicilina 500mg')
-  },
-  {
-    name: 'Azitromicina 500mg',
-    description: 'Antibiótico para infecções respiratórias',
-    category: 'Antibióticos',
-    price: 16.25,
-    stock: 35,
-    prescription: true,
-    manufacturer: 'Sandoz',
-    image: getImagePath('Azitromicina 500mg')
-  },
-  {
-    name: 'Cefalexina 500mg',
-    description: 'Antibiótico cefalosporínico',
-    category: 'Antibióticos',
-    price: 14.45,
-    stock: 30,
-    prescription: true,
-    manufacturer: 'Cimed',
-    image: getImagePath('Cefalexina 500mg')
-  },
-  {
-    name: 'Ciprofloxacino 500mg',
-    description: 'Antibiótico quinolona',
-    category: 'Antibióticos',
-    price: 17.90,
-    stock: 25,
-    prescription: true,
-    manufacturer: 'Eurofarma',
-    image: getImagePath('Ciprofloxacino 500mg')
-  },
-
-  // VITAMINAS E SUPLEMENTOS
-  {
-    name: 'Vitamina C 1g',
-    description: 'Suplemento vitamínico efervescente de Vitamina C 1000mg. Fortalece o sistema imunológico, possui ação antioxidante e auxilia na absorção de ferro. Ideal para prevenção de gripes e resfriados, cicatrização de feridas e manutenção da saúde da pele. Comprimidos efervescentes com sabor laranja, de fácil dissolução e absorção. Recomendado para adultos e crianças acima de 12 anos. Tomar 1 comprimido ao dia dissolvido em água.',
-    category: 'Vitaminas',
-    price: 11.45,
+    name: 'Aspirina Express',
+    description: 'Analgésico, antipirético e anti-inflamatório. Alívio rápido de dores de cabeça, dores musculares e febre. Fórmula de ação rápida.',
+    category: 'Analgésicos',
+    price: 6.80,
     stock: 100,
     prescription: false,
-    manufacturer: 'Redoxon',
-    image: getImagePath('Vitamina C 1g')
+    manufacturer: 'Bayer',
+    image: '/imagensRemedios/Aspirina-Express.png'
   },
   {
-    name: 'Complexo B',
-    description: 'Suplemento vitamínico completo com todas as vitaminas do complexo B (B1, B2, B3, B5, B6, B7, B9, B12). Essencial para o metabolismo energético, funcionamento do sistema nervoso e formação de glóbulos vermelhos. Auxilia no combate ao cansaço, fadiga e estresse. Melhora a concentração, memória e disposição. Importante para a saúde dos cabelos, pele e unhas. Cápsulas de fácil deglutição. Tomar 1 cápsula ao dia com água.',
-    category: 'Vitaminas',
-    price: 9.25,
-    stock: 75,
+    name: 'Ilvico Comprimidos Dor e Febre',
+    description: 'Analgésico e antipirético para alívio de dores e redução da febre. Fórmula eficaz e bem tolerada.',
+    category: 'Analgésicos',
+    price: 4.95,
+    stock: 110,
     prescription: false,
-    manufacturer: 'Centrum',
-    image: getImagePath('Complexo B')
+    manufacturer: 'Ilvico',
+    image: '/imagensRemedios/Ilvico-Comprimidos-Dor-e-Febre.png'
   },
   {
-    name: 'Vitamina D3 2000UI',
-    description: 'Suplemento de Vitamina D3 (colecalciferol) 2000 UI. Fundamental para a absorção de cálcio e fósforo, fortalecimento dos ossos e dentes. Auxilia no funcionamento do sistema imunológico e muscular. Previne osteoporose, raquitismo e osteomalácia. Especialmente importante para pessoas com pouca exposição solar, idosos e crianças em crescimento. Cápsulas gelatinosas moles para melhor absorção. Tomar 1 cápsula ao dia com alimento.',
-    category: 'Vitaminas',
-    price: 17.95,
-    stock: 60,
-    prescription: false,
-    manufacturer: 'Addera',
-    image: getImagePath('Vitamina D3 2000UI')
-  },
-  {
-    name: 'Ômega 3 1000mg',
-    description: 'Suplemento de ácidos graxos essenciais EPA e DHA extraídos de óleo de peixe. Beneficia a saúde cardiovascular, reduzindo triglicerídeos e colesterol. Possui ação anti-inflamatória natural e auxilia no funcionamento cerebral, melhorando memória e concentração. Importante para a saúde ocular e desenvolvimento neurológico. Cápsulas gelatinosas sem sabor residual de peixe. Rico em antioxidantes naturais. Tomar 1-2 cápsulas ao dia com as refeições.',
-    category: 'Suplementos',
-    price: 22.95,
-    stock: 50,
-    prescription: false,
-    manufacturer: 'Vitafor',
-    image: getImagePath('Ômega 3 1000mg')
-  },
-  {
-    name: 'Ferro Quelato',
-    description: 'Suplemento de ferro quelato de alta biodisponibilidade para tratamento e prevenção da anemia ferropriva. O ferro quelato é melhor absorvido pelo organismo e causa menos efeitos colaterais gastrointestinais. Essencial para a formação de hemoglobina e transporte de oxigênio. Combate fadiga, fraqueza e palidez. Especialmente indicado para gestantes, crianças em crescimento e pessoas com deficiência de ferro. Cápsulas vegetais. Tomar 1 cápsula ao dia com estômago vazio.',
-    category: 'Suplementos',
-    price: 28.90,
-    stock: 40,
-    prescription: false,
-    manufacturer: 'Noripurum',
-    image: getImagePath('Ferro Quelato')
-  },
-
-  // MEDICAMENTOS PARA PRESSÃO
-  {
-    name: 'Losartana 50mg',
-    description: 'Anti-hipertensivo',
-    category: 'Cardiovascular',
+    name: 'Brufen 400mg Ibuprofeno',
+    description: 'Anti-inflamatório não esteroidal com ação analgésica e antipirética. Eficaz contra dores musculares, articulares e processos inflamatórios.',
+    category: 'Anti-inflamatórios',
     price: 7.95,
     stock: 80,
-    prescription: true,
-    manufacturer: 'EMS',
-    image: getImagePath('Losartana 50mg')
+    prescription: false,
+    manufacturer: 'Abbott',
+    image: '/imagensRemedios/Brufen-400-mg-Comprimidos-Ibuprofeno.png'
   },
   {
-    name: 'Enalapril 10mg',
-    description: 'Inibidor da ECA',
-    category: 'Cardiovascular',
-    price: 6.25,
+    name: 'Ibuprofeno 200mg Farmoz',
+    description: 'Anti-inflamatório para dores leves a moderadas. Reduz inflamação, dor e febre. Ideal para dores musculares e articulares.',
+    category: 'Anti-inflamatórios',
+    price: 5.50,
     stock: 90,
-    prescription: true,
-    manufacturer: 'Medley',
-    image: getImagePath('Enalapril 10mg')
+    prescription: false,
+    manufacturer: 'Farmoz',
+    image: '/imagensRemedios/Ibuprofeno-200-mg-Farmoz.png'
   },
   {
-    name: 'Amlodipina 5mg',
-    description: 'Bloqueador de canal de cálcio',
-    category: 'Cardiovascular',
+    name: 'Nurofen Xpress Cápsulas Moles',
+    description: 'Ibuprofeno em cápsulas moles para absorção rápida. Alívio eficaz de dores e febre com ação prolongada.',
+    category: 'Anti-inflamatórios',
     price: 9.45,
     stock: 70,
-    prescription: true,
-    manufacturer: 'Eurofarma',
-    image: getImagePath('Amlodipina 5mg')
+    prescription: false,
+    manufacturer: 'Nurofen',
+    image: '/imagensRemedios/Nurofen-Xpress-Cápsulas-Moles-Dor-e-Febre.png'
   },
   {
-    name: 'Hidroclorotiazida 25mg',
-    description: 'Diurético tiazídico',
-    category: 'Cardiovascular',
-    price: 4.45,
-    stock: 100,
-    prescription: true,
-    manufacturer: 'Neo Química',
-    image: getImagePath('Hidroclorotiazida 25mg')
-  },
-
-  // MEDICAMENTOS PARA DIABETES
-  {
-    name: 'Metformina 850mg',
-    description: 'Antidiabético oral',
-    category: 'Diabetes',
-    price: 22.90,
+    name: 'Trifene 400 Comprimidos',
+    description: 'Anti-inflamatório potente para dores e processos inflamatórios. Eficaz em dores musculares, articulares e pós-traumáticas.',
+    category: 'Anti-inflamatórios',
+    price: 8.75,
     stock: 60,
-    prescription: true,
-    manufacturer: 'Glifage',
-    image: getImagePath('Metformina 850mg')
+    prescription: false,
+    manufacturer: 'Trifene',
+    image: '/imagensRemedios/Trifene-400-Comprimidos-Dor-e-Febre.png'
   },
   {
-    name: 'Glibenclamida 5mg',
-    description: 'Hipoglicemiante oral',
-    category: 'Diabetes',
-    price: 8.25,
+    name: 'Momendol Anti-inflamatório',
+    description: 'Anti-inflamatório específico para dores musculares e articulares. Ação localizada e duradoura.',
+    category: 'Anti-inflamatórios',
+    price: 11.20,
+    stock: 50,
+    prescription: false,
+    manufacturer: 'Momendol',
+    image: '/imagensRemedios/Momendol-Anti-inflamatório-Dores-Musculares.png'
+  },
+  {
+    name: 'Voltaren Emulgel',
+    description: 'Gel anti-inflamatório tópico com diclofenaco. Aplicação local para dores musculares, articulares e contusões.',
+    category: 'Anti-inflamatórios',
+    price: 13.50,
     stock: 45,
-    prescription: true,
-    manufacturer: 'EMS',
-    image: getImagePath('Glibenclamida 5mg')
+    prescription: false,
+    manufacturer: 'Voltaren',
+    image: '/imagensRemedios/Voltaren_emulgelex.png'
   },
 
-  // MEDICAMENTOS DIGESTIVOS
+  // GRIPES E CONSTIPAÇÕES
   {
-    name: 'Omeprazol 20mg',
-    description: 'Inibidor da bomba de prótons para tratamento de úlceras, gastrite, esofagite e refluxo gastroesofágico. Reduz significativamente a produção de ácido gástrico, promovendo cicatrização e alívio dos sintomas. Eficaz contra azia, queimação, dor epigástrica e regurgitação ácida. Cápsulas com revestimento entérico para proteção do princípio ativo. Tomar em jejum, 30-60 minutos antes do café da manhã. Posologia: 1 cápsula ao dia. Tratamento usual de 4-8 semanas.',
-    category: 'Digestivo',
-    price: 25.90,
+    name: 'Ben-u-gripe 4mg + 500mg',
+    description: 'Combinação de paracetamol e cloridrato de fenilefrina para alívio dos sintomas de gripes e constipações.',
+    category: 'Gripes e Constipações',
+    price: 7.25,
     stock: 85,
     prescription: false,
-    manufacturer: 'Eurofarma',
-    image: getImagePath('Omeprazol 20mg')
+    manufacturer: 'Ben-u-ron',
+    image: '/imagensRemedios/Ben-u-gripe-4mg-+-500mg.png'
   },
   {
-    name: 'Ranitidina 150mg',
-    description: 'Bloqueador dos receptores H2 da histamina para redução da acidez gástrica. Indicado para úlceras duodenais, úlceras gástricas, síndrome de Zollinger-Ellison e refluxo gastroesofágico. Alívio rápido de azia, queimação e dor estomacal. Ação prolongada de 8-12 horas. Pode ser usado preventivamente antes de refeições que causam desconforto. Comprimidos revestidos de fácil deglutição. Posologia: 1 comprimido 2 vezes ao dia ou conforme orientação médica.',
-    category: 'Digestivo',
-    price: 18.50,
+    name: 'Cêgripe Comprimidos',
+    description: 'Medicamento para alívio dos sintomas de gripes e constipações. Reduz dor, febre e congestão nasal.',
+    category: 'Gripes e Constipações',
+    price: 6.80,
+    stock: 95,
+    prescription: false,
+    manufacturer: 'Cêgripe',
+    image: '/imagensRemedios/Cêgripe-Comprimidos-Dor-e-Febre.png'
+  },
+  {
+    name: 'Griponal',
+    description: 'Tratamento completo para sintomas gripais. Combate febre, dores e congestão nasal.',
+    category: 'Gripes e Constipações',
+    price: 8.95,
     stock: 70,
     prescription: false,
-    manufacturer: 'Label',
-    image: getImagePath('Ranitidina 150mg')
+    manufacturer: 'Griponal',
+    image: '/imagensRemedios/Griponal.png'
   },
   {
-    name: 'Domperidona 10mg',
-    description: 'Procinético digestivo que acelera o esvaziamento gástrico e melhora a motilidade intestinal. Indicado para náuseas, vômitos, sensação de empachamento, digestão lenta e refluxo gastroesofágico. Especialmente eficaz em náuseas pós-operatórias e induzidas por medicamentos. Não atravessa a barreira hematoencefálica, causando menos efeitos colaterais neurológicos. Comprimidos de ação rápida. Posologia: 1 comprimido 3-4 vezes ao dia, 15-30 minutos antes das refeições.',
-    category: 'Digestivo',
-    price: 22.90,
-    stock: 55,
+    name: 'Antigrippine Trieffect Tosse',
+    description: 'Saquetas para alívio da tosse e sintomas gripais. Fórmula tripla ação contra tosse, dor e febre.',
+    category: 'Gripes e Constipações',
+    price: 9.50,
+    stock: 60,
     prescription: false,
-    manufacturer: 'Motilium',
-    image: getImagePath('Domperidona 10mg')
+    manufacturer: 'Antigrippine',
+    image: '/imagensRemedios/Antigrippine-Trieffect-Tosse-Saquetas.png'
   },
   {
-    name: 'Simeticona 40mg',
-    description: 'Antiflatulento que reduz a tensão superficial das bolhas de gás no trato digestivo, facilitando sua eliminação. Alívio rápido de gases, distensão abdominal, cólicas intestinais e desconforto pós-prandial. Não é absorvido pelo organismo, sendo eliminado inalterado. Seguro para uso prolongado e em todas as idades. Especialmente útil após cirurgias abdominais e em bebês com cólicas. Comprimidos mastigáveis com sabor agradável. Posologia: 1-2 comprimidos após as refeições e ao deitar.',
-    category: 'Digestivo',
-    price: 12.90,
+    name: 'Strepsils Mel e Limão',
+    description: 'Pastilhas para dor de garganta com mel e limão. Ação antisséptica e analgésica local.',
+    category: 'Gripes e Constipações',
+    price: 5.95,
+    stock: 120,
+    prescription: false,
+    manufacturer: 'Strepsils',
+    image: '/imagensRemedios/Strepsils-Mel-e-Limão-Dor-de-Garganta.png'
+  },
+  {
+    name: 'Oscillococcinum',
+    description: 'Medicamento homeopático para prevenção e tratamento de estados gripais.',
+    category: 'Gripes e Constipações',
+    price: 12.80,
+    stock: 40,
+    prescription: false,
+    manufacturer: 'Boiron',
+    image: '/imagensRemedios/Oscilloncoccinum.png'
+  },
+
+  // SISTEMA DIGESTIVO
+  {
+    name: 'Buscopan',
+    description: 'Antiespasmódico para alívio de cólicas e espasmos do trato digestivo. Ação rápida e eficaz.',
+    category: 'Sistema Digestivo',
+    price: 8.45,
+    stock: 75,
+    prescription: false,
+    manufacturer: 'Boehringer',
+    image: '/imagensRemedios/Buscopan.png'
+  },
+  {
+    name: 'Aero-Om Cápsulas Antiflatulento',
+    description: 'Tratamento para gases intestinais e distensão abdominal. Alívio rápido do desconforto.',
+    category: 'Sistema Digestivo',
+    price: 7.90,
     stock: 90,
     prescription: false,
-    manufacturer: 'Luftal',
-    image: getImagePath('Simeticona 40mg')
-  },
-
-  // MEDICAMENTOS RESPIRATÓRIOS
-  {
-    name: 'Salbutamol 100mcg',
-    description: 'Broncodilatador spray',
-    category: 'Respiratório',
-    price: 35.90,
-    stock: 30,
-    prescription: true,
-    manufacturer: 'Aerolin',
-    image: getImagePath('Salbutamol 100mcg')
+    manufacturer: 'Aero-Om',
+    image: '/imagensRemedios/Aero-Om-Cápsulas-Moles-Antiflatulento.png'
   },
   {
-    name: 'Loratadina 10mg',
-    description: 'Anti-histamínico',
-    category: 'Respiratório',
-    price: 15.90,
-    stock: 80,
-    prescription: false,
-    manufacturer: 'Claritin',
-    image: getImagePath('Loratadina 10mg')
-  },
-  {
-    name: 'Dextrometorfano 15mg',
-    description: 'Antitussígeno',
-    category: 'Respiratório',
-    price: 18.50,
+    name: 'Imodium Rapid',
+    description: 'Tratamento rápido da diarreia. Reduz a frequência e urgência das evacuações.',
+    category: 'Sistema Digestivo',
+    price: 9.75,
     stock: 65,
     prescription: false,
-    manufacturer: 'Bisolvon',
-    image: getImagePath('Dextrometorfano 15mg')
+    manufacturer: 'Imodium',
+    image: '/imagensRemedios/Imodium-Rapid-Tratamento-da-Diarreia.png'
   },
   {
-    name: 'Carbocisteína 250mg',
-    description: 'Mucolítico',
-    category: 'Respiratório',
-    price: 12.45,
-    stock: 50,
+    name: 'Laevolac Xarope',
+    description: 'Laxante suave para tratamento da obstipação. Ação gradual e eficaz.',
+    category: 'Sistema Digestivo',
+    price: 11.25,
+    stock: 55,
     prescription: false,
-    manufacturer: 'Fluimucil',
-    image: getImagePath('Carbocisteína 250mg')
+    manufacturer: 'Laevolac',
+    image: '/imagensRemedios/Laevolac-Xarope-Obstipação.png'
+  },
+  {
+    name: 'Dulcolax',
+    description: 'Laxante para alívio da obstipação. Ação suave e previsível.',
+    category: 'Sistema Digestivo',
+    price: 6.95,
+    stock: 80,
+    prescription: false,
+    manufacturer: 'Dulcolax',
+    image: '/imagensRemedios/Dulcolax.png'
+  },
+  {
+    name: 'Vomidrine Direct Enjoos',
+    description: 'Tratamento para náuseas e vômitos. Comprimidos de dissolução rápida.',
+    category: 'Sistema Digestivo',
+    price: 8.50,
+    stock: 70,
+    prescription: false,
+    manufacturer: 'Vomidrine',
+    image: '/imagensRemedios/Vomidrine-Direct-Comprimidos-Enjoos.png'
+  },
+  {
+    name: 'Dioralyte Saquetas Limão',
+    description: 'Solução de reidratação oral para reposição de líquidos e eletrólitos perdidos.',
+    category: 'Sistema Digestivo',
+    price: 7.80,
+    stock: 85,
+    prescription: false,
+    manufacturer: 'Dioralyte',
+    image: '/imagensRemedios/Dioralyte-Saquetas-Perda-de-Líquidos-Limão.png'
+  },
+  {
+    name: 'Proton',
+    description: 'Protetor gástrico para redução da acidez estomacal. Alívio de azia e queimação.',
+    category: 'Sistema Digestivo',
+    price: 12.90,
+    stock: 60,
+    prescription: false,
+    manufacturer: 'Proton',
+    image: '/imagensRemedios/Proton.png'
   },
 
-  // MEDICAMENTOS NEUROLÓGICOS
+  // SISTEMA CIRCULATÓRIO
   {
-    name: 'Rivotril 2mg',
-    description: 'Ansiolítico benzodiazepínico',
-    category: 'Neurológico',
-    price: 45.90,
-    stock: 20,
-    prescription: true,
-    manufacturer: 'Roche',
-    image: getImagePath('Rivotril 2mg')
-  },
-  {
-    name: 'Fluoxetina 20mg',
-    description: 'Antidepressivo ISRS',
-    category: 'Neurológico',
-    price: 16.45,
-    stock: 35,
-    prescription: true,
-    manufacturer: 'Prozac',
-    image: getImagePath('Fluoxetina 20mg')
-  },
-  {
-    name: 'Sertralina 50mg',
-    description: 'Antidepressivo ISRS',
-    category: 'Neurológico',
-    price: 19.25,
-    stock: 30,
-    prescription: true,
-    manufacturer: 'Zoloft',
-    image: getImagePath('Sertralina 50mg')
+    name: 'Daflon 500mg',
+    description: 'Venotônico para tratamento de insuficiência venosa e hemorroidas. Melhora a circulação.',
+    category: 'Sistema Circulatório',
+    price: 15.50,
+    stock: 45,
+    prescription: false,
+    manufacturer: 'Servier',
+    image: '/imagensRemedios/Daflon-500-mg.png'
   },
 
-  // DERMOCOSMÉTICOS
+  // SISTEMA RESPIRATÓRIO
   {
-    name: 'Protetor Solar FPS 60',
-    description: 'Proteção solar facial',
-    category: 'Dermocosmético',
-    price: 27.95,
-    stock: 40,
+    name: 'Vibrocil Actilong MD',
+    description: 'Descongestionante nasal de longa duração. Alívio da congestão nasal por até 12 horas.',
+    category: 'Sistema Respiratório',
+    price: 8.95,
+    stock: 75,
     prescription: false,
-    manufacturer: 'La Roche-Posay',
-    image: getImagePath('Protetor Solar FPS 60')
+    manufacturer: 'Vibrocil',
+    image: '/imagensRemedios/Descongestionante-Nasal-Vibrocil-Actilong-MD.png'
   },
   {
-    name: 'Hidratante Facial',
-    description: 'Creme hidratante para rosto',
-    category: 'Dermocosmético',
-    price: 21.45,
-    stock: 35,
+    name: 'Nasex Duo Spray Nasal',
+    description: 'Solução para pulverização nasal. Higiene e descongestionamento das vias nasais.',
+    category: 'Sistema Respiratório',
+    price: 6.75,
+    stock: 90,
     prescription: false,
-    manufacturer: 'Vichy',
-    image: getImagePath('Hidratante Facial')
+    manufacturer: 'Nasex',
+    image: '/imagensRemedios/Nasex-Duo-Solução-Pulverização-Nasal.png'
   },
   {
-    name: 'Shampoo Anticaspa',
-    description: 'Tratamento para caspa',
-    category: 'Dermocosmético',
+    name: 'Nasorhinathiol Descongestionante',
+    description: 'Descongestionante nasal para alívio da obstrução nasal e sinusite.',
+    category: 'Sistema Respiratório',
+    price: 7.50,
+    stock: 65,
+    prescription: false,
+    manufacturer: 'Nasorhinathiol',
+    image: '/imagensRemedios/Nasorhinathiol-Descongestionante-Nasal.png'
+  },
+
+  // SUPLEMENTOS E VITAMINAS
+  {
+    name: 'Dolenio 1500mg Glucosamina',
+    description: 'Suplemento de sulfato de glucosamina para saúde articular. Auxilia na manutenção das cartilagens.',
+    category: 'Suplementos',
     price: 28.90,
+    stock: 35,
+    prescription: false,
+    manufacturer: 'Dolenio',
+    image: '/imagensRemedios/Dolenio-1500mg-Sulfato-de-Glucosamina.png'
+  },
+  {
+    name: 'Kompensan',
+    description: 'Suplemento vitamínico e mineral para reposição nutricional e fortalecimento do organismo.',
+    category: 'Suplementos',
+    price: 22.50,
     stock: 50,
     prescription: false,
-    manufacturer: 'Selsun',
-    image: getImagePath('Shampoo Anticaspa')
+    manufacturer: 'Kompensan',
+    image: '/imagensRemedios/Kompensan.png'
   },
 
-  // HIGIENE E CUIDADOS
+  // DERMOCOSMÉTICA
   {
-    name: 'Álcool Gel 70%',
-    description: 'Higienizador de mãos',
-    category: 'Higiene',
-    price: 8.90,
-    stock: 200,
-    prescription: false,
-    manufacturer: 'Antisséptico',
-    image: getImagePath('Álcool Gel 70%')
-  },
-  {
-    name: 'Termômetro Digital',
-    description: 'Medidor de temperatura corporal',
-    category: 'Equipamentos',
-    price: 25.90,
-    stock: 25,
-    prescription: false,
-    manufacturer: 'G-Tech',
-    image: getImagePath('Termômetro Digital')
-  },
-  {
-    name: 'Aparelho de Pressão',
-    description: 'Monitor de pressão arterial',
-    category: 'Equipamentos',
-    price: 44.95,
-    stock: 15,
-    prescription: false,
-    manufacturer: 'Omron',
-    image: getImagePath('Aparelho de Pressão')
-  },
-  {
-    name: 'Fita Teste Glicemia',
-    description: 'Tiras para medição de glicose',
-    category: 'Equipamentos',
-    price: 45.90,
-    stock: 30,
-    prescription: false,
-    manufacturer: 'Accu-Chek',
-    image: getImagePath('Fita Teste Glicemia')
-  },
-
-  // MEDICAMENTOS GINECOLÓGICOS
-  {
-    name: 'Anticoncepcional Yasmin',
-    description: 'Contraceptivo oral combinado',
-    category: 'Ginecológico',
-    price: 35.90,
-    stock: 40,
-    prescription: true,
-    manufacturer: 'Bayer',
-    image: getImagePath('Anticoncepcional Yasmin')
-  },
-  {
-    name: 'Ácido Fólico 5mg',
-    description: 'Suplemento para gestantes',
-    category: 'Ginecológico',
+    name: 'Protetor Solar',
+    description: 'Protetor solar facial e corporal com alta proteção UVA/UVB. Resistente à água e ao suor.',
+    category: 'Dermocosmética',
     price: 18.90,
     stock: 60,
     prescription: false,
-    manufacturer: 'Folifolim',
-    image: getImagePath('Ácido Fólico 5mg')
+    manufacturer: 'Genérico',
+    image: '/imagensRemedios/protetorsolar.png'
   },
-
-  // MEDICAMENTOS PEDIÁTRICOS
   {
-    name: 'Paracetamol Gotas',
-    description: 'Analgésico infantil',
-    category: 'Pediátrico',
-    price: 12.90,
+    name: 'Hidratante Corporal',
+    description: 'Loção hidratante para pele seca. Fórmula nutritiva com absorção rápida.',
+    category: 'Dermocosmética',
+    price: 12.50,
     stock: 80,
     prescription: false,
-    manufacturer: 'Tylenol',
-    image: getImagePath('Paracetamol Gotas')
+    manufacturer: 'Genérico',
+    image: '/imagensRemedios/hidratante.png'
+  },
+  {
+    name: 'Gel Limpeza Purificante Controlo Oleosidade',
+    description: 'Gel de limpeza facial para pele oleosa. Remove impurezas e controla a oleosidade.',
+    category: 'Dermocosmética',
+    price: 14.90,
+    stock: 45,
+    prescription: false,
+    manufacturer: 'Vichy',
+    image: '/imagensRemedios/Gel-Limpeza-Purificante-Controlo-Oleosidade.png'
+  },
+  {
+    name: 'Gel Limpeza Purificante Pele Oleosa e Acneica',
+    description: 'Gel específico para pele oleosa e com tendência acneica. Ação purificante e matificante.',
+    category: 'Dermocosmética',
+    price: 16.50,
+    stock: 40,
+    prescription: false,
+    manufacturer: 'La Roche-Posay',
+    image: '/imagensRemedios/Gel-Limpeza-Purificante-Pele-Oleosa-e-Acneica.png'
+  },
+  {
+    name: 'Gel Limpeza Rosto Purificante Micropeeling',
+    description: 'Gel de limpeza com ação micropeeling. Remove células mortas e renova a pele.',
+    category: 'Dermocosmética',
+    price: 17.90,
+    stock: 35,
+    prescription: false,
+    manufacturer: 'Eucerin',
+    image: '/imagensRemedios/Gel-Limpeza-Rosto-Purificante-Micropeeling.png'
+  },
+  {
+    name: 'Gel de Limpeza Controlo de Imperfeições',
+    description: 'Gel específico para controlo de imperfeições e poros dilatados.',
+    category: 'Dermocosmética',
+    price: 15.75,
+    stock: 50,
+    prescription: false,
+    manufacturer: 'Avène',
+    image: '/imagensRemedios/Gel-de-Limpeza-Controlo-de-Imperfeições.png'
+  },
+  {
+    name: 'Corretor Anti-Imperfeições Pele Oleosa',
+    description: 'Corretor específico para pele oleosa. Cobre imperfeições e controla brilho.',
+    category: 'Dermocosmética',
+    price: 19.90,
+    stock: 30,
+    prescription: false,
+    manufacturer: 'Vichy',
+    image: '/imagensRemedios/Corretor-Anti-Imperfeições-da-Pele-Oleosa.png'
+  },
+  {
+    name: 'Fluido Antiescurecimento Marcas Pós-Acne',
+    description: 'Fluido para tratamento de marcas pós-acne e manchas escuras.',
+    category: 'Dermocosmética',
+    price: 24.90,
+    stock: 25,
+    prescription: false,
+    manufacturer: 'La Roche-Posay',
+    image: '/imagensRemedios/Fluido-Antiescurecimento-de-Marcas-Pós-Acne.png'
+  },
+  {
+    name: 'Pasta Enxofre Borbulhas Normaderm',
+    description: 'Pasta secativa com enxofre para tratamento localizado de borbulhas.',
+    category: 'Dermocosmética',
+    price: 13.50,
+    stock: 40,
+    prescription: false,
+    manufacturer: 'Vichy',
+    image: '/imagensRemedios/Pasta-Enxofre-Borbulhas-Normaderm-Acne.png'
+  },
+  {
+    name: 'Pasta SOS Eliminação Borbulhas',
+    description: 'Pasta de emergência para eliminação rápida de borbulhas.',
+    category: 'Dermocosmética',
+    price: 11.90,
+    stock: 45,
+    prescription: false,
+    manufacturer: 'Eucerin',
+    image: '/imagensRemedios/Pasta-SOS-Eliminação-Borbulhas-Pele-Oleosa.png'
+  },
+  {
+    name: 'Sérum Antimanchas e Anti-Idade',
+    description: 'Sérum concentrado para tratamento de manchas e sinais de envelhecimento.',
+    category: 'Dermocosmética',
+    price: 32.90,
+    stock: 20,
+    prescription: false,
+    manufacturer: 'Vichy',
+    image: '/imagensRemedios/Sérum-Antimanchas-e-Anti-Idade-Pele-Oleosa.png'
+  },
+  {
+    name: 'Sérum Esfoliante Anti-Imperfeições',
+    description: 'Sérum esfoliante para pele acneica. Reduz imperfeições e melhora textura.',
+    category: 'Dermocosmética',
+    price: 28.50,
+    stock: 25,
+    prescription: false,
+    manufacturer: 'La Roche-Posay',
+    image: '/imagensRemedios/Sérum-Esfoliante-Anti-Imperfeições-Pele-Acneica.png'
+  },
+
+  // CUIDADOS CAPILARES
+  {
+    name: 'Champô Volume Imediato Cabelos Finos',
+    description: 'Champô volumizador para cabelos finos e sem volume. Proporciona corpo e densidade.',
+    category: 'Cuidados Capilares',
+    price: 8.90,
+    stock: 60,
+    prescription: false,
+    manufacturer: 'L\'Oréal',
+    image: '/imagensRemedios/Champô-Volume-Imediato-para-Cabelos-Finos.png'
+  },
+  {
+    name: 'Champô Anticaspa',
+    description: 'Champô medicinal para tratamento e prevenção da caspa. Ação antifúngica.',
+    category: 'Cuidados Capilares',
+    price: 12.50,
+    stock: 50,
+    prescription: false,
+    manufacturer: 'Head & Shoulders',
+    image: '/imagensRemedios/anticaspa.png'
+  },
+  {
+    name: 'Condicionador Antiqueda Cabelo Enfraquecido',
+    description: 'Condicionador fortalecedor para cabelos com tendência à queda.',
+    category: 'Cuidados Capilares',
+    price: 11.90,
+    stock: 45,
+    prescription: false,
+    manufacturer: 'Vichy',
+    image: '/imagensRemedios/Condicionador-Antiqueda-Cabelo-Infranquecido.png'
+  },
+  {
+    name: 'Condicionador Co-Wash Ondulados',
+    description: 'Condicionador co-wash para cabelos ondulados. Limpeza suave sem ressecamento.',
+    category: 'Cuidados Capilares',
+    price: 9.50,
+    stock: 40,
+    prescription: false,
+    manufacturer: 'Lola Inc',
+    image: '/imagensRemedios/Condicionador-Co-Wash-Ondulados-Lola-Inc.png'
+  },
+  {
+    name: 'Condicionador Hidratante Meus Cachinhos',
+    description: 'Condicionador específico para cabelos cacheados. Hidratação intensa e definição.',
+    category: 'Cuidados Capilares',
+    price: 10.90,
+    stock: 35,
+    prescription: false,
+    manufacturer: 'Salon Line',
+    image: '/imagensRemedios/Condicionador-Hidratante-Meus-Cachinhos.png'
+  },
+  {
+    name: 'Coloração Cabelo 7R Louro Acobreado',
+    description: 'Coloração permanente para cabelos. Tom louro acobreado com cobertura total.',
+    category: 'Cuidados Capilares',
+    price: 15.90,
+    stock: 25,
+    prescription: false,
+    manufacturer: 'Garnier',
+    image: '/imagensRemedios/Coloração-Cabelo-7R-Louro-Acobreado.png'
+  },
+  {
+    name: 'Máscara Hidratante Morte Súbita',
+    description: 'Máscara capilar hidratante intensiva. Recupera cabelos danificados e ressecados.',
+    category: 'Cuidados Capilares',
+    price: 13.50,
+    stock: 30,
+    prescription: false,
+    manufacturer: 'Lola Inc',
+    image: '/imagensRemedios/Máscara-Hidratante-Morte-Súbita.png'
+  },
+  {
+    name: 'Sérum Diário Antiqueda Cabelo',
+    description: 'Sérum leave-in para prevenção da queda capilar. Fortalece e estimula crescimento.',
+    category: 'Cuidados Capilares',
+    price: 22.90,
+    stock: 20,
+    prescription: false,
+    manufacturer: 'Vichy',
+    image: '/imagensRemedios/Sérum-Diário-Antiqueda-Cabelo-Enfranquecido.png'
+  },
+  {
+    name: 'Spray Tónico Crescimento Rapunzel',
+    description: 'Spray tónico estimulante do crescimento capilar. Ação revitalizante.',
+    category: 'Cuidados Capilares',
+    price: 18.90,
+    stock: 25,
+    prescription: false,
+    manufacturer: 'Rapunzel',
+    image: '/imagensRemedios/Spray-Tónico-de-Crescimento-Rapunzel.png'
+  },
+
+  // HIGIENE ÍNTIMA E FEMININA
+  {
+    name: 'Gel Íntimo Gravidez e Pós-Parto',
+    description: 'Gel de higiene íntima específico para gravidez e pós-parto. Fórmula suave e hipoalergénica.',
+    category: 'Higiene Íntima',
+    price: 9.90,
+    stock: 40,
+    prescription: false,
+    manufacturer: 'Lactacyd',
+    image: '/imagensRemedios/Gel-Íntimo-Gravidez-e-Pós-Parto.png'
+  },
+  {
+    name: 'Discos Absorventes Antibacterianos',
+    description: 'Discos absorventes para seios com ação antibacteriana. Proteção e conforto.',
+    category: 'Higiene Íntima',
+    price: 6.50,
+    stock: 60,
+    prescription: false,
+    manufacturer: 'Chicco',
+    image: '/imagensRemedios/Discos-Absorventes-Antibacterianos.png'
+  },
+
+  // PEDIÁTRICO E BEBÉ
+  {
+    name: 'Fraldas Bebé 7-14kg T4',
+    description: 'Fraldas descartáveis tamanho 4 para bebés de 7 a 14kg. Absorção superior e conforto.',
+    category: 'Pediátrico',
+    price: 12.90,
+    stock: 50,
+    prescription: false,
+    manufacturer: 'Dodot',
+    image: '/imagensRemedios/Fraldas-de-Bebé-7-14kg-T4.png'
+  },
+  {
+    name: 'Pack XL Fraldas Ecológicas T4',
+    description: 'Fraldas ecológicas tamanho 4 em embalagem XL. Respeitam o ambiente e a pele do bebé.',
+    category: 'Pediátrico',
+    price: 18.90,
+    stock: 30,
+    prescription: false,
+    manufacturer: 'Bambo Nature',
+    image: '/imagensRemedios/Pack-XL-Fraldas-Ecológicas-T4-7-14-kg.png'
+  },
+  {
+    name: 'Compressas Bebé Tecido Não Tecido',
+    description: 'Compressas suaves para higiene do bebé. Tecido não tecido hipoalergénico.',
+    category: 'Pediátrico',
+    price: 4.50,
+    stock: 80,
+    prescription: false,
+    manufacturer: 'Mustela',
+    image: '/imagensRemedios/Compressas-Bebé-Tecido-Não-Tecido.png'
+  },
+  {
+    name: 'Pack Toalhitas 99% Água Limpeza Delicada',
+    description: 'Toalhitas húmidas com 99% de água para limpeza delicada do bebé.',
+    category: 'Pediátrico',
+    price: 8.90,
+    stock: 70,
+    prescription: false,
+    manufacturer: 'WaterWipes',
+    image: '/imagensRemedios/Pack-Toalhitas-99%-de-Água-Limpeza-Delicada.png'
+  },
+  {
+    name: 'Pack Leite Transição Profutura Duo 2',
+    description: 'Leite de transição para bebés a partir dos 6 meses. Fórmula enriquecida.',
+    category: 'Pediátrico',
+    price: 24.90,
+    stock: 25,
+    prescription: false,
+    manufacturer: 'Profutura',
+    image: '/imagensRemedios/Pack-Leite-de-Transição-Profutura-Duo-2.png'
+  },
+
+  // HIGIENE E CUIDADOS GERAIS
+  {
+    name: 'Álcool Gel 70%',
+    description: 'Higienizador de mãos à base de álcool. Elimina 99,9% dos germes e bactérias.',
+    category: 'Higiene',
+    price: 4.50,
+    stock: 200,
+    prescription: false,
+    manufacturer: 'Genérico',
+    image: '/imagensRemedios/alcool.png'
   },
   {
     name: 'Soro Fisiológico',
-    description: 'Solução para higiene nasal',
-    category: 'Pediátrico',
-    price: 8.50,
-    stock: 100,
+    description: 'Solução salina estéril para limpeza nasal e ocular.',
+    category: 'Higiene',
+    price: 3.50,
+    stock: 150,
     prescription: false,
-    manufacturer: 'Rinosoro',
-    image: getImagePath('Soro Fisiológico')
+    manufacturer: 'Genérico',
+    image: '/imagensRemedios/fisiologica.png'
+  },
+
+  // EQUIPAMENTOS MÉDICOS
+  {
+    name: 'Termômetro Digital',
+    description: 'Termômetro digital para medição precisa da temperatura corporal.',
+    category: 'Equipamentos',
+    price: 15.90,
+    stock: 30,
+    prescription: false,
+    manufacturer: 'G-Tech',
+    image: '/imagensRemedios/termometro.png'
   },
   {
-    name: 'Probiótico Infantil',
-    description: 'Regulador da flora intestinal',
-    category: 'Pediátrico',
-    price: 32.90,
-    stock: 45,
+    name: 'Aparelho de Pressão',
+    description: 'Monitor digital de pressão arterial para uso doméstico.',
+    category: 'Equipamentos',
+    price: 89.90,
+    stock: 15,
     prescription: false,
-    manufacturer: 'Floratil',
-    image: getImagePath('Probiótico Infantil')
+    manufacturer: 'Omron',
+    image: '/imagensRemedios/pressao.png'
+  },
+  {
+    name: 'Fitas Teste Glicemia',
+    description: 'Tiras reagentes para medição de glicose no sangue.',
+    category: 'Equipamentos',
+    price: 35.90,
+    stock: 25,
+    prescription: false,
+    manufacturer: 'Accu-Chek',
+    image: '/imagensRemedios/glicemia.png'
+  },
+
+  // MEDICAMENTO GENÉRICO
+  {
+    name: 'Medicamento Genérico',
+    description: 'Medicamento genérico de uso geral. Consulte sempre um profissional de saúde.',
+    category: 'Medicamentos Gerais',
+    price: 8.50,
+    stock: 100,
+    prescription: true,
+    manufacturer: 'Genérico',
+    image: '/imagensRemedios/remedio.png'
   }
 ]
 
@@ -480,29 +675,29 @@ async function main() {
   console.log('🌱 Iniciando seed do banco de dados...')
 
   // Limpar dados existentes
-  await prisma.product.deleteMany()
-  console.log('🗑️ Dados existentes removidos')
+  console.log('🧹 Limpando dados existentes...')
+  await prisma.userCartItem.deleteMany({})
+  await prisma.userCart.deleteMany({})
+  await prisma.chatMessage.deleteMany({})
+  await prisma.chatSession.deleteMany({})
+  await prisma.user.deleteMany({})
+  await prisma.product.deleteMany({})
 
   // Inserir produtos
+  console.log('📦 Inserindo produtos...')
   for (const product of products) {
     await prisma.product.create({
       data: product
     })
   }
 
-  console.log(`✅ ${products.length} produtos inseridos com sucesso!`)
+  console.log(`✅ Seed concluído! ${products.length} produtos inseridos.`)
+  console.log('📊 Categorias criadas:')
   
-  // Mostrar estatísticas por categoria
-  const categories = await prisma.product.groupBy({
-    by: ['category'],
-    _count: {
-      category: true
-    }
-  })
-  
-  console.log('\n📊 Produtos por categoria:')
-  categories.forEach((cat: { category: string; _count: { category: number } }) => {
-    console.log(`   ${cat.category}: ${cat._count.category} produtos`)
+  const categories = [...new Set(products.map(p => p.category))]
+  categories.forEach(category => {
+    const count = products.filter(p => p.category === category).length
+    console.log(`   - ${category}: ${count} produtos`)
   })
 }
 
