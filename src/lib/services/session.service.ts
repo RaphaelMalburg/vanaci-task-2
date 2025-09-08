@@ -26,11 +26,11 @@ export class SessionService {
     }
   }
 
-  async createSession(sessionId: string, context: Record<string, unknown> = {}): Promise<AgentSession> {
+  async createSession(sessionId: string, context: Record<string, unknown> = {}, userId?: string): Promise<AgentSession> {
     const session: AgentSession = {
       id: sessionId,
       messages: [],
-      context
+      context: { ...context, userId }
     }
 
     // Tentar salvar no banco de dados
@@ -39,10 +39,10 @@ export class SessionService {
         await prisma.chatSession.create({
           data: {
             sessionId,
-            context: context as any
+            context: { ...context, userId } as any
           }
         })
-        logger.info(`Session ${sessionId} created in database`)
+        logger.info(`Session ${sessionId} created in database${userId ? ` for user ${userId}` : ''}`)
       } catch (error) {
         logger.error('Failed to create session in database:', error)
         this.dbAvailable = false
@@ -95,7 +95,7 @@ export class SessionService {
     return this.sessions.get(sessionId) || null
   }
 
-  async addMessage(sessionId: string, message: AgentMessage): Promise<void> {
+  async addMessage(sessionId: string, message: AgentMessage, userId?: string): Promise<void> {
     // Adicionar à sessão em memória
     const session = this.sessions.get(sessionId)
     if (session) {
@@ -108,13 +108,14 @@ export class SessionService {
         await prisma.chatMessage.create({
           data: {
             sessionId,
+            userId,
             role: message.role,
             content: message.content,
             toolCalls: message.toolCalls as any,
             timestamp: message.timestamp
           }
         })
-        logger.debug(`Message added to database for session ${sessionId}`)
+        logger.debug(`Message added to database for session ${sessionId}${userId ? ` by user ${userId}` : ''}`)
       } catch (error) {
         logger.error('Failed to save message to database:', error)
         this.dbAvailable = false

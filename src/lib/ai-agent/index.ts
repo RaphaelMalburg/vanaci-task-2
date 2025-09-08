@@ -243,7 +243,7 @@ export class PharmacyAIAgent {
         content: processedMessage,
         timestamp: new Date(),
       };
-      await this.sessionService.addMessage(sessionId, userMsg);
+      await this.sessionService.addMessage(sessionId, userMsg, context?.userId);
       session.messages.push(userMsg);
 
       // Preparar mensagens para o LLM
@@ -329,7 +329,7 @@ export class PharmacyAIAgent {
         timestamp: new Date(),
         toolCalls: toolCalls,
       };
-      await this.sessionService.addMessage(sessionId, assistantMsg);
+      await this.sessionService.addMessage(sessionId, assistantMsg, context?.userId);
       session.messages.push(assistantMsg);
       console.log('➕ Resposta do assistente adicionada à sessão');
 
@@ -403,7 +403,7 @@ export class PharmacyAIAgent {
         content: processedMessage,
         timestamp: new Date(),
       };
-      await this.sessionService.addMessage(sessionId, userMsg);
+      await this.sessionService.addMessage(sessionId, userMsg, context?.userId);
       session.messages.push(userMsg);
       logger.debug('Mensagem do usuário adicionada', { sessionId });
 

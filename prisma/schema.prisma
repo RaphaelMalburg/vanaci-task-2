@@ -37,22 +37,26 @@ model ChatSession {
 model ChatMessage {
   id        String      @id @default(cuid())
   sessionId String
+  userId    String?     // ID do usuário que enviou a mensagem (opcional para compatibilidade)
   role      String      // 'user', 'assistant', 'system'
   content   String
   toolCalls Json?       // Armazena tool calls se houver
   timestamp DateTime    @default(now())
   session   ChatSession @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([sessionId])
+  @@index([userId])
 }
 
 model User {
-  id        String     @id @default(cuid())
-  username  String     @unique
-  password  String     // Senha em texto simples para simplicidade (POC)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id        String        @id @default(cuid())
+  username  String        @unique
+  password  String        // Senha em texto simples para simplicidade (POC)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
   carts     UserCart[]
+  messages  ChatMessage[] // Mensagens de chat do usuário
 }
 
 model UserCart {

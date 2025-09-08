@@ -24,6 +24,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Extrair userId do contexto
+    const userId = context?.userId || context?.user?.id;
+    console.log('👤 User ID extraído do contexto:', userId);
+
     // Gerar sessionId se não fornecido
     const finalSessionId = sessionId || generateId();
     console.log('🆔 Session ID:', finalSessionId);
