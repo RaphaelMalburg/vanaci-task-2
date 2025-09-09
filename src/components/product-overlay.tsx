@@ -55,7 +55,7 @@ export function ProductOverlay() {
 
   return (
     <Sheet open={isOpen} onOpenChange={(o) => (!o ? hide() : undefined)}>
-      <SheetContent side="right" className="sm:max-w-xl w-full bg-white dark:bg-gray-900 border-l dark:border-gray-800">
+      <SheetContent side="right" className="sm:max-w-xl w-full bg-white dark:bg-gray-900 border-l dark:border-gray-800 max-h-[80vh] overflow-y-auto">
         <div className="flex flex-col h-full">
           <SheetHeader className="relative">
             <div className="flex items-center justify-between">
@@ -147,7 +147,7 @@ export function ProductOverlay() {
                                   src={product.image}
                                   alt={product.name}
                                   fill
-                                  className="object-contain p-1 group-hover:scale-105 transition-transform duration-300"
+                                  className="object-contain group-hover:scale-105 transition-transform duration-300"
                                   sizes="80px"
                                 />
                               ) : (

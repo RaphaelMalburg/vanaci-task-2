@@ -39,11 +39,11 @@ function extractImageUrls(text: string): string[] {
   const imageRegex = /📷 \[Imagem: ([^\]]+)\]/g;
   const matches = [];
   let match;
-  
+
   while ((match = imageRegex.exec(text)) !== null) {
     matches.push(match[1]);
   }
-  
+
   return matches;
 }
 
@@ -53,15 +53,15 @@ export function Chat() {
   const { syncCart } = useCart();
   const router = useRouter();
   const productOverlay = useProductOverlay();
-  
+
   // Função para processar redirecionamentos
   const processRedirect = (toolResult: any) => {
     if (toolResult && toolResult.data && toolResult.data.redirect && toolResult.data.url) {
-      console.log('🔗 Redirecionamento detectado:', toolResult.data.url);
+      console.log("🔗 Redirecionamento detectado:", toolResult.data.url);
       // Aguardar um pouco antes de redirecionar para permitir que o usuário veja a mensagem
       setTimeout(() => {
         router.push(toolResult.data.url);
-        console.log('✅ Redirecionando para:', toolResult.data.url);
+        console.log("✅ Redirecionando para:", toolResult.data.url);
       }, 2000);
     }
   };
@@ -79,7 +79,7 @@ export function Chat() {
   const [sessionId, setSessionId] = useState<string>("");
   const [isListening, setIsListening] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  
+
   // Hook para reconhecimento de voz
   const {
     isListening: voiceIsListening,
@@ -89,11 +89,10 @@ export function Chat() {
   } = useNextjsAudioToTextRecognition({
     continuous: true,
     interimResults: true,
-    lang: 'pt-BR',
+    lang: "pt-BR",
   });
-  
-  // Removed n8n status - using AI Agent now
 
+  // Removed n8n status - using AI Agent now
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -111,18 +110,18 @@ export function Chat() {
   useEffect(() => {
     // Use the same sessionId as SessionManager
     const getOrCreateSessionId = () => {
-      let sessionId = localStorage.getItem('farmacia-session-id');
+      let sessionId = localStorage.getItem("farmacia-session-id");
       if (!sessionId) {
-        sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('farmacia-session-id', sessionId);
+        sessionId = "session_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem("farmacia-session-id", sessionId);
       }
       return sessionId;
     };
-    
+
     const newSessionId = getOrCreateSessionId();
     setSessionId(newSessionId);
     setIsClient(true);
-    console.log('🔑 Chat usando sessionId:', newSessionId);
+    console.log("🔑 Chat usando sessionId:", newSessionId);
   }, []);
 
   // Atualizar input com transcript de voz
@@ -166,12 +165,12 @@ export function Chat() {
       // Limpar sessão no backend
       if (sessionId) {
         await fetch(`/api/ai-chat?sessionId=${sessionId}`, {
-          method: 'DELETE',
+          method: "DELETE",
         });
-        console.log('🧹 Chat limpo e sessão resetada');
+        console.log("🧹 Chat limpo e sessão resetada");
       }
     } catch (error) {
-      console.error('❌ Erro ao limpar chat:', error);
+      console.error("❌ Erro ao limpar chat:", error);
     }
   };
 
@@ -191,31 +190,33 @@ export function Chat() {
     setIsLoading(true);
 
     try {
-      console.log('📤 Enviando mensagem:', currentInput);
-      console.log('📤 Dados do request:', { sessionId, message: currentInput, streaming: true });
-      console.log('📤 URL da API:', '/api/ai-chat');
-      console.log('📤 URL completa:', window.location.origin + '/api/ai-chat');
-      console.log('📤 Iniciando fetch...');
-      const response = await fetch('/api/ai-chat', {
-        method: 'POST',
+      console.log("📤 Enviando mensagem:", currentInput);
+      console.log("📤 Dados do request:", { sessionId, message: currentInput, streaming: true });
+      console.log("📤 URL da API:", "/api/ai-chat");
+      console.log("📤 URL completa:", window.location.origin + "/api/ai-chat");
+      console.log("📤 Iniciando fetch...");
+      const response = await fetch("/api/ai-chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           message: currentInput,
           sessionId: sessionId,
           streaming: true,
-          context: user ? {
-            userId: user.id,
-            user: user
-          } : undefined,
+          context: user
+            ? {
+                userId: user.id,
+                user: user,
+              }
+            : undefined,
           chatHistory: messages.slice(-10).map((msg) => ({
-            role: msg.isUser ? 'user' : 'assistant',
+            role: msg.isUser ? "user" : "assistant",
             content: msg.text,
           })),
         }),
       });
-      console.log('Resposta recebida:', response.status, response.headers.get('content-type'));
+      console.log("Resposta recebida:", response.status, response.headers.get("content-type"));
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -223,12 +224,12 @@ export function Chat() {
 
       const reader = response.body?.getReader();
       if (!reader) {
-        throw new Error('No response body');
+        throw new Error("No response body");
       }
 
       const assistantMessage: Message = {
         id: Date.now().toString(),
-        text: '',
+        text: "",
         isUser: false,
         timestamp: new Date(),
       };
@@ -244,24 +245,24 @@ export function Chat() {
 
         if (value) {
           const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+          const lines = chunk.split("\n");
 
           for (const line of lines) {
-            if (line.startsWith('data: ')) {
+            if (line.startsWith("data: ")) {
               const data = line.slice(6);
-              console.log('Dados recebidos:', data);
-              if (data === '[DONE]') {
+              console.log("Dados recebidos:", data);
+              if (data === "[DONE]") {
                 done = true;
                 break;
               }
               try {
                 const parsed = JSON.parse(data);
-                console.log('Dados parseados:', parsed);
-                if (parsed?.type === 'tool_call' && parsed?.toolCall && !parsed.content) {
+                console.log("Dados parseados:", parsed);
+                if (parsed?.type === "tool_call" && parsed?.toolCall && !parsed.content) {
                   parsed.content = parsed.toolCall;
                 }
-                
-                if (parsed.type === 'text' && parsed.content) {
+
+                if (parsed.type === "text" && parsed.content) {
                   // Conteúdo de texto normal
                   setMessages((prev) =>
                     prev.map((msg) => {
@@ -273,93 +274,97 @@ export function Chat() {
                       return msg;
                     })
                   );
-                } else if (parsed.type === 'tool_call' && (parsed.toolCall || parsed.content)) {
+                } else if (parsed.type === "tool_call" && (parsed.toolCall || parsed.content)) {
                   // Tool call - não adicionar ao texto, apenas logar
                   const toolPayload = parsed.toolCall || parsed.content;
-                  console.log('Tool call executado:', toolPayload);
-                  
+                  console.log("Tool call executado:", toolPayload);
+
                   // Verificar se é uma ação relacionada ao carrinho
-                   const cartRelatedTools = [
-                     'add_to_cart', 'remove_from_cart', 'update_cart_quantity', 'view_cart', 'clear_cart',
-                     'add_to_cart_simple', 'remove_from_cart_simple', 'update_cart_quantity_simple'
-                   ];
-                   if (toolPayload && toolPayload.toolName && cartRelatedTools.includes(toolPayload.toolName)) {
-                     console.log('🛒 Ação de carrinho detectada, sincronizando UI...', toolPayload.toolName);
-                     // Aguardar um pouco para garantir que a ação foi processada no backend
-                     setTimeout(async () => {
-                       try {
-                         await syncCart();
-                         console.log('✅ Carrinho sincronizado com sucesso após', parsed.content.toolName);
-                       } catch (error) {
-                         console.error('❌ Erro ao sincronizar carrinho:', error);
-                       }
-                     }, 1500);
-                   }
+                  const cartRelatedTools = [
+                    "add_to_cart",
+                    "remove_from_cart",
+                    "update_cart_quantity",
+                    "view_cart",
+                    "clear_cart",
+                    "add_to_cart_simple",
+                    "remove_from_cart_simple",
+                    "update_cart_quantity_simple",
+                  ];
+                  if (toolPayload && toolPayload.toolName && cartRelatedTools.includes(toolPayload.toolName)) {
+                    console.log("🛒 Ação de carrinho detectada, sincronizando UI...", toolPayload.toolName);
+                    // Aguardar um pouco para garantir que a ação foi processada no backend
+                    setTimeout(async () => {
+                      try {
+                        await syncCart();
+                        console.log("✅ Carrinho sincronizado com sucesso após", parsed.content.toolName);
+                      } catch (error) {
+                        console.error("❌ Erro ao sincronizar carrinho:", error);
+                      }
+                    }, 1500);
+                  }
 
-                   // Preparar sugestões de produtos e redirecionar para a página de produtos
-                   const productTools = [
-                     'search_products', 'list_recommended_products', 'get_promotional_products', 'get_best_sellers'
-                   ];
-                   if (toolPayload && toolPayload.toolName && productTools.includes(toolPayload.toolName)) {
-                     try {
-                       const args = toolPayload.args || {};
-                       const query = args.query || args.symptomOrNeed || undefined;
-                       
-                       // Definir título baseado no tipo de ferramenta
-                       let overlayTitle = 'Sugestões de produtos';
-                       if (toolPayload.toolName === 'get_promotional_products') {
-                         overlayTitle = '🏷️ Produtos em Promoção';
-                       } else if (toolPayload.toolName === 'get_best_sellers') {
-                         overlayTitle = '🏆 Produtos Mais Vendidos';
-                       } else if (toolPayload.toolName === 'list_recommended_products') {
-                         overlayTitle = '💊 Produtos Recomendados';
-                       } else if (query) {
-                         overlayTitle = `Resultados para "${query}"`;
-                       }
-                       
-                       productOverlay.showLoading({ title: overlayTitle, query });
+                  // Preparar sugestões de produtos e redirecionar para a página de produtos
+                  const productTools = ["search_products", "list_recommended_products", "get_promotional_products", "get_best_sellers"];
+                  if (toolPayload && toolPayload.toolName && (productTools.includes(toolPayload.toolName) || toolPayload.toolName === "suggest_within_budget")) {
+                    try {
+                      const args = toolPayload.args || {};
+                      const query = args.query || args.symptomOrNeed || undefined;
 
-                       // Tentar extrair produtos diretamente do result quando disponível
-                       let toolProducts = toolPayload.result?.data?.products || toolPayload.result?.products;
-                       if (!toolProducts || !Array.isArray(toolProducts)) {
-                         // Fallback: buscar pela API com base no argumento
-                         const fetched = await searchProductsApi({ q: query, limit: 12 });
-                         toolProducts = fetched;
-                       }
-                       productOverlay.showProducts({ title: overlayTitle, query, products: toolProducts || [] });
-                       setTimeout(() => router.push('/products'), 250);
-                     } catch (e) {
-                       console.error('Erro ao preparar sugestões de produtos:', e);
-                       productOverlay.showProducts({ title: 'Sugestões de produtos', products: [] });
-                       setTimeout(() => router.push('/products'), 250);
-                     }
-                   }
+                      // Definir título baseado no tipo de ferramenta
+                      let overlayTitle = "Sugestões de produtos";
+                      if (toolPayload.toolName === "get_promotional_products") {
+                        overlayTitle = "🏷️ Produtos em Promoção";
+                      } else if (toolPayload.toolName === "get_best_sellers") {
+                        overlayTitle = "🏆 Produtos Mais Vendidos";
+                      } else if (toolPayload.toolName === "list_recommended_products") {
+                        overlayTitle = "💊 Produtos Recomendados";
+                      } else if (query) {
+                        overlayTitle = `Resultados para "${query}"`;
+                      }
 
-                   // Processar ferramenta de múltiplos produtos
-                   if (toolPayload && toolPayload.toolName === 'show_multiple_products') {
-                     try {
-                       const result = toolPayload.result;
-                       if (result && result.data && result.data.showInOverlay) {
-                         const { products, title, query } = result.data;
-                         productOverlay.showProducts({ 
-                           title: title || 'Produtos Selecionados', 
-                           query, 
-                           products: products || [] 
-                         });
-                         setTimeout(() => router.push('/products'), 250);
-                         console.log('✅ Múltiplos produtos exibidos no overlay:', products?.length || 0);
-                       }
-                     } catch (e) {
-                       console.error('Erro ao processar múltiplos produtos:', e);
-                     }
-                   }
-                   
-                   // Verificar se é uma ação de redirecionamento
-                   if (toolPayload && toolPayload.toolName === 'redirect_to_product' && toolPayload.result) {
-                     console.log('🔗 Ação de redirecionamento detectada:', toolPayload.result);
-                     processRedirect(toolPayload.result);
-                   }
-                } else if (parsed.content && typeof parsed.content === 'string') {
+                      productOverlay.showLoading({ title: overlayTitle, query });
+
+                      // Tentar extrair produtos diretamente do result quando disponível
+                      let toolProducts = toolPayload.result?.data?.products || toolPayload.result?.products;
+                      if (!toolProducts || !Array.isArray(toolProducts)) {
+                        // Fallback: buscar pela API com base no argumento
+                        const fetched = await searchProductsApi({ q: query, limit: 12 });
+                        toolProducts = fetched;
+                      }
+                      productOverlay.showProducts({ title: overlayTitle, query, products: toolProducts || [] });
+                      setTimeout(() => router.push("/products"), 250);
+                    } catch (e) {
+                      console.error("Erro ao preparar sugestões de produtos:", e);
+                      productOverlay.showProducts({ title: "Sugestões de produtos", products: [] });
+                      setTimeout(() => router.push("/products"), 250);
+                    }
+                  }
+
+                  // Processar ferramenta de múltiplos produtos
+                  if (toolPayload && toolPayload.toolName === "show_multiple_products") {
+                    try {
+                      const result = toolPayload.result;
+                      if (result && result.data && result.data.showInOverlay) {
+                        const { products, title, query } = result.data;
+                        productOverlay.showProducts({
+                          title: title || "Produtos Selecionados",
+                          query,
+                          products: products || [],
+                        });
+                        setTimeout(() => router.push("/products"), 250);
+                        console.log("✅ Múltiplos produtos exibidos no overlay:", products?.length || 0);
+                      }
+                    } catch (e) {
+                      console.error("Erro ao processar múltiplos produtos:", e);
+                    }
+                  }
+
+                  // Verificar se é uma ação de redirecionamento
+                  if (toolPayload && toolPayload.toolName === "redirect_to_product" && toolPayload.result) {
+                    console.log("🔗 Ação de redirecionamento detectada:", toolPayload.result);
+                    processRedirect(toolPayload.result);
+                  }
+                } else if (parsed.content && typeof parsed.content === "string") {
                   // Fallback para conteúdo direto
                   setMessages((prev) =>
                     prev.map((msg) => {
@@ -372,35 +377,34 @@ export function Chat() {
                     })
                   );
                 }
-                
-                if (parsed.type === 'end') {
+
+                if (parsed.type === "end") {
                   done = true;
                   break;
                 }
               } catch (e) {
-                console.log('Erro ao parsear dados:', e, 'Dados:', data);
+                console.log("Erro ao parsear dados:", e, "Dados:", data);
               }
             }
           }
         }
       }
-
     } catch (error) {
-      console.error('❌ Erro ao enviar mensagem:', error);
-      console.error('❌ Tipo do erro:', typeof error);
-      console.error('❌ Nome do erro:', (error as any)?.name);
-      console.error('❌ Mensagem do erro:', (error as any)?.message);
-      console.error('❌ Stack do erro:', (error as any)?.stack);
+      console.error("❌ Erro ao enviar mensagem:", error);
+      console.error("❌ Tipo do erro:", typeof error);
+      console.error("❌ Nome do erro:", (error as any)?.name);
+      console.error("❌ Mensagem do erro:", (error as any)?.message);
+      console.error("❌ Stack do erro:", (error as any)?.stack);
       setIsLoading(false);
 
       let errorText = "❌ Não foi possível enviar sua mensagem. Tente novamente.";
 
       if (error instanceof TypeError && error.message.includes("fetch")) {
         errorText = "❌ Não foi possível conectar ao assistente. Verifique sua conexão.";
-        console.error('❌ Erro de fetch detectado');
+        console.error("❌ Erro de fetch detectado");
       } else if (error instanceof DOMException && error.name === "TimeoutError") {
         errorText = "⏱️ Timeout ao enviar mensagem. Tente novamente.";
-        console.error('❌ Timeout detectado');
+        console.error("❌ Timeout detectado");
       } else if (error instanceof Error && error.message.includes("HTTP")) {
         errorText = `❌ Erro do servidor: ${error.message}`;
       }
@@ -482,53 +486,53 @@ export function Chat() {
             </div>
           ) : (
             messages.map((message, index) => (
-                <div key={message.id} className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[85%] rounded-lg p-4 transition-colors duration-300 ${
-                      message.isUser
-                        ? "bg-blue-600 dark:bg-blue-500 text-white"
-                        : "bg-white text-gray-900 dark:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm"
-                    }`}>
-                    <div className="flex items-start gap-3">
-                      {!message.isUser && <Bot className="h-5 w-5 mt-0.5 text-blue-600 dark:text-blue-400 flex-shrink-0 transition-colors duration-300" />}
-                      {message.isUser && <User className="h-5 w-5 mt-0.5 text-white flex-shrink-0" />}
-                      <div className="flex-1">
-                        <p className="text-sm leading-relaxed">{message.text}</p>
-                        
-                        {/* Renderizar imagens se disponíveis */}
-                        {message.images && message.images.length > 0 && (
-                          <div className="mt-3 grid grid-cols-2 gap-2">
-                            {message.images.map((imageUrl, imgIndex) => (
-                              <div key={imgIndex} className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
-                                <Image
-                                  src={imageUrl}
-                                  alt={`Produto ${imgIndex + 1}`}
-                                  fill
-                                  className="object-cover"
-                                  sizes="(max-width: 768px) 50vw, 25vw"
-                                  onError={(e) => {
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                  }}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        
-                        <p className={`text-xs mt-1 transition-colors duration-300 ${message.isUser ? "text-blue-100 dark:text-blue-200" : "text-gray-500 dark:text-gray-400"}`}>
-                          {isClient
-                            ? message.timestamp.toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                            : "--:--"}
-                        </p>
-                      </div>
+              <div key={message.id} className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}>
+                <div
+                  className={`max-w-[85%] rounded-lg p-4 transition-colors duration-300 ${
+                    message.isUser
+                      ? "bg-blue-600 dark:bg-blue-500 text-white"
+                      : "bg-white text-gray-900 dark:bg-gray-800 dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm"
+                  }`}>
+                  <div className="flex items-start gap-3">
+                    {!message.isUser && <Bot className="h-5 w-5 mt-0.5 text-blue-600 dark:text-blue-400 flex-shrink-0 transition-colors duration-300" />}
+                    {message.isUser && <User className="h-5 w-5 mt-0.5 text-white flex-shrink-0" />}
+                    <div className="flex-1">
+                      <p className="text-sm leading-relaxed">{message.text}</p>
+
+                      {/* Renderizar imagens se disponíveis */}
+                      {message.images && message.images.length > 0 && (
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          {message.images.map((imageUrl, imgIndex) => (
+                            <div key={imgIndex} className="relative w-full h-32 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
+                              <Image
+                                src={imageUrl}
+                                alt={`Produto ${imgIndex + 1}`}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 50vw, 25vw"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = "none";
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <p className={`text-xs mt-1 transition-colors duration-300 ${message.isUser ? "text-blue-100 dark:text-blue-200" : "text-gray-500 dark:text-gray-400"}`}>
+                        {isClient
+                          ? message.timestamp.toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "--:--"}
+                      </p>
                     </div>
                   </div>
                 </div>
-              ))
+              </div>
+            ))
           )}
 
           {/* Loading indicator */}
@@ -549,8 +553,6 @@ export function Chat() {
 
           <div ref={messagesEndRef} />
         </div>
-
-
 
         {/* Input Area */}
         <div className="border-t dark:border-gray-700 p-6 bg-white dark:bg-gray-800 transition-colors duration-300">
