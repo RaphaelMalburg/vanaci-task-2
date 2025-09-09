@@ -56,9 +56,10 @@ const SYSTEM_PROMPT = `Você é um assistente virtual especializado da Farmácia
 - Use emojis moderadamente para tornar a conversa mais amigável
 - **JAMAIS mencione detalhes técnicos como IDs, verificações de sistema, processos internos ou ferramentas**
 - **NUNCA informe sobre buscas, consultas ou verificações que está fazendo**
-- **NÃO use termos como "vou buscar", "verificando", "consultando sistema", "encontrei no banco de dados"**
+- **NÃO use termos como "vou buscar", "verificando", "consultando sistema", "encontrei no banco de dados", "foram retornados X produtos", "com base nas ferramentas usadas"**
 - **Seja completamente natural, como se fosse um atendente humano experiente**
 - **Responda sempre como se já soubesse as informações, sem explicar como as obteve**
+- **Para consultas médicas, seja empático e focado no bem-estar do cliente**
 - **Quando mostrar produtos, inclua uma descrição visual atrativa e informações relevantes**
 - **🚨 CRÍTICO - NUNCA TRANSFORME CAMINHOS DE IMAGEM EM URLs COMPLETAS 🚨**
 - **NUNCA adicione domínios como 'exemplo.com' ou qualquer outro domínio aos caminhos de imagem**
@@ -81,10 +82,12 @@ const SYSTEM_PROMPT = `Você é um assistente virtual especializado da Farmácia
 - Você deve SEMPRE executar show_multiple_products com os IDs retornados, mesmo sendo sugestões
 
 **COMO RESPONDER A DIFERENTES TIPOS DE QUERIES:**
-- Para queries médicas normais sem resultados: "Não encontrei produtos específicos para [query], mas aqui estão algumas sugestões que podem interessar"
-- Para queries nonsense/impossíveis (ex: "remédio para unicórnio"): "Não temos produtos para [query], mas que tal dar uma olhada nestas ofertas especiais?"
-- Para queries muito vagas: "Preciso de mais detalhes sobre o que procura. Enquanto isso, aqui estão alguns produtos populares"
-- SEMPRE seja educado e útil, mesmo com queries estranhas
+- Para queries médicas (ex: "dor no joelho"): Responda de forma empática e informativa, sugerindo produtos que podem ajudar no alívio dos sintomas, sempre lembrando de orientar sobre consulta médica se necessário
+- Para queries nonsense/impossíveis: Responda com bom humor e redirecione para produtos úteis
+- Para queries muito vagas: Peça mais detalhes de forma amigável e ofereça produtos populares
+- SEMPRE seja educado, empático e útil
+- NUNCA mencione IDs de produtos, ferramentas usadas, ou processos técnicos
+- Foque no benefício dos produtos para o cliente
 
 **REGRAS OBRIGATÓRIAS PARA USO DE TOOLS:**
 - **VOCÊ DEVE SEMPRE USAR TOOLS PARA AÇÕES ESPECÍFICAS - NUNCA APENAS RESPONDER COM TEXTO**
@@ -456,7 +459,6 @@ export class PharmacyAIAgent {
       // Processar tool calls do resultado com suporte a múltiplas execuções
       let executionCount = 0;
       const maxExecutions = 3; // Limite para evitar loops infinitos
-      let collectedProductIds: string[] = []; // Coletar IDs de produtos para automação
 
       for await (const part of result.fullStream) {
         if (part.type === "tool-call") {
@@ -487,25 +489,7 @@ export class PharmacyAIAgent {
               timestamp: new Date(),
             } as AgentMessage);
 
-            // AUTOMAÇÃO FORÇADA: Coletar IDs de produtos de search_products
-            if (part.toolName === "search_products" && toolResult?.products?.length > 0) {
-              const productIds = toolResult.products.map((p: any) => p.id).filter(Boolean);
-              collectedProductIds.push(...productIds);
-              logger.debug("IDs de produtos coletados", { productIds, total: collectedProductIds.length });
-
-              // Log para debug - não executar add_to_cart aqui pois deve ser feito pelo LLM
-              const userMessage = processedMessage || "";
-              const isAddToCartCommand = /adicionar?|adicione|add.*cart|comprar|colocar.*carrinho/i.test(userMessage);
-
-              if (isAddToCartCommand && executionCount < maxExecutions) {
-                const quantityMatch = userMessage.match(/\b(\d+)\b/);
-                const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
-                logger.debug("Comando de adicionar detectado", {
-                  productId: toolResult.products[0].id,
-                  quantity,
-                });
-              }
-            }
+            // Tools serão executadas naturalmente pelo LLM conforme o prompt
           } catch (error) {
             logger.error("Erro na execução da tool", {
               toolName: part.toolName,
@@ -526,37 +510,7 @@ export class PharmacyAIAgent {
         }
       }
 
-      // AUTOMAÇÃO FORÇADA: Executar show_multiple_products se coletamos IDs
-      if (collectedProductIds.length > 0) {
-        try {
-          logger.debug("Executando show_multiple_products automaticamente", {
-            productIds: collectedProductIds,
-          });
-
-          const showMultipleTool = allTools["show_multiple_products"];
-          if (showMultipleTool && showMultipleTool.execute) {
-            const showResult = await (showMultipleTool.execute as any)({
-              productIds: collectedProductIds,
-            });
-
-            logger.debug("show_multiple_products executado automaticamente", {
-              result: showResult,
-            });
-
-            // Adicionar resultado à sessão
-            session.messages.push({
-              role: "assistant",
-              content: `Tool show_multiple_products: ${JSON.stringify(showResult)}`,
-              timestamp: new Date(),
-            } as AgentMessage);
-          }
-        } catch (error) {
-          logger.error("Erro na execução automática de show_multiple_products", {
-            error: error instanceof Error ? error.message : error,
-            productIds: collectedProductIds,
-          });
-        }
-      }
+      // Remover execução automática - deixar o LLM executar show_multiple_products naturalmente
       logger.debug("Processamento concluído", {
         sessionId,
         totalMessages: session.messages.length,
