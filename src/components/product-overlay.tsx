@@ -40,6 +40,11 @@ export function ProductOverlay() {
     );
   }, [products]);
 
+  const filteredProducts = useMemo(() => {
+    if (!showPromotions) return products;
+    return products.filter((p) => p.category === "Vitaminas" || p.name.toLowerCase().includes("vitamina") || p.price < 20);
+  }, [products, showPromotions]);
+
   const handleAdd = async (product: Product) => {
     try {
       await addItem({ id: product.id, name: product.name, price: product.price, category: product.category, imagePath: product.image }, 1);
