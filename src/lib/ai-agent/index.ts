@@ -1,17 +1,17 @@
-import { generateText, streamText, CoreMessage, stepCountIs } from 'ai';
-import { setGlobalContext, updateGlobalContext } from './context';
-import { createLLMModel, createLLMModelWithFallback, validateLLMConfig, LLMConfig as ConfigLLMConfig } from './config';
-import { conditionalRewriteMessage } from './message-rewriter';
-import { cartTools } from './actions/cart';
-import { productTools } from './actions/products';
-import { checkoutTools } from './actions/checkout';
-import { navigationTools } from './actions/navigation';
-import { budgetTools } from './actions/budget';
-import { extraTools } from './actions/extras';
-import { logger } from '@/lib/logger';
-import { SessionService } from '@/lib/services/session.service';
-import type { AgentMessage, AgentSession } from './types';
-import type { LLMConfig } from './config';
+import { generateText, streamText, CoreMessage, stepCountIs } from "ai";
+import { setGlobalContext, updateGlobalContext } from "./context";
+import { createLLMModel, createLLMModelWithFallback, validateLLMConfig, LLMConfig as ConfigLLMConfig } from "./config";
+import { conditionalRewriteMessage } from "./message-rewriter";
+import { cartTools } from "./actions/cart";
+import { productTools } from "./actions/products";
+import { checkoutTools } from "./actions/checkout";
+import { navigationTools } from "./actions/navigation";
+import { budgetTools } from "./actions/budget";
+import { extraTools } from "./actions/extras";
+import { logger } from "@/lib/logger";
+import { SessionService } from "@/lib/services/session.service";
+import type { AgentMessage, AgentSession } from "./types";
+import type { LLMConfig } from "./config";
 
 // Combinar todas as tools
 export const allTools = {
@@ -67,12 +67,24 @@ const SYSTEM_PROMPT = `Você é um assistente virtual especializado da Farmácia
 
 **🚨🚨🚨 REGRA ABSOLUTA CRÍTICA - EXECUTE SEMPRE 🚨🚨🚨**
 **FLUXO OBRIGATÓRIO PARA QUALQUER BUSCA:**
-1. search_products (buscar)
-2. show_multiple_products (OBRIGATÓRIO - usar TODOS os IDs encontrados)
+1. search_products (buscar - agora com sugestões inteligentes automáticas)
+2. show_multiple_products (OBRIGATÓRIO - usar TODOS os IDs encontrados, incluindo sugestões)
 3. Só então responder com texto
 
 **NUNCA PULE O PASSO 2! SEMPRE EXECUTE show_multiple_products APÓS search_products!**
 **ISSO É OBRIGATÓRIO MESMO SE HOUVER APENAS 1 PRODUTO ENCONTRADO!**
+**ISSO INCLUI PRODUTOS SUGERIDOS AUTOMATICAMENTE QUANDO A BUSCA ORIGINAL FALHA!**
+
+**SISTEMA DE SUGESTÕES INTELIGENTES:**
+- O search_products automaticamente sugere produtos promocionais quando não encontra resultados
+- SEMPRE retorna produtos para mostrar no overlay - nunca deixa vazio
+- Você deve SEMPRE executar show_multiple_products com os IDs retornados, mesmo sendo sugestões
+
+**COMO RESPONDER A DIFERENTES TIPOS DE QUERIES:**
+- Para queries médicas normais sem resultados: "Não encontrei produtos específicos para [query], mas aqui estão algumas sugestões que podem interessar"
+- Para queries nonsense/impossíveis (ex: "remédio para unicórnio"): "Não temos produtos para [query], mas que tal dar uma olhada nestas ofertas especiais?"
+- Para queries muito vagas: "Preciso de mais detalhes sobre o que procura. Enquanto isso, aqui estão alguns produtos populares"
+- SEMPRE seja educado e útil, mesmo com queries estranhas
 
 **REGRAS OBRIGATÓRIAS PARA USO DE TOOLS:**
 - **VOCÊ DEVE SEMPRE USAR TOOLS PARA AÇÕES ESPECÍFICAS - NUNCA APENAS RESPONDER COM TEXTO**
@@ -143,9 +155,9 @@ export class PharmacyAIAgent {
 
   constructor(llmConfig?: ConfigLLMConfig) {
     this.llmConfig = llmConfig || {
-      provider: (process.env.DEFAULT_LLM_PROVIDER as ConfigLLMConfig['provider']) || 'openai',
-      temperature: parseFloat(process.env.LLM_TEMPERATURE || '0.7'),
-      maxTokens: parseInt(process.env.LLM_MAX_TOKENS || '2000')
+      provider: (process.env.DEFAULT_LLM_PROVIDER as ConfigLLMConfig["provider"]) || "openai",
+      temperature: parseFloat(process.env.LLM_TEMPERATURE || "0.7"),
+      maxTokens: parseInt(process.env.LLM_MAX_TOKENS || "2000"),
     };
     validateLLMConfig(this.llmConfig.provider);
     this.sessionService = SessionService.getInstance();
@@ -156,19 +168,19 @@ export class PharmacyAIAgent {
     try {
       const session = await this.sessionService.getSession(sessionId);
       if (!session) {
-        logger.debug('Sessão não encontrada, criando nova', { sessionId });
+        logger.debug("Sessão não encontrada, criando nova", { sessionId });
         return await this.sessionService.createSession(sessionId);
       }
       return session;
     } catch (error) {
-      logger.debug('Erro ao obter sessão, criando nova', { sessionId });
+      logger.debug("Erro ao obter sessão, criando nova", { sessionId });
       return await this.sessionService.createSession(sessionId);
     }
   }
 
   // Converter mensagens para formato CoreMessage
   private convertMessages(messages: AgentMessage[]): CoreMessage[] {
-    return messages.map(msg => ({
+    return messages.map((msg) => ({
       role: msg.role,
       content: msg.content,
     }));
@@ -179,7 +191,7 @@ export class PharmacyAIAgent {
    */
   private shouldForceToolUsage(message: string): boolean {
     const lowerMessage = message.toLowerCase().trim();
-    
+
     // Padrões que SEMPRE devem usar tools
     const toolPatterns = [
       // Carrinho
@@ -188,54 +200,50 @@ export class PharmacyAIAgent {
       /\bcarrinho\b/,
       /\blimpar?\s+carrinho\b/,
       /\besvaziar\s+carrinho\b/,
-      
+
       // Adicionar produtos
       /\b(adicionar?|add|colocar?)\s+.+\s+(ao\s+)?carrinho\b/,
       /\b(adicionar?|add|colocar?)\s+\d+\s+.+/,
       /\bquero\s+(adicionar?|comprar)\b/,
-      
+
       // Buscar produtos
       /\b(buscar?|procurar?|encontrar?)\s+.+/,
       /\b(tem|há|existe)\s+.+\?/,
       /\bonde\s+(está|fica)\s+.+\?/,
-      
+
       // Remover do carrinho
       /\b(remover?|tirar|excluir)\s+.+\s+(do\s+)?carrinho\b/,
       /\b(remover?|tirar|excluir)\s+\d+\s+.+/,
-      
+
       // Checkout e pagamento
       /\b(finalizar|concluir)\s+(compra|pedido)\b/,
       /\bcheckout\b/,
       /\bpagar\b/,
-      
+
       // Produtos específicos (nomes comuns)
       /\b(dipirona|paracetamol|ibuprofeno|aspirina|vitamina|termômetro)\b/,
     ];
-    
-    return toolPatterns.some(pattern => pattern.test(lowerMessage));
+
+    return toolPatterns.some((pattern) => pattern.test(lowerMessage));
   }
 
   // Processar mensagem do usuário
-  async processMessage(
-    sessionId: string,
-    userMessage: string,
-    context?: { cartId?: string; userId?: string; user?: any; currentPage?: string }
-  ): Promise<string> {
+  async processMessage(sessionId: string, userMessage: string, context?: { cartId?: string; userId?: string; user?: any; currentPage?: string }): Promise<string> {
     try {
-      logger.info('Processando mensagem', { sessionId, messageLength: userMessage.length });
-      
+      logger.info("Processando mensagem", { sessionId, messageLength: userMessage.length });
+
       // Reescrever mensagem se habilitado
       let processedMessage = userMessage;
       if (this.llmConfig.enableMessageRewriter) {
         const rewriteResult = await conditionalRewriteMessage(userMessage, this.llmConfig);
         processedMessage = rewriteResult.message;
         if (rewriteResult.wasRewritten) {
-          logger.debug('Mensagem reescrita', { original: userMessage.substring(0, 50), rewritten: processedMessage.substring(0, 50) });
+          logger.debug("Mensagem reescrita", { original: userMessage.substring(0, 50), rewritten: processedMessage.substring(0, 50) });
         }
       }
-      
+
       const session = await this.getSession(sessionId);
-      
+
       // Atualizar contexto se fornecido
       if (context) {
         await this.sessionService.updateSessionContext(sessionId, { ...session.context, ...context });
@@ -243,7 +251,7 @@ export class PharmacyAIAgent {
 
       // Adicionar mensagem do usuário
       const userMsg: AgentMessage = {
-        role: 'user',
+        role: "user",
         content: processedMessage,
         timestamp: new Date(),
       };
@@ -251,27 +259,24 @@ export class PharmacyAIAgent {
       session.messages.push(userMsg);
 
       // Preparar mensagens para o LLM
-      const messages: CoreMessage[] = [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...this.convertMessages(session.messages),
-      ];
+      const messages: CoreMessage[] = [{ role: "system", content: SYSTEM_PROMPT }, ...this.convertMessages(session.messages)];
 
       // Gerar resposta com tools (usando fallback)
       const llmModel = await createLLMModelWithFallback(this.llmConfig);
-      
+
       // Definir sessionId no contexto global para as tools
-      setGlobalContext('sessionId', sessionId);
+      setGlobalContext("sessionId", sessionId);
       if (context) {
-        if (context.cartId) setGlobalContext('cartId', context.cartId);
-        if (context.userId) setGlobalContext('userId', context.userId);
-        if (context.currentPage) setGlobalContext('currentPage', context.currentPage);
+        if (context.cartId) setGlobalContext("cartId", context.cartId);
+        if (context.userId) setGlobalContext("userId", context.userId);
+        if (context.currentPage) setGlobalContext("currentPage", context.currentPage);
         // Definir informações do usuário no contexto global
         if (context.user) {
-          setGlobalContext('user', context.user);
-          logger.debug('Usuário definido no contexto global', { username: context.user.username });
+          setGlobalContext("user", context.user);
+          logger.debug("Usuário definido no contexto global", { username: context.user.username });
         }
       }
-      
+
       const result = await generateText({
         model: llmModel,
         messages: messages,
@@ -279,314 +284,309 @@ export class PharmacyAIAgent {
         temperature: this.llmConfig.temperature || 0.7,
         stopWhen: stepCountIs(10), // Permite até 10 steps para múltiplas tool calls em sequência
       });
-      
+
       const responseText = result.text;
       const toolCalls = result.toolCalls;
       const toolResults = result.toolResults;
 
       if (toolCalls && toolCalls.length > 0) {
-        logger.debug('Tool calls executados', { count: toolCalls.length });
+        logger.debug("Tool calls executados", { count: toolCalls.length });
       }
 
       // Processar tool calls se existirem
       if (result.toolCalls && result.toolCalls.length > 0) {
-        logger.debug('Tool calls detectados', { count: result.toolCalls.length });
-        
+        logger.debug("Tool calls detectados", { count: result.toolCalls.length });
+
         for (const toolCall of result.toolCalls) {
-          logger.debug('Executando tool', { toolName: toolCall.toolName, toolCallId: toolCall.toolCallId });
-          
+          logger.debug("Executando tool", { toolName: toolCall.toolName, toolCallId: toolCall.toolCallId });
+
           try {
             const tool = allTools[toolCall.toolName as keyof typeof allTools];
             if (!tool || !tool.execute) {
               throw new Error(`Tool ${toolCall.toolName} não encontrada ou não executável`);
             }
             const toolResult = await (tool.execute as any)((toolCall as any).args);
-            logger.debug('Tool executado com sucesso', { toolName: toolCall.toolName });
-            
+            logger.debug("Tool executado com sucesso", { toolName: toolCall.toolName });
+
             // Adicionar resultado da tool à sessão
             session.messages.push({
-              role: 'assistant',
+              role: "assistant",
               content: `Tool ${toolCall.toolName}: ${JSON.stringify(toolResult)}`,
               timestamp: new Date(),
             } as AgentMessage);
           } catch (error) {
-            logger.error('Erro ao executar tool', { 
-              toolName: toolCall.toolName, 
-              error: error instanceof Error ? error.message : 'Erro desconhecido'
+            logger.error("Erro ao executar tool", {
+              toolName: toolCall.toolName,
+              error: error instanceof Error ? error.message : "Erro desconhecido",
             });
-            
+
             // Adicionar erro da tool à sessão
             session.messages.push({
-              role: 'assistant',
-              content: `Tool ${toolCall.toolName} Error: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+              role: "assistant",
+              content: `Tool ${toolCall.toolName} Error: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
               timestamp: new Date(),
             } as AgentMessage);
           }
         }
-        logger.debug('Processamento de tool calls concluído', { count: result.toolCalls.length });
+        logger.debug("Processamento de tool calls concluído", { count: result.toolCalls.length });
       }
 
       // Adicionar resposta do assistente
       const assistantMsg: AgentMessage = {
-        role: 'assistant',
+        role: "assistant",
         content: responseText,
         timestamp: new Date(),
         toolCalls: toolCalls,
       };
       await this.sessionService.addMessage(sessionId, assistantMsg, context?.userId);
       session.messages.push(assistantMsg);
-      console.log('➕ Resposta do assistente adicionada à sessão');
+      console.log("➕ Resposta do assistente adicionada à sessão");
 
       // Limitar histórico de mensagens (manter últimas 20)
       if (session.messages.length > 20) {
         session.messages = session.messages.slice(-20);
-        console.log('🗂️ Histórico limitado a 20 mensagens');
+        console.log("🗂️ Histórico limitado a 20 mensagens");
       }
 
-      console.log('✅ ProcessMessage concluído com sucesso');
+      console.log("✅ ProcessMessage concluído com sucesso");
       return responseText;
     } catch (error) {
-      console.error('❌ Erro ao processar mensagem:', error);
-      console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível');
-      return 'Desculpe, ocorreu um erro interno. Tente novamente em alguns instantes ou entre em contato conosco pelo telefone (11) 1234-5678.';
+      console.error("❌ Erro ao processar mensagem:", error);
+      console.error("❌ Stack trace:", error instanceof Error ? error.stack : "Stack não disponível");
+      return "Desculpe, ocorreu um erro interno. Tente novamente em alguns instantes ou entre em contato conosco pelo telefone (11) 1234-5678.";
     }
   }
 
   // Processar mensagem com streaming
-  async streamMessage(
-    sessionId: string,
-    userMessage: string,
-    context?: { cartId?: string; userId?: string; user?: any; currentPage?: string }
-  ) {
+  async streamMessage(sessionId: string, userMessage: string, context?: { cartId?: string; userId?: string; user?: any; currentPage?: string }) {
     // Validação de entrada
-    if (!sessionId || typeof sessionId !== 'string' || sessionId.trim().length === 0) {
-      const error = new Error('SessionId é obrigatório e deve ser uma string não vazia');
-      logger.error('Erro de validação no streamMessage:', error);
+    if (!sessionId || typeof sessionId !== "string" || sessionId.trim().length === 0) {
+      const error = new Error("SessionId é obrigatório e deve ser uma string não vazia");
+      logger.error("Erro de validação no streamMessage:", error);
       throw error;
     }
 
-    if (!userMessage || typeof userMessage !== 'string' || userMessage.trim().length === 0) {
-      const error = new Error('Mensagem do usuário é obrigatória e deve ser uma string não vazia');
-      logger.error('Erro de validação no streamMessage:', error);
+    if (!userMessage || typeof userMessage !== "string" || userMessage.trim().length === 0) {
+      const error = new Error("Mensagem do usuário é obrigatória e deve ser uma string não vazia");
+      logger.error("Erro de validação no streamMessage:", error);
       throw error;
     }
 
     if (userMessage.length > 10000) {
-      const error = new Error('Mensagem do usuário muito longa (máximo 10000 caracteres)');
-      logger.error('Erro de validação no streamMessage:', error);
+      const error = new Error("Mensagem do usuário muito longa (máximo 10000 caracteres)");
+      logger.error("Erro de validação no streamMessage:", error);
       throw error;
     }
 
     try {
-      console.log('🎯 StreamMessage iniciado para sessão:', sessionId);
-      console.log('💬 Mensagem original do usuário:', userMessage);
-      console.log('🔧 Contexto fornecido:', context);
-      
+      console.log("🎯 StreamMessage iniciado para sessão:", sessionId);
+      console.log("💬 Mensagem original do usuário:", userMessage);
+      console.log("🔧 Contexto fornecido:", context);
+
       // Reescrever mensagem se habilitado
       let processedMessage = userMessage;
       if (this.llmConfig.enableMessageRewriter) {
         const rewriteResult = await conditionalRewriteMessage(userMessage, this.llmConfig);
         processedMessage = rewriteResult.message;
         if (rewriteResult.wasRewritten) {
-          logger.debug('Mensagem reescrita', { original: userMessage, rewritten: processedMessage });
+          logger.debug("Mensagem reescrita", { original: userMessage, rewritten: processedMessage });
         }
       }
-      
+
       const session = await this.getSession(sessionId);
-      logger.debug('Sessão obtida', { sessionId, messageCount: session.messages.length });
-      
+      logger.debug("Sessão obtida", { sessionId, messageCount: session.messages.length });
+
       // Atualizar contexto se fornecido
       if (context) {
         await this.sessionService.updateSessionContext(sessionId, { ...session.context, ...context });
-        logger.debug('Contexto atualizado', { sessionId, context });
+        logger.debug("Contexto atualizado", { sessionId, context });
       }
 
       // Adicionar mensagem do usuário
       const userMsg: AgentMessage = {
-        role: 'user',
+        role: "user",
         content: processedMessage,
         timestamp: new Date(),
       };
       await this.sessionService.addMessage(sessionId, userMsg, context?.userId);
       session.messages.push(userMsg);
-      logger.debug('Mensagem do usuário adicionada', { sessionId });
+      logger.debug("Mensagem do usuário adicionada", { sessionId });
 
       // Preparar mensagens para o LLM
-      const messages: CoreMessage[] = [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...this.convertMessages(session.messages),
-      ];
-      logger.debug('Mensagens preparadas para LLM', { count: messages.length });
+      const messages: CoreMessage[] = [{ role: "system", content: SYSTEM_PROMPT }, ...this.convertMessages(session.messages)];
+      logger.debug("Mensagens preparadas para LLM", { count: messages.length });
 
       // Gerar resposta com streaming (usando fallback)
       const llmModel = await createLLMModelWithFallback(this.llmConfig);
-      logger.debug('Modelo LLM criado', { hasModel: !!llmModel, toolCount: Object.keys(allTools).length });
+      logger.debug("Modelo LLM criado", { hasModel: !!llmModel, toolCount: Object.keys(allTools).length });
 
       // Definir sessionId no contexto global para as tools
-      setGlobalContext('sessionId', sessionId);
+      setGlobalContext("sessionId", sessionId);
       if (context) {
-        if (context.cartId) setGlobalContext('cartId', context.cartId);
+        if (context.cartId) setGlobalContext("cartId", context.cartId);
         if (context.userId) {
-          setGlobalContext('userId', context.userId);
-          logger.debug('UserId definido no contexto', { userId: context.userId });
+          setGlobalContext("userId", context.userId);
+          logger.debug("UserId definido no contexto", { userId: context.userId });
         }
         if (context.user) {
-          setGlobalContext('user', context.user);
-          logger.debug('User definido no contexto', { user: context.user });
+          setGlobalContext("user", context.user);
+          logger.debug("User definido no contexto", { user: context.user });
         }
-        if (context.currentPage) setGlobalContext('currentPage', context.currentPage);
+        if (context.currentPage) setGlobalContext("currentPage", context.currentPage);
       }
-      logger.debug('Contexto global configurado', { sessionId });
+      logger.debug("Contexto global configurado", { sessionId });
 
       // Detectar se a mensagem requer tools obrigatoriamente
       const requiresTools = this.shouldForceToolUsage(processedMessage);
-      logger.debug('Iniciando processamento', { 
-        sessionId, 
-        message: processedMessage, 
-        requiresTools, 
-        toolCount: Object.keys(allTools).length 
+      logger.debug("Iniciando processamento", {
+        sessionId,
+        message: processedMessage,
+        requiresTools,
+        toolCount: Object.keys(allTools).length,
       });
-      
+
       const result = streamText({
         model: llmModel,
         messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
-        toolChoice: requiresTools ? 'required' : 'auto',
+        toolChoice: requiresTools ? "required" : "auto",
       });
-      
+
       // Processar tool calls do resultado com suporte a múltiplas execuções
       let executionCount = 0;
       const maxExecutions = 3; // Limite para evitar loops infinitos
       let collectedProductIds: string[] = []; // Coletar IDs de produtos para automação
-      
+
       for await (const part of result.fullStream) {
-        if (part.type === 'tool-call') {
+        if (part.type === "tool-call") {
           executionCount++;
-          logger.debug('Tool call executada', {
+          logger.debug("Tool call executada", {
             toolName: part.toolName,
             execution: executionCount,
             toolCallId: part.toolCallId,
-            args: (part as any).input
+            args: (part as any).input,
           });
-          
+
           try {
-            logger.debug('Executando tool', { toolName: part.toolName });
+            logger.debug("Executando tool", { toolName: part.toolName });
             const tool = allTools[part.toolName as keyof typeof allTools];
             if (!tool || !tool.execute) {
               throw new Error(`Tool ${part.toolName} não encontrada ou não executável`);
             }
             const toolResult = await (tool.execute as any)((part as any).input);
-            logger.debug('Tool executada com sucesso', { 
-              toolName: part.toolName, 
-              result: toolResult 
+            logger.debug("Tool executada com sucesso", {
+              toolName: part.toolName,
+              result: toolResult,
             });
-            
+
             // Adicionar resultado da tool à sessão
             session.messages.push({
-              role: 'assistant',
+              role: "assistant",
               content: `Tool ${part.toolName}: ${JSON.stringify(toolResult)}`,
               timestamp: new Date(),
             } as AgentMessage);
-            
+
             // AUTOMAÇÃO FORÇADA: Coletar IDs de produtos de search_products
-            if (part.toolName === 'search_products' && toolResult?.products?.length > 0) {
+            if (part.toolName === "search_products" && toolResult?.products?.length > 0) {
               const productIds = toolResult.products.map((p: any) => p.id).filter(Boolean);
               collectedProductIds.push(...productIds);
-              logger.debug('IDs de produtos coletados', { productIds, total: collectedProductIds.length });
-              
+              logger.debug("IDs de produtos coletados", { productIds, total: collectedProductIds.length });
+
               // Log para debug - não executar add_to_cart aqui pois deve ser feito pelo LLM
-              const userMessage = processedMessage || '';
+              const userMessage = processedMessage || "";
               const isAddToCartCommand = /adicionar?|adicione|add.*cart|comprar|colocar.*carrinho/i.test(userMessage);
-              
+
               if (isAddToCartCommand && executionCount < maxExecutions) {
                 const quantityMatch = userMessage.match(/\b(\d+)\b/);
                 const quantity = quantityMatch ? parseInt(quantityMatch[1]) : 1;
-                logger.debug('Comando de adicionar detectado', {
+                logger.debug("Comando de adicionar detectado", {
                   productId: toolResult.products[0].id,
-                  quantity
+                  quantity,
                 });
               }
             }
-            
           } catch (error) {
-            logger.error('Erro na execução da tool', {
+            logger.error("Erro na execução da tool", {
               toolName: part.toolName,
-              error: error instanceof Error ? error.message : error
+              error: error instanceof Error ? error.message : error,
             });
-            
+
             // Adicionar erro da tool à sessão
             session.messages.push({
-              role: 'assistant',
-              content: `Tool ${part.toolName} Error: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
+              role: "assistant",
+              content: `Tool ${part.toolName} Error: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
               timestamp: new Date(),
             } as AgentMessage);
           }
-        } else if (part.type === 'text-delta') {
+        } else if (part.type === "text-delta") {
           // Log silencioso para text-delta
         } else {
-          logger.debug('Stream part processado', { type: part.type });
+          logger.debug("Stream part processado", { type: part.type });
         }
       }
-      
+
       // AUTOMAÇÃO FORÇADA: Executar show_multiple_products se coletamos IDs
       if (collectedProductIds.length > 0) {
         try {
-          logger.debug('Executando show_multiple_products automaticamente', { 
-            productIds: collectedProductIds 
+          logger.debug("Executando show_multiple_products automaticamente", {
+            productIds: collectedProductIds,
           });
-          
-          const showMultipleTool = allTools['show_multiple_products'];
+
+          const showMultipleTool = allTools["show_multiple_products"];
           if (showMultipleTool && showMultipleTool.execute) {
-            const showResult = await (showMultipleTool.execute as any)({ 
-              productIds: collectedProductIds 
+            const showResult = await (showMultipleTool.execute as any)({
+              productIds: collectedProductIds,
             });
-            
-            logger.debug('show_multiple_products executado automaticamente', { 
-              result: showResult 
+
+            logger.debug("show_multiple_products executado automaticamente", {
+              result: showResult,
             });
-            
+
             // Adicionar resultado à sessão
             session.messages.push({
-              role: 'assistant',
+              role: "assistant",
               content: `Tool show_multiple_products: ${JSON.stringify(showResult)}`,
               timestamp: new Date(),
             } as AgentMessage);
           }
         } catch (error) {
-          logger.error('Erro na execução automática de show_multiple_products', {
+          logger.error("Erro na execução automática de show_multiple_products", {
             error: error instanceof Error ? error.message : error,
-            productIds: collectedProductIds
+            productIds: collectedProductIds,
           });
         }
       }
-      logger.debug('Processamento concluído', { 
-        sessionId, 
-        totalMessages: session.messages.length 
+      logger.debug("Processamento concluído", {
+        sessionId,
+        totalMessages: session.messages.length,
       });
 
       return result;
     } catch (error) {
-      logger.error('Erro ao processar mensagem com streaming:', {
+      logger.error("Erro ao processar mensagem com streaming:", {
         sessionId,
-        userMessage: userMessage.substring(0, 100) + (userMessage.length > 100 ? '...' : ''),
+        userMessage: userMessage.substring(0, 100) + (userMessage.length > 100 ? "..." : ""),
         context,
-        error: error instanceof Error ? {
-          message: error.message,
-          stack: error.stack,
-          name: error.name
-        } : error
+        error:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error,
       });
-      
+
       // Error já logado pelo logger.error acima
-      
+
       // Re-throw validation errors as-is
-      if (error instanceof Error && error.message.includes('validação')) {
+      if (error instanceof Error && error.message.includes("validação")) {
         throw error;
       }
-      
+
       // For other errors, provide a more user-friendly message
-      throw new Error('Erro interno ao processar mensagem. Tente novamente.');
+      throw new Error("Erro interno ao processar mensagem. Tente novamente.");
     }
   }
 
@@ -596,7 +596,7 @@ export class PharmacyAIAgent {
       const session = await this.sessionService.getSession(sessionId);
       return session ? [...session.messages] : [];
     } catch (error) {
-      logger.error('Erro ao obter histórico da sessão', { sessionId, error });
+      logger.error("Erro ao obter histórico da sessão", { sessionId, error });
       return [];
     }
   }
@@ -605,10 +605,10 @@ export class PharmacyAIAgent {
   async clearSession(sessionId: string): Promise<void> {
     try {
       await this.sessionService.deleteSession(sessionId);
-      logger.info('Sessão limpa com sucesso', { sessionId });
+      logger.info("Sessão limpa com sucesso", { sessionId });
     } catch (error) {
-      logger.error('Erro ao limpar sessão', { sessionId, error });
-      throw new Error(`Falha ao limpar sessão: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      logger.error("Erro ao limpar sessão", { sessionId, error });
+      throw new Error(`Falha ao limpar sessão: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
     }
   }
 
@@ -618,7 +618,7 @@ export class PharmacyAIAgent {
       const session = await this.sessionService.getSession(sessionId);
       return session ? { ...session.context } : {};
     } catch (error) {
-      logger.error('Erro ao obter contexto da sessão', { sessionId, error });
+      logger.error("Erro ao obter contexto da sessão", { sessionId, error });
       return {};
     }
   }
@@ -655,32 +655,32 @@ export async function processUserMessage(
 ): Promise<string> {
   try {
     // Validar entrada
-    if (!sessionId || typeof sessionId !== 'string') {
-      throw new Error('SessionId é obrigatório e deve ser uma string');
+    if (!sessionId || typeof sessionId !== "string") {
+      throw new Error("SessionId é obrigatório e deve ser uma string");
     }
-    
-    if (!message || typeof message !== 'string' || message.trim().length === 0) {
-      throw new Error('Mensagem é obrigatória e não pode estar vazia');
+
+    if (!message || typeof message !== "string" || message.trim().length === 0) {
+      throw new Error("Mensagem é obrigatória e não pode estar vazia");
     }
-    
+
     if (message.length > 10000) {
-      throw new Error('Mensagem muito longa (máximo 10.000 caracteres)');
+      throw new Error("Mensagem muito longa (máximo 10.000 caracteres)");
     }
-    
+
     const agent = getPharmacyAgent(llmConfig);
     return await agent.processMessage(sessionId, message.trim(), context);
   } catch (error) {
-    logger.error('Erro na função processUserMessage', { sessionId, messageLength: message?.length, error });
-    
-    if (error instanceof Error && error.message.includes('obrigatório')) {
+    logger.error("Erro na função processUserMessage", { sessionId, messageLength: message?.length, error });
+
+    if (error instanceof Error && error.message.includes("obrigatório")) {
       throw error; // Re-throw validation errors
     }
-    
-    return 'Desculpe, ocorreu um erro interno. Tente novamente em alguns instantes ou entre em contato conosco pelo telefone (11) 1234-5678.';
+
+    return "Desculpe, ocorreu um erro interno. Tente novamente em alguns instantes ou entre em contato conosco pelo telefone (11) 1234-5678.";
   }
 }
 
 // Exportar types e tools
-export * from './types';
-export * from './config';
+export * from "./types";
+export * from "./config";
 export { cartTools, productTools, checkoutTools, navigationTools, budgetTools, extraTools };

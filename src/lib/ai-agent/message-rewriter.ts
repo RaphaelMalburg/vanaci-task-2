@@ -2,6 +2,8 @@ import { generateText } from 'ai';
 import { createLLMModelWithFallback } from './config';
 import type { LLMConfig } from './config';
 
+
+
 /**
  * Reescreve mensagens do usuário para melhorar a clareza e eficácia das tool calls
  */
