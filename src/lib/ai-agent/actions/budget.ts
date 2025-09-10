@@ -353,7 +353,7 @@ export const compareProductPricesTool = tool({
         return sameCategory && differentProduct && withinPrice;
       })
       .sort((a, b) => a.price - b.price) // Ordenar por preço
-      .slice(0, 10); // Limitar a 10 resultados
+      .slice(0, 15); // Limitar a 15 resultados
     
     if (similarProducts.length === 0) {
       return {

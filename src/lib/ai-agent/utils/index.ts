@@ -187,7 +187,7 @@ export const getProductRecommendations = (products: Product[], symptom: string):
       
       return nameMatch || descriptionMatch || categoryMatch;
     });
-  }).slice(0, 10); // Limitar a 10 recomendações
+  }).slice(0, 15); // Limitar a 15 recomendações
 };
 
 // Utilitários para otimização de orçamento

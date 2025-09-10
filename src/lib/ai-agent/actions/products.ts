@@ -528,7 +528,7 @@ export const redirectToProductTool = tool({
 export const showMultipleProductsTool = tool({
   description: "Exibe múltiplos produtos específicos no overlay de produtos",
   inputSchema: z.object({
-    productIds: z.array(z.string()).min(1).max(10).describe("Lista de IDs dos produtos para exibir"),
+    productIds: z.array(z.string()).min(1).max(15).describe("Lista de IDs dos produtos para exibir"),
     title: z.string().optional().describe("Título personalizado para o overlay"),
     query: z.string().optional().describe("Query de busca relacionada"),
   }),
