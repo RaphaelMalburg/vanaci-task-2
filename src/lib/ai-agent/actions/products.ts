@@ -33,8 +33,7 @@ export const searchProductsTool = tool({
       if (products.length > 0) {
         const productsList = products
           .map((product) => {
-            const imageInfo = product.image ? ` 📷 [Imagem: ${product.image}]` : "";
-            return `- ${product.name} - €${product.price.toFixed(2)}${imageInfo} (ID: ${product.id})`;
+            return `- ${product.name} - €${product.price.toFixed(2)}`;
           })
           .join("\n");
 
@@ -53,8 +52,7 @@ export const searchProductsTool = tool({
       if (promotionalProducts.length > 0) {
         const productsList = promotionalProducts
           .map((product: any) => {
-            const imageInfo = product.image ? ` 📷 [Imagem: ${product.image}]` : "";
-            return `- ${product.name} - €${product.price.toFixed(2)}${imageInfo} (ID: ${product.id})`;
+            return `- ${product.name} - €${product.price.toFixed(2)}`;
           })
           .join("\n");
 
@@ -117,13 +115,11 @@ export const getProductDetailsTool = tool({
 
       logger.info("Detalhes do produto obtidos", { productId, name: product.name });
 
-      const imageInfo = product.image ? `\n📷 Imagem: ${product.image}` : "";
-
       return {
         success: true,
         message: `Produto: ${product.name}\nPreço: €${product.price.toFixed(2)}\nDescrição: ${product.description || "Sem descrição"}\nCategoria: ${
           product.category || "Sem categoria"
-        }${imageInfo}`,
+        }`,
         data: product,
       };
     } catch (error) {
@@ -213,8 +209,7 @@ export const listRecommendedProductsTool = tool({
 
       const productsList = uniqueProducts
         .map((product) => {
-          const imageInfo = product.image ? ` 📷 [Imagem: ${product.image}]` : "";
-          return `• ${product.name} - €${product.price.toFixed(2)}${imageInfo} (ID: ${product.id})`;
+          return `• ${product.name} - €${product.price.toFixed(2)}`;
         })
         .join("\n");
 
@@ -391,9 +386,8 @@ export const getPromotionalProductsTool = tool({
 
       const productsList = promotionalProducts
         .map((product) => {
-          const imageInfo = product.image ? ` 📷 [Imagem: ${product.image}]` : "";
           const categoryInfo = product.category ? ` [${product.category}]` : "";
-          return `🏷️ ${product.name}${categoryInfo} - €${product.price} (antes €${product.originalPrice}) - ${product.discount}% OFF (Poupa €${product.savings})${imageInfo} (ID: ${product.id})`;
+          return `🏷️ ${product.name}${categoryInfo} - €${product.price} (antes €${product.originalPrice}) - ${product.discount}% OFF (Poupa €${product.savings})`;
         })
         .join("\n");
 

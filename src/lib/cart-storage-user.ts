@@ -20,7 +20,7 @@ export interface UserCartData {
  */
 export async function getOrCreateUserCart(userId: string): Promise<UserCartData> {
   try {
-    console.log(`🛒 [UserCart] Buscando carrinho para usuário: ${userId}`)
+    // Buscar carrinho para usuário
     
     // Buscar carrinho existente
     let userCart = await prisma.userCart.findUnique({
@@ -58,7 +58,7 @@ export async function getOrCreateUserCart(userId: string): Promise<UserCartData>
       itemCount: userCart.items.reduce((sum: number, item: any) => sum + item.quantity, 0)
     }
 
-    console.log(`✅ [UserCart] Carrinho obtido:`, cartData)
+    // Carrinho obtido com sucesso
     return cartData
   } catch (error) {
     console.error('❌ [UserCart] Erro ao obter carrinho:', error)

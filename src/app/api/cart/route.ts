@@ -5,23 +5,17 @@ import { getOrCreateUserCart, addToUserCart, updateUserCartQuantity, removeFromU
 
 // GET - Obter carrinho do usuário autenticado
 export async function GET(request: NextRequest) {
-  console.log(`🛒 [Cart API GET] INICIANDO requisição`);
-  
   try {
     const user = getUserFromRequest(request)
     
     if (!user) {
-      console.log(`❌ [Cart API GET] Usuário não autenticado`);
       return NextResponse.json(
         { error: 'Usuário não autenticado' },
         { status: 401 }
       )
     }
-
-    console.log(`🔑 [Cart API GET] Usuário autenticado: ${user.id}`);
     
     const cart = await getOrCreateUserCart(user.id)
-    console.log(`✅ [Cart API GET] Carrinho obtido:`, cart);
 
     return NextResponse.json(cart)
   } catch (error) {

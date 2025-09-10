@@ -513,37 +513,66 @@ export class PharmacyAIAgent {
             // Apenas fazer log interno para debugging
             
             // Executar show_multiple_products automaticamente após tools de busca
-            if (productSearchTools.includes(part.toolName) && toolResult?.data?.products) {
-              const products = toolResult.data.products;
-              if (products.length > 0) {
+            logger.debug("Verificando se deve executar show_multiple_products", {
+              toolName: part.toolName,
+              isProductSearchTool: productSearchTools.includes(part.toolName),
+              hasToolResult: !!toolResult,
+              hasData: !!toolResult?.data,
+              hasProducts: !!toolResult?.data?.products,
+              productCount: toolResult?.data?.products?.length || 0
+            });
+            
+            if (productSearchTools.includes(part.toolName)) {
+              logger.debug("Tool de busca de produtos detectada", { toolName: part.toolName });
+              
+              if (toolResult?.data?.products && toolResult.data.products.length > 0) {
+                const products = toolResult.data.products;
                 try {
                   const productIds = products.map((p: any) => p.id).filter(Boolean);
+                  logger.debug("Produtos encontrados para overlay", { 
+                    toolName: part.toolName, 
+                    productIds,
+                    productCount: productIds.length,
+                    products: products.map((p: any) => ({ id: p.id, name: p.name }))
+                  });
+                  
                   if (productIds.length > 0) {
-                    logger.debug("Executando show_multiple_products automaticamente", { 
-                      toolName: part.toolName, 
-                      productIds,
-                      productCount: productIds.length 
-                    });
-                    
                     const showMultipleTool = allTools.show_multiple_products;
                     if (showMultipleTool && showMultipleTool.execute) {
+                      logger.debug("Executando show_multiple_products automaticamente", { 
+                        productIds,
+                        title: "Produtos Encontrados",
+                        query: processedMessage
+                      });
+                      
                       const overlayResult = await (showMultipleTool.execute as any)({
                         productIds,
                         title: "Produtos Encontrados",
                         query: processedMessage
                       });
+                      
                       logger.debug("show_multiple_products executado com sucesso", { 
                         productCount: productIds.length,
                         overlayResult 
                       });
+                    } else {
+                      logger.error("show_multiple_products tool não encontrada ou não executável");
                     }
+                  } else {
+                    logger.warn("Nenhum ID de produto válido encontrado", { products });
                   }
                 } catch (error) {
                   logger.error("Erro ao executar show_multiple_products automaticamente", { 
                     toolName: part.toolName,
-                    error: error instanceof Error ? error.message : error 
+                    error: error instanceof Error ? error.message : error,
+                    stack: error instanceof Error ? error.stack : undefined
                   });
                 }
+              } else {
+                logger.warn("Tool de busca não retornou produtos", {
+                  toolName: part.toolName,
+                  toolResult: toolResult?.data
+                });
               }
             }
 
