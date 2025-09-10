@@ -136,7 +136,28 @@ export async function POST(request: NextRequest) {
                   console.error(`❌ Erro ao processar tool call ${toolCallCount}:`, toolError);
                 }
               } else if (chunk.type === 'tool-result') {
-                console.log(`🔧 Tool result recebido para ${chunk.toolCallId}`);
+                console.log(`🔧 Tool result recebido para ${chunk.toolCallId}:`, {
+                  toolCallId: chunk.toolCallId,
+                  result: chunk.result ? 'presente' : 'ausente',
+                  resultType: typeof chunk.result
+                });
+                
+                try {
+                  const toolResultData = JSON.stringify({
+                    type: 'tool_result',
+                    toolResult: {
+                      toolCallId: chunk.toolCallId,
+                      result: chunk.result
+                    },
+                    sessionId: finalSessionId,
+                    timestamp: new Date().toISOString(),
+                  });
+                  console.log(`📤 Enviando tool result data para ${chunk.toolCallId}`);
+                  controller.enqueue(new TextEncoder().encode(`data: ${toolResultData}\n\n`));
+                  console.log(`✅ Tool result enviado com sucesso para ${chunk.toolCallId}`);
+                } catch (toolResultError) {
+                  console.error(`❌ Erro ao processar tool result ${chunk.toolCallId}:`, toolResultError);
+                }
               } else {
                 console.log(`❓ Chunk tipo desconhecido:`, chunk.type, chunk);
               }

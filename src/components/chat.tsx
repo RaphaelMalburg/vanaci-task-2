@@ -274,6 +274,17 @@ export function Chat() {
                       return msg;
                     })
                   );
+                } else if (parsed.type === "tool_result" && parsed.toolResult) {
+                  // Tool result - processar resultado da ferramenta
+                  const toolResult = parsed.toolResult;
+                  console.log("Tool result recebido:", toolResult);
+                  
+                  // Verificar se é resultado de show_multiple_products
+                  if (toolResult.result && toolResult.result.success && toolResult.result.data && toolResult.result.data.showInOverlay) {
+                    const { products, title, query } = toolResult.result.data;
+                    console.log("📦 Exibindo produtos no overlay via tool result:", { products: products?.length, title, query });
+                    productOverlay.showProducts({ title: title || "Produtos Recomendados", query, products: products || [] });
+                  }
                 } else if (parsed.type === "tool_call" && (parsed.toolCall || parsed.content)) {
                   // Tool call - não adicionar ao texto, apenas logar
                   const toolPayload = parsed.toolCall || parsed.content;
