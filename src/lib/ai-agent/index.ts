@@ -485,7 +485,6 @@ export class PharmacyAIAgent {
       // Processar tool calls do resultado com suporte a múltiplas execuções
       let executionCount = 0;
       const maxExecutions = 3; // Limite para evitar loops infinitos
-      let lastProductSearchResult: any = null;
       const productSearchTools = ['search_products', 'get_promotional_products', 'list_recommended_products', 'get_best_sellers'];
 
       for await (const part of result.fullStream) {
@@ -513,10 +512,39 @@ export class PharmacyAIAgent {
             // NÃO adicionar resultado da tool à sessão para evitar vazamento de informações técnicas
             // Apenas fazer log interno para debugging
             
-            // Detectar tools de busca de produtos e armazenar resultado
-            if (productSearchTools.includes(part.toolName)) {
-              lastProductSearchResult = toolResult;
-              logger.debug("Tool de busca de produtos detectada", { toolName: part.toolName, productCount: toolResult?.data?.products?.length || 0 });
+            // Executar show_multiple_products automaticamente após tools de busca
+            if (productSearchTools.includes(part.toolName) && toolResult?.data?.products) {
+              const products = toolResult.data.products;
+              if (products.length > 0) {
+                try {
+                  const productIds = products.map((p: any) => p.id).filter(Boolean);
+                  if (productIds.length > 0) {
+                    logger.debug("Executando show_multiple_products automaticamente", { 
+                      toolName: part.toolName, 
+                      productIds,
+                      productCount: productIds.length 
+                    });
+                    
+                    const showMultipleTool = allTools.show_multiple_products;
+                    if (showMultipleTool && showMultipleTool.execute) {
+                      const overlayResult = await (showMultipleTool.execute as any)({
+                        productIds,
+                        title: "Produtos Encontrados",
+                        query: processedMessage
+                      });
+                      logger.debug("show_multiple_products executado com sucesso", { 
+                        productCount: productIds.length,
+                        overlayResult 
+                      });
+                    }
+                  }
+                } catch (error) {
+                  logger.error("Erro ao executar show_multiple_products automaticamente", { 
+                    toolName: part.toolName,
+                    error: error instanceof Error ? error.message : error 
+                  });
+                }
+              }
             }
 
             // Tools serão executadas naturalmente pelo LLM conforme o prompt
@@ -533,30 +561,6 @@ export class PharmacyAIAgent {
           // Log silencioso para text-delta
         } else {
           logger.debug("Stream part processado", { type: part.type });
-        }
-      }
-
-      // Forçar execução de show_multiple_products se uma tool de busca foi executada
-      if (lastProductSearchResult && lastProductSearchResult.data && lastProductSearchResult.data.products) {
-        const products = lastProductSearchResult.data.products;
-        if (products.length > 0) {
-          try {
-            const productIds = products.map((p: any) => p.id).filter(Boolean);
-            if (productIds.length > 0) {
-              logger.debug("Executando show_multiple_products automaticamente", { productIds });
-              const showMultipleTool = allTools.show_multiple_products;
-              if (showMultipleTool && showMultipleTool.execute) {
-                await (showMultipleTool.execute as any)({
-                  productIds,
-                  title: "Produtos Encontrados",
-                  query: processedMessage
-                });
-                logger.debug("show_multiple_products executado com sucesso", { productCount: productIds.length });
-              }
-            }
-          } catch (error) {
-            logger.error("Erro ao executar show_multiple_products automaticamente", { error });
-          }
         }
       }
 
