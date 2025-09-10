@@ -202,21 +202,20 @@ export const listRecommendedProductsTool = tool({
       if (uniqueProducts.length === 0) {
         return {
           success: true,
-          message: `Nenhum produto encontrado. Consulte um farmacêutico para orientações.`,
+          message: `Nenhum produto encontrado para "${symptomOrNeed}". Consulte um farmacêutico para orientações.`,
           data: { products: [], symptomOrNeed },
         };
       }
 
-      const productsList = uniqueProducts
-        .map((product) => {
-          return `• ${product.name} - €${product.price.toFixed(2)}`;
-        })
-        .join("\n");
-
+      // Retornar resposta concisa - os produtos serão mostrados no overlay
       return {
         success: true,
-        message: `${uniqueProducts.length} produtos recomendados:\n\n${productsList}\n\n⚠️ Importante: Consulte sempre um profissional de saúde antes de usar medicamentos.`,
-        data: { products: uniqueProducts, symptomOrNeed },
+        message: `Encontrei ${uniqueProducts.length} produtos recomendados para "${symptomOrNeed}". Consulte sempre um profissional de saúde antes de usar medicamentos.`,
+        data: { 
+          products: uniqueProducts, 
+          symptomOrNeed,
+          showInOverlay: true // Flag para indicar que deve mostrar no overlay
+        },
       };
     } catch (error) {
       logger.error("Erro ao buscar recomendações", { symptomOrNeed, error: error instanceof Error ? error.message : error });
