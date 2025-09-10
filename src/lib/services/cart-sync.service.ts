@@ -39,63 +39,51 @@ export class CartSyncService {
 
   async syncCartFromBackend(): Promise<void> {
     if (!this.isClient) {
-      console.log('🔄 [CartSync] Sync cancelado - não é cliente');
       return;
     }
 
     // Check if user is authenticated before attempting sync
     const token = localStorage.getItem('token');
     if (!token) {
-      console.log('🔄 [CartSync] Sync cancelado - usuário não autenticado');
       return;
     }
 
     const sessionId = this.getSessionId();
     try {
-      console.log('🔄 [CartSync] Iniciando sincronização do backend', { sessionId });
       const response = await fetch(`/api/cart?sessionId=${sessionId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      console.log('🔄 [CartSync] Resposta da API cart:', { status: response.status, ok: response.ok });
       
       if (response.status === 401) {
-        console.log('❌ [CartSync] Usuário não autenticado - parando sincronização automática');
         this.stopAutoSync();
         return;
       }
       
       if (!response.ok) {
         logger.warn('Falha ao sincronizar carrinho do backend', { status: response.status });
-        console.log('❌ [CartSync] Falha na sincronização - status não ok:', response.status);
         return;
       }
 
       const backendCart: CartSyncData = await response.json();
-      console.log('📦 [CartSync] Carrinho do backend recebido:', backendCart);
       
       const cartStore = useCartStore.getState();
-      console.log('🛒 [CartSync] Estado atual do Zustand:', { items: cartStore.items, total: cartStore.total });
       
       // Verificar se há diferenças entre o carrinho do backend e o frontend
       const needsSync = this.cartsDiffer(backendCart.items, cartStore.items);
-      console.log('🔍 [CartSync] Necessita sincronização?', { needsSync, backendItemsCount: backendCart.items.length, frontendItemsCount: cartStore.items.length });
       
       if (needsSync) {
         logger.info('Sincronizando carrinho do backend para frontend', {
           backendItems: backendCart.items.length,
           frontendItems: cartStore.items.length
         });
-        console.log('🔄 [CartSync] Sincronizando carrinho - limpando e adicionando itens');
         
         // Limpar carrinho atual e adicionar itens do backend
         cartStore.clearCart();
-        console.log('🗑️ [CartSync] Carrinho limpo');
         
-        backendCart.items.forEach((item, index) => {
-          console.log(`➕ [CartSync] Adicionando item ${index + 1}/${backendCart.items.length}:`, item);
+        backendCart.items.forEach((item) => {
           cartStore.addItem({
             id: item.id,
             name: item.name,
@@ -104,14 +92,9 @@ export class CartSyncService {
             imagePath: item.imagePath
           }, item.quantity);
         });
-        
-        console.log('✅ [CartSync] Sincronização concluída - novo estado:', useCartStore.getState());
-      } else {
-        console.log('✅ [CartSync] Carrinho já está sincronizado - nenhuma alteração necessária');
       }
     } catch (error) {
       logger.error('Erro ao sincronizar carrinho do backend', { error });
-      console.error('❌ [CartSync] Erro na sincronização:', error);
     }
   }
 
