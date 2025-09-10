@@ -344,18 +344,21 @@ export function Chat() {
                   if (toolPayload && toolPayload.toolName === "show_multiple_products") {
                     try {
                       const result = toolPayload.result;
-                      if (result && result.data && result.data.showInOverlay) {
+                      console.log("🔍 Processando show_multiple_products:", result);
+                      if (result && result.success && result.data && result.data.showInOverlay) {
                         const { products, title, query } = result.data;
+                        console.log("📦 Exibindo produtos no overlay:", { products: products?.length, title, query });
                         productOverlay.showProducts({
                           title: title || "Produtos Selecionados",
                           query,
                           products: products || [],
                         });
-                        setTimeout(() => router.push("/products"), 250);
                         console.log("✅ Múltiplos produtos exibidos no overlay:", products?.length || 0);
+                      } else {
+                        console.warn("⚠️ show_multiple_products não tem dados válidos para overlay:", result);
                       }
                     } catch (e) {
-                      console.error("Erro ao processar múltiplos produtos:", e);
+                      console.error("❌ Erro ao processar múltiplos produtos:", e);
                     }
                   }
 
