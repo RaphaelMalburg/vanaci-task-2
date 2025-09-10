@@ -12,7 +12,7 @@ export const searchProductsTool = tool({
   inputSchema: z.object({
     query: z.string().describe("Termo de busca para encontrar produtos"),
     category: z.string().optional().describe("Filtrar por categoria específica"),
-    limit: z.number().min(1).max(50).default(10).describe("Número máximo de resultados"),
+    limit: z.number().min(1).max(50).default(15).describe("Número máximo de resultados"),
   }),
   execute: async ({ query, category, limit }: { query: string; category?: string; limit: number }) => {
     logger.info("Buscando produtos", { query, category, limit });
@@ -39,7 +39,7 @@ export const searchProductsTool = tool({
 
         return {
           success: true,
-          message: `Encontrados ${products.length} produtos para "${query}":\n${productsList}`,
+          message: `${products.length} produtos encontrados:\n${productsList}`,
           data: { products, total: products.length, query },
         };
       }
@@ -47,7 +47,7 @@ export const searchProductsTool = tool({
       // Se não encontrou produtos, mostrar produtos promocionais como sugestão
       logger.info("Nenhum produto encontrado, buscando produtos promocionais", { query });
 
-      const promotionalProducts = await getPromotionalProductsForFallback(productService, limit);
+      const promotionalProducts = await getPromotionalProductsForFallback(productService, 15);
 
       if (promotionalProducts.length > 0) {
         const productsList = promotionalProducts
@@ -58,7 +58,7 @@ export const searchProductsTool = tool({
 
         return {
           success: true,
-          message: `Não encontrei produtos específicos para "${query}". Aqui estão algumas sugestões populares:\n\n${productsList}`,
+          message: `Produto não encontrado. Veja estas promoções:\n\n${productsList}`,
           data: { products: promotionalProducts, total: promotionalProducts.length, query, fallbackType: "promotional" },
         };
       }
@@ -66,7 +66,7 @@ export const searchProductsTool = tool({
       // Fallback final - se nada funcionou
       return {
         success: true,
-        message: `Não encontrei produtos para "${query}". Recomendo entrar em contato com nossos farmacêuticos para orientações específicas.`,
+        message: `Produto não encontrado. Contacte os nossos farmacêuticos para orientações.`,
         data: { products: [], total: 0, query, fallbackType: "none" },
       };
     } catch (error) {
@@ -80,7 +80,7 @@ export const searchProductsTool = tool({
 async function getPromotionalProductsForFallback(productService: any, limit: number) {
   try {
     // Buscar produtos com preços mais baixos (simulando promoções)
-    const allProducts = await productService.getAllProducts({ limit: 100 });
+    const allProducts = await productService.getAllProducts({ limit: 200 });
 
     // Ordenar por preço e pegar os mais baratos
     const cheapestProducts = allProducts.sort((a: any, b: any) => a.price - b.price).slice(0, limit);
@@ -174,9 +174,9 @@ export const listCategoriesTool = tool({
 export const listRecommendedProductsTool = tool({
   description: "Recomenda produtos baseado em sintomas ou necessidades específicas",
   inputSchema: z.object({
-    symptomOrNeed: z.string().describe('Sintoma ou necessidade do usuário (ex: "dor de cabeça", "vitaminas", "gripe")'),
-    limit: z.number().min(1).max(20).default(5).describe("Número máximo de recomendações"),
-  }),
+      symptomOrNeed: z.string().describe('Sintoma ou necessidade do usuário (ex: "dor de cabeça", "vitaminas", "gripe")'),
+      limit: z.number().min(1).max(20).default(15).describe("Número máximo de recomendações"),
+    }),
   execute: async ({ symptomOrNeed, limit }: { symptomOrNeed: string; limit: number }) => {
     logger.info("Buscando produtos recomendados", { symptomOrNeed, limit });
 
@@ -202,7 +202,7 @@ export const listRecommendedProductsTool = tool({
       if (uniqueProducts.length === 0) {
         return {
           success: true,
-          message: `Não foram encontrados produtos específicos recomendados para "${symptomOrNeed}". É importante considerar consultar um farmacêutico ou um médico para obter orientações adequadas sobre que tomar nesse caso. Se precisar de mais alguma informação ou ajuda, estou à disposição!`,
+          message: `Nenhum produto encontrado. Consulte um farmacêutico para orientações.`,
           data: { products: [], symptomOrNeed },
         };
       }
@@ -215,7 +215,7 @@ export const listRecommendedProductsTool = tool({
 
       return {
         success: true,
-        message: `Produtos recomendados para "${symptomOrNeed}":\n\n${productsList}\n\n⚠️ Importante: Consulte sempre um profissional de saúde antes de usar medicamentos.`,
+        message: `${uniqueProducts.length} produtos recomendados:\n\n${productsList}\n\n⚠️ Importante: Consulte sempre um profissional de saúde antes de usar medicamentos.`,
         data: { products: uniqueProducts, symptomOrNeed },
       };
     } catch (error) {
@@ -228,38 +228,106 @@ export const listRecommendedProductsTool = tool({
 // Função auxiliar para mapear sintomas para termos de busca
 function getSearchTermsForSymptom(symptom: string): string[] {
   const symptomMap: Record<string, string[]> = {
-    // Dores
-    dor: ["dor", "analgésico", "paracetamol", "ibuprofeno"],
-    "dor de cabeça": ["dor", "analgésico", "paracetamol", "ibuprofeno", "aspirina"],
-    "dor no joelho": ["dor", "anti-inflamatório", "ibuprofeno", "voltaren", "momendol"],
-    "dor muscular": ["dor", "anti-inflamatório", "ibuprofeno", "voltaren", "momendol"],
-    "dor nas costas": ["dor", "anti-inflamatório", "ibuprofeno", "voltaren"],
-    "dor articular": ["dor", "anti-inflamatório", "ibuprofeno", "voltaren"],
-    "dor de garganta": ["garganta", "strepsils", "anti-inflamatório"],
+    // Dores e analgésicos
+    dor: ["dor", "analgésico", "paracetamol", "ibuprofeno", "aspirina", "brufen", "ben-u-ron"],
+    "dor de cabeça": ["dor", "analgésico", "paracetamol", "ibuprofeno", "aspirina", "enxaqueca", "cefaleia"],
+    "dor de dentes": ["dor", "analgésico", "paracetamol", "ibuprofeno", "dental", "odontalgia"],
+    "dor muscular": ["dor", "analgésico", "ibuprofeno", "voltaren", "muscular", "mialgia", "anti-inflamatório"],
+    "dor nas costas": ["dor", "analgésico", "ibuprofeno", "voltaren", "costas", "lombar", "coluna"],
+    "dor no joelho": ["dor", "analgésico", "ibuprofeno", "voltaren", "joelho", "articular", "articulação"],
+    "dor articular": ["dor", "analgésico", "ibuprofeno", "voltaren", "articular", "articulação", "artrite"],
+    "dor menstrual": ["dor", "analgésico", "ibuprofeno", "paracetamol", "menstrual", "cólica", "período"],
+    "dor de garganta": ["dor", "garganta", "strepsils", "tantum", "faringite", "amigdalite"],
+    enxaqueca: ["enxaqueca", "dor", "cabeça", "paracetamol", "ibuprofeno", "cefaleia"],
+    cólica: ["cólica", "dor", "menstrual", "ibuprofeno", "paracetamol", "antiespasmódico"],
 
-    // Gripes e constipações
-    gripe: ["gripe", "constipação", "ben-u-gripe", "griponal"],
-    constipação: ["gripe", "constipação", "ben-u-gripe", "griponal"],
-    tosse: ["tosse", "gripe", "antigrippine"],
-    febre: ["febre", "paracetamol", "ibuprofeno", "dor"],
+    // Gripes, constipações e respiratório
+    gripe: ["gripe", "constipação", "ben-u-gripe", "griponal", "influenza", "viral"],
+    constipação: ["gripe", "constipação", "ben-u-gripe", "griponal", "nasal", "congestionamento"],
+    tosse: ["tosse", "gripe", "antigrippine", "expectorante", "antitússico", "bronquite"],
+    febre: ["febre", "paracetamol", "ibuprofeno", "dor", "antipirético", "temperatura"],
+    "nariz entupido": ["nasal", "descongestionante", "rinite", "sinusite", "constipação"],
+    sinusite: ["sinusite", "nasal", "descongestionante", "dor", "facial"],
+    rinite: ["rinite", "alérgica", "nasal", "anti-histamínico", "espirros"],
+    asma: ["asma", "broncodilatador", "inalador", "respiratório", "bronquite"],
 
-    // Digestivo
-    enjoo: ["enjoo", "vomidrine", "digestivo"],
-    náusea: ["enjoo", "vomidrine", "digestivo"],
-    diarreia: ["diarreia", "imodium", "digestivo"],
-    obstipação: ["obstipação", "laevolac", "dulcolax"],
-    "prisão de ventre": ["obstipação", "laevolac", "dulcolax"],
+    // Digestivo e gastrointestinal
+    enjoo: ["enjoo", "vomidrine", "digestivo", "náusea", "antiemético"],
+    náusea: ["enjoo", "vomidrine", "digestivo", "náusea", "antiemético"],
+    diarreia: ["diarreia", "imodium", "digestivo", "intestinal", "antidiarreico"],
+    obstipação: ["obstipação", "laevolac", "dulcolax", "laxante", "intestinal"],
+    "prisão de ventre": ["obstipação", "laevolac", "dulcolax", "laxante", "intestinal"],
+    azia: ["azia", "antiácido", "estômago", "digestivo", "refluxo", "gastrite"],
+    gastrite: ["gastrite", "estômago", "antiácido", "digestivo", "azia"],
+    "má digestão": ["digestivo", "enzimas", "estômago", "digestão", "dispepsia"],
+    "dor de estômago": ["estômago", "dor", "gastrite", "antiácido", "digestivo"],
 
-    // Pele
-    acne: ["acne", "borbulhas", "pasta", "sérum"],
-    borbulhas: ["acne", "borbulhas", "pasta", "sérum"],
-    "pele oleosa": ["oleosa", "acne", "gel", "sérum"],
+    // Pele e dermatologia
+    acne: ["acne", "borbulhas", "pasta", "sérum", "dermatológico", "espinhas"],
+    borbulhas: ["acne", "borbulhas", "pasta", "sérum", "dermatológico", "espinhas"],
+    "pele oleosa": ["oleosa", "acne", "gel", "sérum", "dermatológico", "seborreia"],
+    eczema: ["eczema", "dermatite", "pele", "hidratante", "anti-inflamatório"],
+    psoríase: ["psoríase", "dermatológico", "pele", "descamação", "hidratante"],
+    "pele seca": ["hidratante", "pele", "seca", "creme", "loção"],
+    queimadura: ["queimadura", "pele", "cicatrizante", "regenerador", "aloe"],
+    "protetor solar": ["protetor", "solar", "FPS", "UV", "bronzeador"],
 
-    // Promoções
-    promoção: ["promoção", "desconto", "oferta"],
-    promoções: ["promoção", "desconto", "oferta"],
-    desconto: ["promoção", "desconto", "oferta"],
-    ofertas: ["promoção", "desconto", "oferta"],
+    // Alergias e anti-histamínicos
+    alergia: ["alergia", "anti-histamínico", "antialérgico", "urticária", "prurido"],
+    "reação alérgica": ["alergia", "anti-histamínico", "antialérgico", "urticária"],
+    urticária: ["urticária", "alergia", "anti-histamínico", "prurido", "comichão"],
+    comichão: ["comichão", "prurido", "anti-histamínico", "alergia", "dermatite"],
+
+    // Vitaminas e suplementos
+    vitamina: ["vitamina", "suplemento", "multivitamínico", "complexo", "nutricional"],
+    "vitamina C": ["vitamina", "C", "imunidade", "antioxidante", "ácido ascórbico"],
+    "vitamina D": ["vitamina", "D", "ossos", "cálcio", "imunidade"],
+    "complexo B": ["vitamina", "B", "complexo", "energia", "nervoso"],
+    ferro: ["ferro", "anemia", "suplemento", "hemoglobina", "cansaço"],
+    cálcio: ["cálcio", "ossos", "vitamina D", "suplemento", "osteoporose"],
+    magnésio: ["magnésio", "suplemento", "muscular", "cãibras", "relaxante"],
+    ómega: ["ómega", "3", "cardiovascular", "suplemento", "colesterol"],
+
+    // Saúde feminina
+    "saúde feminina": ["feminina", "ginecológico", "íntimo", "menstrual", "hormonal"],
+    candidíase: ["candidíase", "antifúngico", "íntimo", "vaginal", "fungos"],
+    cistite: ["cistite", "urinário", "bexiga", "antibiótico", "cranberry"],
+    menopausa: ["menopausa", "hormonal", "afrontamentos", "estrogénio", "climatério"],
+
+    // Saúde masculina
+    "saúde masculina": ["masculina", "próstata", "urológico", "andrológico"],
+    próstata: ["próstata", "urológico", "masculina", "hiperplasia", "PSA"],
+
+    // Sono e ansiedade
+    insónia: ["insónia", "sono", "melatonina", "sedativo", "relaxante"],
+    ansiedade: ["ansiedade", "calmante", "relaxante", "stress", "nervosismo"],
+    stress: ["stress", "ansiedade", "calmante", "relaxante", "adaptogénico"],
+
+    // Circulação e cardiovascular
+    circulação: ["circulação", "cardiovascular", "varizes", "pernas", "venoso"],
+    varizes: ["varizes", "circulação", "pernas", "venoso", "varicoso"],
+    colesterol: ["colesterol", "cardiovascular", "ómega", "estatina", "lipídios"],
+    "pressão arterial": ["pressão", "arterial", "hipertensão", "cardiovascular"],
+
+    // Diabetes e metabólico
+    diabetes: ["diabetes", "glicemia", "açúcar", "insulina", "metabólico"],
+    "açúcar no sangue": ["glicemia", "diabetes", "açúcar", "glucose", "metabólico"],
+
+    // Oftalmologia
+    "olhos secos": ["olhos", "lágrimas", "oftálmico", "lubrificante", "seco"],
+    conjuntivite: ["conjuntivite", "olhos", "oftálmico", "vermelhidão", "inflamação"],
+
+    // Higiene e cuidados
+    higiene: ["higiene", "limpeza", "desinfetante", "antisséptico", "cuidados"],
+    "higiene oral": ["oral", "dentes", "pasta", "elixir", "dental"],
+    "cuidados bebé": ["bebé", "infantil", "pediatria", "criança", "pediátrico"],
+
+    // Promoções e ofertas
+    promoção: ["promoção", "desconto", "oferta", "barato", "económico"],
+    promoções: ["promoção", "desconto", "oferta", "barato", "económico"],
+    desconto: ["promoção", "desconto", "oferta", "barato", "económico"],
+    ofertas: ["promoção", "desconto", "oferta", "barato", "económico"],
+    barato: ["barato", "económico", "promoção", "desconto", "oferta"],
   };
 
   // Buscar correspondências exatas primeiro
@@ -277,7 +345,7 @@ function getSearchTermsForSymptom(symptom: string): string[] {
 export const getBestSellersTool = tool({
   description: "Lista os produtos mais vendidos da farmácia",
   inputSchema: z.object({
-    limit: z.number().min(1).max(20).default(10).describe("Número máximo de produtos"),
+    limit: z.number().min(1).max(20).default(15).describe("Número máximo de produtos"),
   }),
   execute: async ({ limit }) => {
     logger.info("Buscando produtos mais vendidos", { limit });
@@ -303,7 +371,7 @@ export const getBestSellersTool = tool({
       if (bestSellers.length === 0) {
         return {
           success: true,
-          message: "Não há informações sobre produtos mais vendidos no momento.",
+          message: "Erro ao carregar produtos. Tente novamente.",
           data: { products: [] },
         };
       }
@@ -312,7 +380,7 @@ export const getBestSellersTool = tool({
 
       return {
         success: true,
-        message: `🏆 Produtos mais vendidos (${bestSellers.length}):\n\n${productsList}`,
+        message: `${bestSellers.length} produtos mais vendidos:\n\n${productsList}`,
         data: { products: bestSellers },
       };
     } catch (error) {
@@ -326,7 +394,7 @@ export const getBestSellersTool = tool({
 export const getPromotionalProductsTool = tool({
   description: "Lista produtos em promoção ou com desconto",
   inputSchema: z.object({
-    limit: z.number().min(1).max(20).default(8).describe("Número máximo de produtos promocionais"),
+    limit: z.number().min(1).max(20).default(15).describe("Número máximo de produtos promocionais"),
     category: z.string().optional().describe("Categoria específica para promoções"),
   }),
   execute: async ({ limit, category }: { limit: number; category?: string }) => {
@@ -376,11 +444,13 @@ export const getPromotionalProductsTool = tool({
 
       if (promotionalProducts.length === 0) {
         return {
-          success: true,
-          message: category
-            ? `Não há produtos em promoção na categoria "${category}" no momento. Mas temos outras ofertas disponíveis!`
-            : "Não há produtos em promoção no momento, mas em breve teremos novas ofertas!",
-          data: { products: [] },
+          success: false,
+          message: `Nenhuma promoção${category ? ` em ${category}` : ""} disponível no momento.`,
+          data: {
+            products: [],
+            total: 0,
+            category,
+          },
         };
       }
 
@@ -395,10 +465,12 @@ export const getPromotionalProductsTool = tool({
 
       return {
         success: true,
-        message: `🎉 Produtos em Promoção${category ? ` - ${category}` : ""}:\n\n${productsList}\n\n💰 Poupança total disponível: €${totalSavings.toFixed(
-          2
-        )}\n💡 Aproveite estas ofertas especiais!`,
-        data: { products: promotionalProducts, totalSavings },
+        message: `${promotionalProducts.length} promoções${category ? ` em ${category}` : ""}:\n\n${productsList}`,
+        data: {
+          products: promotionalProducts,
+          total: promotionalProducts.length,
+          category,
+        },
       };
     } catch (error) {
       logger.error("Erro ao buscar produtos promocionais", { error: error instanceof Error ? error.message : error });
