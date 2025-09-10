@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useProductOverlay } from "@/contexts/product-overlay-context";
 import { useRouter } from "next/navigation";
 
-import type { Product } from '@/lib/types';
+import type { Product } from "@/lib/types";
 
 // Produtos serão carregados do banco de dados
 
@@ -36,14 +36,14 @@ export default function Products() {
     async function fetchProducts() {
       try {
         setLoading(true);
-        const response = await fetch('/api/products');
+        const response = await fetch("/api/products");
         if (!response.ok) {
-          throw new Error('Erro ao carregar produtos');
+          throw new Error("Erro ao carregar produtos");
         }
         const data = await response.json();
         setProducts(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro desconhecido');
+        setError(err instanceof Error ? err.message : "Erro desconhecido");
       } finally {
         setLoading(false);
       }
@@ -55,10 +55,10 @@ export default function Products() {
   // Extrair categorias únicas dos produtos
   const categories = useMemo(() => {
     if (!products || products.length === 0) {
-      return ['Todos'];
+      return ["Todos"];
     }
-    const uniqueCategories = [...new Set(products.map(p => p.category))];
-    return ['Todos', ...uniqueCategories.sort()];
+    const uniqueCategories = [...new Set(products.map((p) => p.category))];
+    return ["Todos", ...uniqueCategories.sort()];
   }, [products]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
@@ -67,20 +67,18 @@ export default function Products() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const toggleExpanded = (id: string) =>
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleExpanded = (id: string) => setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const filteredAndSortedProducts = useMemo(() => {
     if (!products || products.length === 0) {
       return [];
     }
-    
-    const filtered = products.filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (product.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+
+    const filtered = products.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || product.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false;
       const matchesCategory = selectedCategory === "Todos" || product.category === selectedCategory;
       const matchesStock = !showOnlyInStock || product.stock > 0;
-      
+
       return matchesSearch && matchesCategory && matchesStock;
     });
 
@@ -106,14 +104,14 @@ export default function Products() {
       event.preventDefault();
       event.stopPropagation();
     }
-    
+
     if (!user) {
-      toast.error('Você precisa estar logado para adicionar produtos ao carrinho');
+      toast.error("Você precisa estar logado para adicionar produtos ao carrinho");
       return;
     }
-    
+
     if (product.stock <= 0) {
-      toast.error('Produto fora de estoque');
+      toast.error("Produto fora de estoque");
       return;
     }
 
@@ -123,27 +121,27 @@ export default function Products() {
         name: product.name,
         price: product.price,
         imagePath: product.image || undefined,
-        category: product.category
+        category: product.category,
       });
 
       toast.success(`${product.name} adicionado ao carrinho!`);
     } catch (error) {
-      console.error('Erro ao adicionar produto ao carrinho:', error);
-      toast.error('Erro ao adicionar produto ao carrinho. Tente novamente.');
+      console.error("Erro ao adicionar produto ao carrinho:", error);
+      toast.error("Erro ao adicionar produto ao carrinho. Tente novamente.");
     }
   };
 
   // Agrupar produtos por categoria
   const productsByCategory = useMemo(() => {
     const grouped: { [key: string]: Product[] } = {};
-    
-    filteredAndSortedProducts.forEach(product => {
+
+    filteredAndSortedProducts.forEach((product) => {
       if (!grouped[product.category]) {
         grouped[product.category] = [];
       }
       grouped[product.category].push(product);
     });
-    
+
     return grouped;
   }, [filteredAndSortedProducts]);
 
@@ -163,22 +161,13 @@ export default function Products() {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center text-red-600">
           <p>Erro ao carregar produtos: {error}</p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="mt-4"
-          >
+          <Button onClick={() => window.location.reload()} className="mt-4">
             Tentar novamente
           </Button>
         </div>
       </div>
     );
   }
-
-
-
-
-
-
 
   return (
     <div className="min-h-screen relative bg-gradient-to-br from-sky-100/60 via-white to-emerald-100/60 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 transition-colors duration-300 py-12">
@@ -190,10 +179,8 @@ export default function Products() {
             <div className="rounded-2xl border border-white/40 dark:border-gray-700/40 bg-white/70 dark:bg-gray-800/60 backdrop-blur-md shadow-xl">
               <div className="p-4 md:p-6 flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">{overlay.title || 'Sugestões de produtos'}</h3>
-                  {overlay.query && (
-                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">para "{overlay.query}"</p>
-                  )}
+                  <h3 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-gray-100">{overlay.title || "Sugestões de produtos"}</h3>
+                  {overlay.query && <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">para "{overlay.query}"</p>}
                 </div>
                 <Button variant="ghost" size="icon" onClick={overlay.hide}>
                   <X className="h-5 w-5" />
@@ -205,26 +192,28 @@ export default function Products() {
                 ) : overlay.products.length === 0 ? (
                   <div className="text-sm text-gray-600 dark:text-gray-300 p-4">Nenhum produto encontrado.</div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {overlay.products.map((p) => (
-                      <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border border-white/40 dark:border-gray-700/40">
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                      <div
+                        key={p.id}
+                        className="flex flex-col gap-3 p-4 rounded-xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border border-white/40 dark:border-gray-700/40 hover:shadow-lg transition-shadow">
+                        <div className="relative w-full h-32 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
                           {p.image ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                            <img src={p.image} alt={p.name} className="w-full h-full object-contain p-2" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">Sem imagem</div>
+                            <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">Sem imagem</div>
                           )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium truncate text-gray-900 dark:text-gray-100">{p.name}</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400 truncate">R$ {p.price.toFixed(2)}</div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1 line-clamp-2">{p.name}</div>
+                          <div className="text-lg font-bold text-green-600 mb-3">R$ {p.price.toFixed(2)}</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button size="sm" variant="secondary" onClick={() => router.push(`/products/${p.id}`)}>
+                        <div className="flex flex-col gap-2">
+                          <Button size="sm" variant="secondary" onClick={() => router.push(`/products/${p.id}`)} className="w-full">
                             Detalhes
                           </Button>
-                          <Button size="sm" onClick={() => handleAddToCart(p)}>
+                          <Button size="sm" onClick={() => handleAddToCart(p)} className="w-full">
                             Adicionar
                           </Button>
                         </div>
@@ -234,7 +223,9 @@ export default function Products() {
                 )}
               </div>
               <div className="p-3 md:p-4">
-                <Button variant="outline" className="w-full" onClick={overlay.hide}>Fechar</Button>
+                <Button variant="outline" className="w-full" onClick={overlay.hide}>
+                  Fechar
+                </Button>
               </div>
             </div>
           </div>
@@ -244,19 +235,11 @@ export default function Products() {
         <div className="text-center mb-12 slide-up">
           <div className="flex flex-col gap-4 items-center justify-between mb-8">
             <div className="flex-1 text-center">
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4 transition-colors duration-300">
-                Nossos Produtos
-              </h1>
-              <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 transition-colors duration-300">
-                Produtos de qualidade para sua saúde e bem-estar
-              </p>
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4 transition-colors duration-300">Nossos Produtos</h1>
+              <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 transition-colors duration-300">Produtos de qualidade para sua saúde e bem-estar</p>
             </div>
-            
-            <Button
-              onClick={() => setIsCartOpen(true)}
-              variant="outline"
-              className="flex items-center gap-2 w-full sm:w-auto"
-            >
+
+            <Button onClick={() => setIsCartOpen(true)} variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
               <ShoppingCart className="h-4 w-4" />
               Carrinho ({getItemCount()})
               {getItemCount() > 0 && (
@@ -275,12 +258,10 @@ export default function Products() {
               <div className="flex items-center gap-2">
                 <ShoppingCart className="h-5 w-5 text-green-600 dark:text-green-400" />
                 <span className="font-medium text-green-800 dark:text-green-100 transition-colors duration-300">
-                  {getItemCount()} {getItemCount() === 1 ? 'item' : 'itens'} no carrinho
+                  {getItemCount()} {getItemCount() === 1 ? "item" : "itens"} no carrinho
                 </span>
               </div>
-              <div className="text-green-800 dark:text-green-100 font-bold transition-colors duration-300">
-                Total: R$ {total.toFixed(2)}
-              </div>
+              <div className="text-green-800 dark:text-green-100 font-bold transition-colors duration-300">Total: R$ {total.toFixed(2)}</div>
             </div>
           </div>
         )}
@@ -305,7 +286,7 @@ export default function Products() {
               <Filter className="h-4 w-4 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Filtros:</span>
             </div>
-            
+
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="w-full sm:w-48 bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border-white/40 dark:border-gray-700/40 text-gray-900 dark:text-white transition-colors duration-300">
                 <SelectValue placeholder="Categoria" />
@@ -353,7 +334,7 @@ export default function Products() {
         {/* Former floating suggestions panel removed in favor of full-width section above */}
 
         {/* Produtos organizados por categoria */}
-        {selectedCategory === 'Todos' ? (
+        {selectedCategory === "Todos" ? (
           <div className="space-y-8">
             {Object.entries(productsByCategory).map(([category, categoryProducts]) => (
               <div key={category}>
@@ -361,19 +342,17 @@ export default function Products() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {categoryProducts.map((product) => {
                     const cartQuantity = getItemQuantity(product.id);
-                    
+
                     return (
-                      <Card key={product.id} className="h-full flex flex-col hover:shadow-2xl transition-shadow bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border border-white/40 dark:border-gray-700/40">
+                      <Card
+                        key={product.id}
+                        className="h-full flex flex-col hover:shadow-2xl transition-shadow bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border border-white/40 dark:border-gray-700/40">
                         <CardHeader>
-                          <div onClick={() => router.push(`/products/${product.id}`)} className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer">
+                          <div
+                            onClick={() => router.push(`/products/${product.id}`)}
+                            className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer">
                             {product.image ? (
-                              <Image
-                                src={product.image}
-                                alt={product.name}
-                                fill
-                                className="object-contain p-2"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                              />
+                              <Image src={product.image} alt={product.name} fill className="object-contain p-2" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-gray-400">
                                 <span>Sem imagem</span>
@@ -382,7 +361,9 @@ export default function Products() {
                           </div>
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex-1">
-                              <CardTitle className="text-lg leading-tight cursor-pointer hover:underline" onClick={() => router.push(`/products/${product.id}`)}>{product.name}</CardTitle>
+                              <CardTitle className="text-lg leading-tight cursor-pointer hover:underline" onClick={() => router.push(`/products/${product.id}`)}>
+                                {product.name}
+                              </CardTitle>
                               <Badge variant="outline" className="text-xs mt-1">
                                 {product.category}
                               </Badge>
@@ -394,64 +375,44 @@ export default function Products() {
                             )}
                           </div>
                         </CardHeader>
-                        
+
                         <CardContent className="flex-1 flex flex-col">
                           <div className="mb-3">
                             <button className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline" onClick={() => toggleExpanded(product.id)}>
                               {expanded[product.id] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                              {expanded[product.id] ? 'Esconder descrição' : 'Ver descrição'}
+                              {expanded[product.id] ? "Esconder descrição" : "Ver descrição"}
                             </button>
-                            {expanded[product.id] && (
-                              <CardDescription className="mt-2 text-sm">
-                                {product.description}
-                              </CardDescription>
-                            )}
+                            {expanded[product.id] && <CardDescription className="mt-2 text-sm">{product.description}</CardDescription>}
                           </div>
-                          
+
                           <div className="space-y-3">
                             <div className="flex items-center gap-2">
-                              <span className="text-xl font-bold text-green-600">
-                                R$ {product.price.toFixed(2)}
-                              </span>
+                              <span className="text-xl font-bold text-green-600">R$ {product.price.toFixed(2)}</span>
                             </div>
-                            
+
                             <div className="flex items-center justify-between">
-                              <span className={`text-sm font-medium ${
-                                product.stock > 0 ? "text-green-600" : "text-red-600"
-                              }`}>
+                              <span className={`text-sm font-medium ${product.stock > 0 ? "text-green-600" : "text-red-600"}`}>
                                 {product.stock > 0 ? `Em estoque (${product.stock})` : "Fora de estoque"}
                               </span>
                               <Button variant="ghost" size="sm" onClick={() => router.push(`/products/${product.id}`)}>
                                 <Info className="h-4 w-4 mr-1" /> Detalhes
                               </Button>
                             </div>
-                            
+
                             {product.stock > 0 ? (
                               cartQuantity > 0 ? (
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                     <span className="font-medium">{cartQuantity} no carrinho</span>
                                   </div>
-                                  <span className="text-sm text-gray-600">
-                                    R$ {(product.price * cartQuantity).toFixed(2)}
-                                  </span>
+                                  <span className="text-sm text-gray-600">R$ {(product.price * cartQuantity).toFixed(2)}</span>
                                 </div>
                               ) : null
                             ) : null}
-                            
-                            <Button
-                              size="sm"
-                              onClick={(e) => handleAddToCart(product, e)}
-                              disabled={product.stock <= 0 || isItemLoading(product.id)}
-                              className="w-full"
-                            >
-                              {isItemLoading(product.id) ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <ShoppingCart className="h-4 w-4 mr-2" />
-                              )}
-                              {isItemLoading(product.id) ? 'Adicionando...' : 
-                               product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
+
+                            <Button size="sm" onClick={(e) => handleAddToCart(product, e)} disabled={product.stock <= 0 || isItemLoading(product.id)} className="w-full">
+                              {isItemLoading(product.id) ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ShoppingCart className="h-4 w-4 mr-2" />}
+                              {isItemLoading(product.id) ? "Adicionando..." : product.stock > 0 ? "Adicionar ao Carrinho" : "Indisponível"}
                             </Button>
                           </div>
                         </CardContent>
@@ -466,19 +427,17 @@ export default function Products() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredAndSortedProducts.map((product) => {
               const cartQuantity = getItemQuantity(product.id);
-              
+
               return (
-                <Card key={product.id} className="h-full flex flex-col hover:shadow-2xl transition-shadow bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border border-white/40 dark:border-gray-700/40">
+                <Card
+                  key={product.id}
+                  className="h-full flex flex-col hover:shadow-2xl transition-shadow bg-white/60 dark:bg-gray-800/60 backdrop-blur-md border border-white/40 dark:border-gray-700/40">
                   <CardHeader>
-                    <div onClick={() => router.push(`/products/${product.id}`)} className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer">
+                    <div
+                      onClick={() => router.push(`/products/${product.id}`)}
+                      className="relative w-full h-48 mb-4 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden cursor-pointer">
                       {product.image ? (
-                        <Image
-                          src={product.image}
-                          alt={product.name}
-                          fill
-                          className="object-contain p-2"
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                        />
+                        <Image src={product.image} alt={product.name} fill className="object-contain p-2" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400">
                           <span>Sem imagem</span>
@@ -487,7 +446,9 @@ export default function Products() {
                     </div>
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
-                        <CardTitle className="text-lg leading-tight cursor-pointer hover:underline" onClick={() => router.push(`/products/${product.id}`)}>{product.name}</CardTitle>
+                        <CardTitle className="text-lg leading-tight cursor-pointer hover:underline" onClick={() => router.push(`/products/${product.id}`)}>
+                          {product.name}
+                        </CardTitle>
                         <Badge variant="outline" className="text-xs mt-1">
                           {product.category}
                         </Badge>
@@ -499,64 +460,44 @@ export default function Products() {
                       )}
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent className="flex-1 flex flex-col">
                     <div className="mb-3">
                       <button className="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline" onClick={() => toggleExpanded(product.id)}>
                         {expanded[product.id] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                        {expanded[product.id] ? 'Esconder descrição' : 'Ver descrição'}
+                        {expanded[product.id] ? "Esconder descrição" : "Ver descrição"}
                       </button>
-                      {expanded[product.id] && (
-                        <CardDescription className="mt-2 text-sm">
-                          {product.description}
-                        </CardDescription>
-                      )}
+                      {expanded[product.id] && <CardDescription className="mt-2 text-sm">{product.description}</CardDescription>}
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold text-green-600">
-                          R$ {product.price.toFixed(2)}
-                        </span>
+                        <span className="text-xl font-bold text-green-600">R$ {product.price.toFixed(2)}</span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between">
-                        <span className={`text-sm font-medium ${
-                          product.stock > 0 ? "text-green-600" : "text-red-600"
-                        }`}>
+                        <span className={`text-sm font-medium ${product.stock > 0 ? "text-green-600" : "text-red-600"}`}>
                           {product.stock > 0 ? `Em estoque (${product.stock})` : "Fora de estoque"}
                         </span>
                         <Button variant="ghost" size="sm" onClick={() => router.push(`/products/${product.id}`)}>
                           <Info className="h-4 w-4 mr-1" /> Detalhes
                         </Button>
                       </div>
-                      
+
                       {product.stock > 0 ? (
                         cartQuantity > 0 ? (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{cartQuantity} no carrinho</span>
                             </div>
-                            <span className="text-sm text-gray-600">
-                              R$ {(product.price * cartQuantity).toFixed(2)}
-                            </span>
+                            <span className="text-sm text-gray-600">R$ {(product.price * cartQuantity).toFixed(2)}</span>
                           </div>
                         ) : null
                       ) : null}
-                      
-                      <Button
-                        size="sm"
-                        onClick={(e) => handleAddToCart(product, e)}
-                        disabled={product.stock <= 0 || isItemLoading(product.id)}
-                        className="w-full"
-                      >
-                        {isItemLoading(product.id) ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <ShoppingCart className="h-4 w-4 mr-2" />
-                        )}
-                        {isItemLoading(product.id) ? 'Adicionando...' : 
-                         product.stock > 0 ? 'Adicionar ao Carrinho' : 'Indisponível'}
+
+                      <Button size="sm" onClick={(e) => handleAddToCart(product, e)} disabled={product.stock <= 0 || isItemLoading(product.id)} className="w-full">
+                        {isItemLoading(product.id) ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <ShoppingCart className="h-4 w-4 mr-2" />}
+                        {isItemLoading(product.id) ? "Adicionando..." : product.stock > 0 ? "Adicionar ao Carrinho" : "Indisponível"}
                       </Button>
                     </div>
                   </CardContent>
@@ -577,8 +518,7 @@ export default function Products() {
                 setSelectedCategory("Todos");
                 setShowOnlyInStock(false);
               }}
-              className="mt-4"
-            >
+              className="mt-4">
               Limpar Filtros
             </Button>
           </div>
@@ -586,23 +526,16 @@ export default function Products() {
 
         {/* Disclaimer */}
         <div className="mt-12 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-6 transition-colors duration-300">
-          <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-100 mb-2 transition-colors duration-300">
-            Aviso Importante
-          </h3>
+          <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-100 mb-2 transition-colors duration-300">Aviso Importante</h3>
           <p className="text-yellow-700 dark:text-yellow-200 transition-colors duration-300">
-            Este é um site de demonstração. Todos os produtos e preços mostrados são apenas 
-            para fins demonstrativos. Consulte sempre um profissional de saúde antes de tomar 
+            Este é um site de demonstração. Todos os produtos e preços mostrados são apenas para fins demonstrativos. Consulte sempre um profissional de saúde antes de tomar
             qualquer medicamento. Para prescrições reais e orientação médica, visite uma farmácia licenciada.
           </p>
         </div>
       </div>
-      
+
       {/* Cart Component */}
-      <Cart 
-        products={products} 
-        isOpen={isCartOpen} 
-        onClose={() => setIsCartOpen(false)} 
-      />
+      <Cart products={products} isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </div>
   );
 }
