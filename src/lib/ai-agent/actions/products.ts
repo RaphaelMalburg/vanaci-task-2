@@ -219,7 +219,13 @@ export const listRecommendedProductsTool = tool({
       };
     } catch (error) {
       logger.error("Erro ao buscar recomendações", { symptomOrNeed, error: error instanceof Error ? error.message : error });
-      throw new Error(`Erro ao buscar recomendações: ${error instanceof Error ? error.message : "Erro desconhecido"}`);
+      
+      // Retornar resposta de erro em vez de lançar exceção
+      return {
+        success: false,
+        message: `Não foi possível buscar produtos para "${symptomOrNeed}" no momento. Tente novamente ou consulte um farmacêutico.`,
+        data: { products: [], symptomOrNeed, error: true },
+      };
     }
   },
 });
