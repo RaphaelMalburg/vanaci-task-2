@@ -108,7 +108,6 @@ export class SessionService {
         await prisma.chatMessage.create({
           data: {
             sessionId,
-            userId,
             role: message.role,
             content: message.content,
             toolCalls: message.toolCalls as any,
