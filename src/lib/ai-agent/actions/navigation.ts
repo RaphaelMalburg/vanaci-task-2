@@ -16,7 +16,7 @@ export const redirectToProductTool = tool({
       // Usar URL absoluta para funcionar no contexto do servidor
       const BASE_URL = process.env.NODE_ENV === 'production'
   ? process.env.NEXT_PUBLIC_APP_URL || 'https://farmacia-vanaci.vercel.app'
-  : 'http://localhost:3000';
+  : 'http://localhost:3007';
       
       // Primeiro, tentar buscar por ID direto
       let response = await fetch(`${BASE_URL}/api/products/${productIdentifier}`);
