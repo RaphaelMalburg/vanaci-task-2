@@ -138,8 +138,8 @@ export async function POST(request: NextRequest) {
               } else if (chunk.type === 'tool-result') {
                 console.log(`🔧 Tool result recebido para ${chunk.toolCallId}:`, {
                   toolCallId: chunk.toolCallId,
-                  result: chunk.result ? 'presente' : 'ausente',
-                  resultType: typeof chunk.result
+                  result: ('result' in chunk && chunk.result) ? 'presente' : 'ausente',
+                  resultType: 'result' in chunk ? typeof chunk.result : 'undefined'
                 });
                 
                 try {
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
                     type: 'tool_result',
                     toolResult: {
                       toolCallId: chunk.toolCallId,
-                      result: chunk.result
+                      result: 'result' in chunk ? chunk.result : null
                     },
                     sessionId: finalSessionId,
                     timestamp: new Date().toISOString(),
