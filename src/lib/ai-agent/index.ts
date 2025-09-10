@@ -54,11 +54,13 @@ const SYSTEM_PROMPT = `Você é um assistente virtual especializado da Farmácia
 - Seja direto e objetivo, evite mensagens muito longas
 - Confirme ações de forma simples (ex: "Produto adicionado ao carrinho!")
 - Use emojis moderadamente para tornar a conversa mais amigável
-- **JAMAIS mencione detalhes técnicos como IDs, verificações de sistema, processos internos ou ferramentas**
-- **NUNCA informe sobre buscas, consultas ou verificações que está fazendo**
-- **NÃO use termos como "vou buscar", "verificando", "consultando sistema", "encontrei no banco de dados", "foram retornados X produtos", "com base nas ferramentas usadas"**
-- **Seja completamente natural, como se fosse um atendente humano experiente**
+- **🚨 CRÍTICO: JAMAIS mencione detalhes técnicos como IDs, verificações de sistema, processos internos ou ferramentas 🚨**
+- **🚨 NUNCA informe sobre buscas, consultas ou verificações que está fazendo 🚨**
+- **🚨 NÃO use termos como "vou buscar", "verificando", "consultando sistema", "encontrei no banco de dados", "foram retornados X produtos", "com base nas ferramentas usadas", "executando", "processando" 🚨**
+- **🚨 NUNCA mencione "overlay", "sistema", "banco de dados", "API", "ferramenta", "busca", "consulta", "verificação" 🚨**
+- **Seja completamente natural, como se fosse um atendente humano experiente que já conhece todos os produtos**
 - **Responda sempre como se já soubesse as informações, sem explicar como as obteve**
+- **Fale sobre produtos como se os tivesse na sua frente, não como resultado de uma busca**
 - **Para consultas médicas, seja empático e focado no bem-estar do cliente**
 - **Quando mostrar produtos, inclua uma descrição visual atrativa e informações relevantes**
 - **🚨 CRÍTICO - NUNCA TRANSFORME CAMINHOS DE IMAGEM EM URLs COMPLETAS 🚨**
@@ -483,6 +485,8 @@ export class PharmacyAIAgent {
       // Processar tool calls do resultado com suporte a múltiplas execuções
       let executionCount = 0;
       const maxExecutions = 3; // Limite para evitar loops infinitos
+      let lastProductSearchResult: any = null;
+      const productSearchTools = ['search_products', 'get_promotional_products', 'list_recommended_products', 'get_best_sellers'];
 
       for await (const part of result.fullStream) {
         if (part.type === "tool-call") {
@@ -506,12 +510,14 @@ export class PharmacyAIAgent {
               result: toolResult,
             });
 
-            // Adicionar resultado da tool à sessão
-            session.messages.push({
-              role: "assistant",
-              content: `Tool ${part.toolName}: ${JSON.stringify(toolResult)}`,
-              timestamp: new Date(),
-            } as AgentMessage);
+            // NÃO adicionar resultado da tool à sessão para evitar vazamento de informações técnicas
+            // Apenas fazer log interno para debugging
+            
+            // Detectar tools de busca de produtos e armazenar resultado
+            if (productSearchTools.includes(part.toolName)) {
+              lastProductSearchResult = toolResult;
+              logger.debug("Tool de busca de produtos detectada", { toolName: part.toolName, productCount: toolResult?.data?.products?.length || 0 });
+            }
 
             // Tools serão executadas naturalmente pelo LLM conforme o prompt
           } catch (error) {
@@ -520,12 +526,8 @@ export class PharmacyAIAgent {
               error: error instanceof Error ? error.message : error,
             });
 
-            // Adicionar erro da tool à sessão
-            session.messages.push({
-              role: "assistant",
-              content: `Tool ${part.toolName} Error: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
-              timestamp: new Date(),
-            } as AgentMessage);
+            // NÃO adicionar erro da tool à sessão para evitar vazamento de informações técnicas
+            // Apenas fazer log interno
           }
         } else if (part.type === "text-delta") {
           // Log silencioso para text-delta
@@ -534,7 +536,30 @@ export class PharmacyAIAgent {
         }
       }
 
-      // Remover execução automática - deixar o LLM executar show_multiple_products naturalmente
+      // Forçar execução de show_multiple_products se uma tool de busca foi executada
+      if (lastProductSearchResult && lastProductSearchResult.data && lastProductSearchResult.data.products) {
+        const products = lastProductSearchResult.data.products;
+        if (products.length > 0) {
+          try {
+            const productIds = products.map((p: any) => p.id).filter(Boolean);
+            if (productIds.length > 0) {
+              logger.debug("Executando show_multiple_products automaticamente", { productIds });
+              const showMultipleTool = allTools.show_multiple_products;
+              if (showMultipleTool && showMultipleTool.execute) {
+                await (showMultipleTool.execute as any)({
+                  productIds,
+                  title: "Produtos Encontrados",
+                  query: processedMessage
+                });
+                logger.debug("show_multiple_products executado com sucesso", { productCount: productIds.length });
+              }
+            }
+          } catch (error) {
+            logger.error("Erro ao executar show_multiple_products automaticamente", { error });
+          }
+        }
+      }
+
       logger.debug("Processamento concluído", {
         sessionId,
         totalMessages: session.messages.length,
