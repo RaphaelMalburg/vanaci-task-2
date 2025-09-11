@@ -394,10 +394,13 @@ function getSearchTermsForSymptom(symptom: string): string[] {
     barato: ["barato", "económico", "promoção", "desconto", "oferta"],
   };
 
-  // Buscar correspondências exatas primeiro
-  for (const [key, terms] of Object.entries(symptomMap)) {
+  // Ordenar as chaves por comprimento, da mais longa para a mais curta
+  const sortedKeys = Object.keys(symptomMap).sort((a, b) => b.length - a.length);
+
+  // Buscar correspondências, priorizando as mais específicas
+  for (const key of sortedKeys) {
     if (symptom.includes(key)) {
-      return terms;
+      return symptomMap[key];
     }
   }
 

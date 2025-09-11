@@ -1,7 +1,7 @@
-2025-09-10T14:52:41.813Z [info] 📡 Stream result obtido: true
-2025-09-10T14:52:41.814Z [info] 🚀 Iniciando stream para sessão: session_1756746412255_oi9mxcmg9
-2025-09-10T14:52:41.814Z [info] 📡 Stream result obtido: true
-2025-09-10T14:52:41.814Z [info] 📡 Stream result keys: [
+2025-09-11T10:45:52.356Z [info] 📡 Stream result obtido: true
+2025-09-11T10:45:52.356Z [info] 🚀 Iniciando stream para sessão: session_1756746412255_oi9mxcmg9
+2025-09-11T10:45:52.356Z [info] 📡 Stream result obtido: true
+2025-09-11T10:45:52.357Z [info] 📡 Stream result keys: [
   '_totalUsage',
   '_finishReason',
   '_steps',
@@ -12,22 +12,22 @@
   'closeStream',
   'baseStream'
 ]
-2025-09-10T14:52:41.815Z [info] 🔧 Tool calls promise detectado no resultado inicial
-2025-09-10T14:52:41.816Z [info] 🔧 Tool calls no resultado inicial: 1
-2025-09-10T14:52:41.817Z [info] 🛠️ Tool Call 0: {
+2025-09-11T10:45:52.357Z [info] 🔧 Tool calls promise detectado no resultado inicial
+2025-09-11T10:45:52.359Z [info] 🔧 Tool calls no resultado inicial: 1
+2025-09-11T10:45:52.359Z [info] 🛠️ Tool Call 0: {
   toolName: 'list_recommended_products',
-  toolCallId: 'call_dhHEADLsGTh0yw9PGYeB6W0w'
+  toolCallId: 'call_KV4irpkUpSe8dxfX0hiQ8pVB'
 }
-2025-09-10T14:52:41.817Z [info] 🌊 Iniciando iteração do fullStream...
-2025-09-10T14:52:41.817Z [info] 🔄 Processando chunk 1 do fullStream: { type: 'start', hasText: false, hasToolCall: false, chunkData: 'N/A' }
-2025-09-10T14:52:41.818Z [info] ❓ Chunk tipo desconhecido: start { type: 'start' }
-2025-09-10T14:52:41.818Z [info] 🔄 Processando chunk 2 do fullStream: {
+2025-09-11T10:45:52.359Z [info] 🌊 Iniciando iteração do fullStream...
+2025-09-11T10:45:52.360Z [info] 🔄 Processando chunk 1 do fullStream: { type: 'start', hasText: false, hasToolCall: false, chunkData: 'N/A' }
+2025-09-11T10:45:52.360Z [info] ❓ Chunk tipo desconhecido: start { type: 'start' }
+2025-09-11T10:45:52.360Z [info] 🔄 Processando chunk 2 do fullStream: {
   type: 'start-step',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.819Z [info] ❓ Chunk tipo desconhecido: start-step {
+2025-09-11T10:45:52.361Z [info] ❓ Chunk tipo desconhecido: start-step {
   type: 'start-step',
   request: {
     body: {
@@ -59,320 +59,322 @@
     }
   ]
 }
-2025-09-10T14:52:41.819Z [info] 🔄 Processando chunk 3 do fullStream: {
+2025-09-11T10:45:52.362Z [info] 🔄 Processando chunk 3 do fullStream: {
   type: 'reasoning-start',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.820Z [info] ❓ Chunk tipo desconhecido: reasoning-start {
+2025-09-11T10:45:52.362Z [info] ❓ Chunk tipo desconhecido: reasoning-start {
   type: 'reasoning-start',
-  id: 'rs_68c190ada78481a39ce8ac77c336c3260af2d81964c6d3a8:0',
+  id: 'rs_68c2a8561b84819782298e218be5a580047738df5132b2ed:0',
   providerMetadata: {
     openai: {
-      itemId: 'rs_68c190ada78481a39ce8ac77c336c3260af2d81964c6d3a8',
+      itemId: 'rs_68c2a8561b84819782298e218be5a580047738df5132b2ed',
       reasoningEncryptedContent: null
     }
   }
 }
-2025-09-10T14:52:41.820Z [info] 🔄 Processando chunk 4 do fullStream: {
+2025-09-11T10:45:52.362Z [info] 🔄 Processando chunk 4 do fullStream: {
   type: 'reasoning-end',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.820Z [info] ❓ Chunk tipo desconhecido: reasoning-end {
+2025-09-11T10:45:52.362Z [info] ❓ Chunk tipo desconhecido: reasoning-end {
   type: 'reasoning-end',
-  id: 'rs_68c190ada78481a39ce8ac77c336c3260af2d81964c6d3a8:0',
+  id: 'rs_68c2a8561b84819782298e218be5a580047738df5132b2ed:0',
   providerMetadata: {
     openai: {
-      itemId: 'rs_68c190ada78481a39ce8ac77c336c3260af2d81964c6d3a8',
+      itemId: 'rs_68c2a8561b84819782298e218be5a580047738df5132b2ed',
       reasoningEncryptedContent: null
     }
   }
 }
-2025-09-10T14:52:41.820Z [info] 🔄 Processando chunk 5 do fullStream: {
+2025-09-11T10:45:52.363Z [info] 🔄 Processando chunk 5 do fullStream: {
   type: 'tool-input-start',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.820Z [info] ❓ Chunk tipo desconhecido: tool-input-start {
+2025-09-11T10:45:52.363Z [info] ❓ Chunk tipo desconhecido: tool-input-start {
   type: 'tool-input-start',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   toolName: 'list_recommended_products',
   dynamic: false
 }
-2025-09-10T14:52:41.821Z [info] 🔄 Processando chunk 6 do fullStream: {
+2025-09-11T10:45:52.363Z [info] 🔄 Processando chunk 6 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.821Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.363Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: '{"'
 }
-2025-09-10T14:52:41.822Z [info] 🔄 Processando chunk 7 do fullStream: {
+2025-09-11T10:45:52.364Z [info] 🔄 Processando chunk 7 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.822Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.364Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: 'sym'
 }
-2025-09-10T14:52:41.822Z [info] 🔄 Processando chunk 8 do fullStream: {
+2025-09-11T10:45:52.364Z [info] 🔄 Processando chunk 8 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.822Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.364Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: 'ptom'
 }
-2025-09-10T14:52:41.822Z [info] 🔄 Processando chunk 9 do fullStream: {
+2025-09-11T10:45:52.364Z [info] 🔄 Processando chunk 9 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.822Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.364Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: 'Or'
 }
-2025-09-10T14:52:41.823Z [info] 🔄 Processando chunk 10 do fullStream: {
+2025-09-11T10:45:52.365Z [info] 🔄 Processando chunk 10 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.823Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.365Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: 'Need'
 }
-2025-09-10T14:52:41.823Z [info] 🔄 Processando chunk 11 do fullStream: {
+2025-09-11T10:45:52.365Z [info] 🔄 Processando chunk 11 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.823Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.365Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: '":"'
 }
-2025-09-10T14:52:41.824Z [info] 🔄 Processando chunk 12 do fullStream: {
+2025-09-11T10:45:52.365Z [info] 🔄 Processando chunk 12 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.824Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.365Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: 'dor'
 }
-2025-09-10T14:52:41.824Z [info] 🔄 Processando chunk 13 do fullStream: {
+2025-09-11T10:45:52.366Z [info] 🔄 Processando chunk 13 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.824Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.366Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: ' no'
 }
-2025-09-10T14:52:41.824Z [info] 🔄 Processando chunk 14 do fullStream: {
+2025-09-11T10:45:52.366Z [info] 🔄 Processando chunk 14 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.825Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.366Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: ' jo'
 }
-2025-09-10T14:52:41.825Z [info] 🔄 Processando chunk 15 do fullStream: {
+2025-09-11T10:45:52.366Z [info] 🔄 Processando chunk 15 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.825Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.366Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: 'elho'
 }
-2025-09-10T14:52:41.825Z [info] 🔄 Processando chunk 16 do fullStream: {
+2025-09-11T10:45:52.367Z [info] 🔄 Processando chunk 16 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.825Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.367Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: '","'
 }
-2025-09-10T14:52:41.825Z [info] 🔄 Processando chunk 17 do fullStream: {
+2025-09-11T10:45:52.367Z [info] 🔄 Processando chunk 17 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.825Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.367Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: 'limit'
 }
-2025-09-10T14:52:41.826Z [info] 🔄 Processando chunk 18 do fullStream: {
+2025-09-11T10:45:52.367Z [info] 🔄 Processando chunk 18 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.826Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.367Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: '":'
 }
-2025-09-10T14:52:41.826Z [info] 🔄 Processando chunk 19 do fullStream: {
+2025-09-11T10:45:52.367Z [info] 🔄 Processando chunk 19 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.826Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.368Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: '5'
 }
-2025-09-10T14:52:41.826Z [info] 🔄 Processando chunk 20 do fullStream: {
+2025-09-11T10:45:52.368Z [info] 🔄 Processando chunk 20 do fullStream: {
   type: 'tool-input-delta',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.826Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
+2025-09-11T10:45:52.368Z [info] ❓ Chunk tipo desconhecido: tool-input-delta {
   type: 'tool-input-delta',
-  id: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   delta: '}'
 }
-2025-09-10T14:52:41.827Z [info] 🔄 Processando chunk 21 do fullStream: {
+2025-09-11T10:45:52.368Z [info] 🔄 Processando chunk 21 do fullStream: {
   type: 'tool-input-end',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.827Z [info] ❓ Chunk tipo desconhecido: tool-input-end { type: 'tool-input-end', id: 'call_dhHEADLsGTh0yw9PGYeB6W0w' }
-2025-09-10T14:52:41.827Z [info] 🔄 Processando chunk 22 do fullStream: {
+2025-09-11T10:45:52.368Z [info] ❓ Chunk tipo desconhecido: tool-input-end { type: 'tool-input-end', id: 'call_KV4irpkUpSe8dxfX0hiQ8pVB' }
+2025-09-11T10:45:52.369Z [info] 🔄 Processando chunk 22 do fullStream: {
   type: 'tool-call',
   hasText: false,
   hasToolCall: true,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.829Z [info] 🛠️ Processando tool call 1: {
+2025-09-11T10:45:52.369Z [info] 🛠️ Processando tool call 1: {
   toolName: 'list_recommended_products',
-  toolCallId: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+  toolCallId: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   args: { symptomOrNeed: 'dor no joelho', limit: 5 },
   argsKeys: [ 'symptomOrNeed', 'limit' ]
 }
-2025-09-10T14:52:41.829Z [info] 📤 Enviando tool call data: {"type":"tool_call","toolCall":{"type":"tool-call","toolCallId":"call_dhHEADLsGTh0yw9PGYeB6W0w","toolName":"list_recommended_products","input":{"symptomOrNeed":"dor no joelho","limit":5},"providerMeta...
-2025-09-10T14:52:41.829Z [info] ✅ Tool call 1 enviado com sucesso
-2025-09-10T14:52:41.829Z [info] 🔄 Processando chunk 23 do fullStream: {
+2025-09-11T10:45:52.369Z [info] 📤 Enviando tool call data: {"type":"tool_call","toolCall":{"type":"tool-call","toolCallId":"call_KV4irpkUpSe8dxfX0hiQ8pVB","toolName":"list_recommended_products","input":{"symptomOrNeed":"dor no joelho","limit":5},"providerMeta...
+2025-09-11T10:45:52.371Z [info] ✅ Tool call 1 enviado com sucesso
+2025-09-11T10:45:52.376Z [info] 🔄 Processando chunk 23 do fullStream: {
   type: 'tool-result',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.829Z [info] 🔧 Tool result recebido para call_dhHEADLsGTh0yw9PGYeB6W0w: {
-  toolCallId: 'call_dhHEADLsGTh0yw9PGYeB6W0w',
+2025-09-11T10:45:52.376Z [info] 🔧 Tool result recebido para call_KV4irpkUpSe8dxfX0hiQ8pVB: {
+  toolCallId: 'call_KV4irpkUpSe8dxfX0hiQ8pVB',
   result: 'ausente',
   resultType: 'undefined'
 }
-2025-09-10T14:52:41.830Z [info] 📤 Enviando tool result data para call_dhHEADLsGTh0yw9PGYeB6W0w
-2025-09-10T14:52:41.830Z [info] ✅ Tool result enviado com sucesso para call_dhHEADLsGTh0yw9PGYeB6W0w
-2025-09-10T14:52:41.830Z [info] 🔄 Processando chunk 24 do fullStream: {
+2025-09-11T10:45:52.376Z [info] 📤 Enviando tool result data para call_KV4irpkUpSe8dxfX0hiQ8pVB
+2025-09-11T10:45:52.376Z [info] ✅ Tool result enviado com sucesso para call_KV4irpkUpSe8dxfX0hiQ8pVB
+2025-09-11T10:45:52.376Z [info] 🔄 Processando chunk 24 do fullStream: {
   type: 'finish-step',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.830Z [info] ❓ Chunk tipo desconhecido: finish-step {
+2025-09-11T10:45:52.377Z [info] ❓ Chunk tipo desconhecido: finish-step {
   type: 'finish-step',
   finishReason: 'tool-calls',
   usage: {
-    inputTokens: 7575,
-    outputTokens: 864,
-    totalTokens: 8439,
-    reasoningTokens: 832,
+    inputTokens: 10267,
+    outputTokens: 800,
+    totalTokens: 11067,
+    reasoningTokens: 768,
     cachedInputTokens: 0
   },
   providerMetadata: {
     openai: {
-      responseId: 'resp_68c190acae2081a39c22e33c5d6caa680af2d81964c6d3a8'
+      responseId: 'resp_68c2a855398c8197972ac31c6b0b3ad5047738df5132b2ed'
     }
   },
   response: {
-    id: 'resp_68c190acae2081a39c22e33c5d6caa680af2d81964c6d3a8',
-    timestamp: 2025-09-10T14:52:28.000Z,
+    id: 'resp_68c2a855398c8197972ac31c6b0b3ad5047738df5132b2ed',
+    timestamp: 2025-09-11T10:45:41.000Z,
     modelId: 'gpt-5-nano-2025-08-07',
     headers: {
       'alt-svc': 'h3=":443"; ma=86400',
       'cf-cache-status': 'DYNAMIC',
-      'cf-ray': '97cfbfd55d1082de-IAD',
+      'cf-ray': '97d693b32d733725-IAD',
       connection: 'keep-alive',
       'content-type': 'text/event-stream; charset=utf-8',
-      date: 'Wed, 10 Sep 2025 14:52:28 GMT',
+      date: 'Thu, 11 Sep 2025 10:45:41 GMT',
       'openai-organization': 'vanaciprime',
-      'openai-processing-ms': '259',
+      'openai-processing-ms': '290',
       'openai-project': 'proj_mK94ke9oHqgykXFfyMAf8tOb',
       'openai-version': '2020-10-01',
       server: 'cloudflare',
-      'set-cookie': '_cfuvid=Gs4eUoy0IoY5xhH9V7eWdGBYUEJ3_KpNhnAR6YmUk2Q-1757515948904-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
+      'set-cookie': '_cfuvid=7C1mesyFBipDcUoLJDfZh4QPP5ogg9dSt8hJ8MVIDjg-1757587541501-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None',
       'strict-transport-security': 'max-age=31536000; includeSubDomains; preload',
       'transfer-encoding': 'chunked',
       'x-content-type-options': 'nosniff',
-      'x-envoy-upstream-service-time': '273',
-      'x-request-id': 'req_6af167d16312bcad8c14d35d516380f7'
+      'x-envoy-upstream-service-time': '303',
+      'x-request-id': 'req_6fb48e006948ff8d84fe7186e9f00a52'
     }
   }
 }
-2025-09-10T14:52:41.830Z [info] 🔄 Processando chunk 25 do fullStream: {
+2025-09-11T10:45:52.377Z [info] 🔄 Processando chunk 25 do fullStream: {
   type: 'finish',
   hasText: false,
   hasToolCall: false,
   chunkData: 'N/A'
 }
-2025-09-10T14:52:41.830Z [info] ❓ Chunk tipo desconhecido: finish {
+2025-09-11T10:45:52.377Z [info] ❓ Chunk tipo desconhecido: finish {
   type: 'finish',
   finishReason: 'tool-calls',
   totalUsage: {
-    inputTokens: 7575,
-    outputTokens: 864,
-    totalTokens: 8439,
-    reasoningTokens: 832,
+    inputTokens: 10267,
+    outputTokens: 800,
+    totalTokens: 11067,
+    reasoningTokens: 768,
     cachedInputTokens: 0
   }
 }
-2025-09-10T14:52:41.831Z [info] 📊 Total de chunks de texto processados: 0
-2025-09-10T14:52:41.831Z [info] 📊 Total de tool calls processados: 1
-2025-09-10T14:52:41.831Z [info] 🔧 Tool calls foram processados: true
-2025-09-10T14:52:41.831Z [info] 📊 Total de chunks processados: 25
-2025-09-10T14:52:41.831Z [info] 🔄 Implementando solução híbrida: forçando resposta textual após tool calls
-2025-09-10T14:52:27.065Z [info] 🚀 API ai-chat: Recebendo requisição POST
-2025-09-10T14:52:27.067Z [info] 📦 Dados recebidos: {
-  "message": "estou com dor no joelho o que tomo",
+2025-09-11T10:45:52.378Z [info] 📊 Total de chunks de texto processados: 0
+2025-09-11T10:45:52.378Z [info] 📊 Total de tool calls processados: 1
+2025-09-11T10:45:52.378Z [info] 🔧 Tool calls foram processados: true
+2025-09-11T10:45:52.378Z [info] 📊 Total de chunks processados: 25
+2025-09-11T10:45:52.378Z [info] 🔄 Implementando solução híbrida: forçando resposta textual após tool calls
+2025-09-11T10:45:53.671Z [info] 🔧 [Global Context] sessionId definido: session_1756746412255_oi9mxcmg9
+2025-09-11T10:45:38.491Z [info] Warning: NODE_ENV was incorrectly set to "development", this value is being overridden to "production"
+2025-09-11T10:45:38.848Z [info] 🚀 API ai-chat: Recebendo requisição POST
+2025-09-11T10:45:38.852Z [info] 📦 Dados recebidos: {
+  "message": "dor no joeho o que posso tomar",
   "sessionId": "session_1756746412255_oi9mxcmg9",
   "streaming": true,
   "chatHistory": [
@@ -382,24 +384,22 @@
     }
   ]
 }
-2025-09-10T14:52:27.068Z [info] 👤 User ID extraído do contexto: undefined
-2025-09-10T14:52:27.068Z [info] 🆔 Session ID: session_1756746412255_oi9mxcmg9
-2025-09-10T14:52:27.068Z [info] 📝 Mensagem: estou com dor no joelho o que tomo
-2025-09-10T14:52:27.068Z [info] 🔄 Streaming habilitado: true
-2025-09-10T14:52:27.068Z [info] ⚙️ Configuração LLM: { provider: 'openai', temperature: 0.7, maxTokens: 2000 }
-2025-09-10T14:52:27.068Z [info] 🤖 Criando instância do agente...
-2025-09-10T14:52:27.069Z [info] ✅ Agente criado com sucesso
-2025-09-10T14:52:27.069Z [info] 🌊 Iniciando processamento com streaming...
-2025-09-10T14:52:27.070Z [info] 🎯 StreamMessage iniciado para sessão: session_1756746412255_oi9mxcmg9
-2025-09-10T14:52:27.070Z [info] 💬 Mensagem original do usuário: estou com dor no joelho o que tomo
-2025-09-10T14:52:27.070Z [info] 🔧 Contexto fornecido: undefined
-2025-09-10T14:52:28.311Z [info] 🔧 [Global Context] sessionId definido: session_1756746412255_oi9mxcmg9
-2025-09-10T14:52:43.081Z [info] 🔧 [Global Context] sessionId definido: session_1756746412255_oi9mxcmg9
-2025-09-10T14:52:56.588Z [info] ➕ Resposta do assistente adicionada à sessão
-2025-09-10T14:52:56.588Z [info] 🗂️ Histórico limitado a 20 mensagens
-2025-09-10T14:52:56.588Z [info] ✅ ProcessMessage concluído com sucesso
-2025-09-10T14:52:56.588Z [info] 📝 Resposta textual forçada gerada: Resumo do que foi feito
-- Identificamos opções seguras e comuns para dor no joelho.
-- Listei 5 opçõe...
-2025-09-10T14:52:56.589Z [info] 🏁 Finalizando stream
-2025-09-10T14:52:56.589Z [info] ✅ Stream finalizado com sucesso
+2025-09-11T10:45:38.852Z [info] 👤 User ID extraído do contexto: undefined
+2025-09-11T10:45:38.853Z [info] 🆔 Session ID: session_1756746412255_oi9mxcmg9
+2025-09-11T10:45:38.853Z [info] 📝 Mensagem: dor no joeho o que posso tomar
+2025-09-11T10:45:38.853Z [info] 🔄 Streaming habilitado: true
+2025-09-11T10:45:38.853Z [info] ⚙️ Configuração LLM: { provider: 'openai', temperature: 0.7, maxTokens: 2000 }
+2025-09-11T10:45:38.865Z [info] 🤖 Criando instância do agente...
+2025-09-11T10:45:38.866Z [info] ✅ Agente criado com sucesso
+2025-09-11T10:45:38.866Z [info] 🌊 Iniciando processamento com streaming...
+2025-09-11T10:45:38.867Z [info] 🎯 StreamMessage iniciado para sessão: session_1756746412255_oi9mxcmg9
+2025-09-11T10:45:38.867Z [info] 💬 Mensagem original do usuário: dor no joeho o que posso tomar
+2025-09-11T10:45:38.867Z [info] 🔧 Contexto fornecido: undefined
+2025-09-11T10:45:40.925Z [info] 🔧 [Global Context] sessionId definido: session_1756746412255_oi9mxcmg9
+2025-09-11T10:46:23.621Z [info] ➕ Resposta do assistente adicionada à sessão
+2025-09-11T10:46:23.621Z [info] 🗂️ Histórico limitado a 20 mensagens
+2025-09-11T10:46:23.622Z [info] ✅ ProcessMessage concluído com sucesso
+2025-09-11T10:46:23.622Z [info] 📝 Resposta textual forçada gerada: Resumo do que foi feito
+- Identificamos opções seguras e comuns para dor no joelho, com foco em anal...
+2025-09-11T10:46:23.622Z [info] 🏁 Finalizando stream
+2025-09-11T10:46:23.622Z [info] ✅ Stream finalizado com sucesso
