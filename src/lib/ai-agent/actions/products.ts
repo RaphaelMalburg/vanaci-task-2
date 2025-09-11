@@ -178,28 +178,57 @@ export const listRecommendedProductsTool = tool({
       limit: z.number().min(1).max(20).default(15).describe("Número máximo de recomendações"),
     }),
   execute: async ({ symptomOrNeed, limit }: { symptomOrNeed: string; limit: number }) => {
-    logger.info("Buscando produtos recomendados", { symptomOrNeed, limit });
+    logger.info("🔍 [list_recommended_products] Iniciando busca", { symptomOrNeed, limit });
 
     try {
       const productService = ProductService.getInstance();
+      logger.info("✅ [list_recommended_products] ProductService obtido", { serviceExists: !!productService });
 
       // Mapear sintomas/necessidades para termos de busca mais específicos
       const searchTerms = getSearchTermsForSymptom(symptomOrNeed.toLowerCase());
+      logger.info("🔍 [list_recommended_products] Termos de busca mapeados", { searchTerms });
 
       let allProducts: any[] = [];
 
       // Buscar por cada termo
       for (const term of searchTerms) {
-        const products = await productService.getAllProducts({ search: term, limit: limit * 2 });
-        allProducts.push(...products);
+        try {
+          logger.info("🔍 [list_recommended_products] Buscando por termo", { term });
+          const products = await productService.getAllProducts({ search: term, limit: limit * 2 });
+          logger.info("📦 [list_recommended_products] Produtos encontrados para termo", { term, count: products?.length || 0 });
+          allProducts.push(...(products || []));
+        } catch (termError) {
+          logger.warn("⚠️ [list_recommended_products] Erro ao buscar termo específico", { term, error: termError });
+        }
       }
 
       // Remover duplicatas e limitar resultados
       const uniqueProducts = allProducts.filter((product, index, self) => index === self.findIndex((p) => p.id === product.id)).slice(0, limit);
+      logger.info("📊 [list_recommended_products] Produtos únicos após filtro", { count: uniqueProducts.length, originalCount: allProducts.length });
 
-      logger.info("Produtos recomendados encontrados", { count: uniqueProducts.length, searchTerms });
-
+      // Se não encontrou produtos, buscar produtos promocionais como fallback
       if (uniqueProducts.length === 0) {
+        logger.info("🔄 [list_recommended_products] Nenhum produto encontrado, buscando fallback promocional");
+        try {
+          const promotionalProducts = await getPromotionalProductsForFallback(productService, limit);
+          logger.info("🎯 [list_recommended_products] Produtos promocionais como fallback", { count: promotionalProducts?.length || 0 });
+          
+          if (promotionalProducts && promotionalProducts.length > 0) {
+            return {
+              success: true,
+              message: `Não encontrei produtos específicos para "${symptomOrNeed}", mas aqui estão algumas opções que podem ajudar. Consulte sempre um profissional de saúde.`,
+              data: { 
+                products: promotionalProducts, 
+                symptomOrNeed,
+                showInOverlay: true,
+                isFallback: true
+              },
+            };
+          }
+        } catch (fallbackError) {
+          logger.error("❌ [list_recommended_products] Erro no fallback promocional", { error: fallbackError });
+        }
+        
         return {
           success: true,
           message: `Nenhum produto encontrado para "${symptomOrNeed}". Consulte um farmacêutico para orientações.`,
@@ -207,6 +236,8 @@ export const listRecommendedProductsTool = tool({
         };
       }
 
+      logger.info("✅ [list_recommended_products] Retornando produtos encontrados", { count: uniqueProducts.length });
+      
       // Retornar resposta concisa - os produtos serão mostrados no overlay
       return {
         success: true,
@@ -218,9 +249,37 @@ export const listRecommendedProductsTool = tool({
         },
       };
     } catch (error) {
-      logger.error("Erro ao buscar recomendações", { symptomOrNeed, error: error instanceof Error ? error.message : error });
+      logger.error("❌ [list_recommended_products] Erro crítico na execução", { 
+        symptomOrNeed, 
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
       
-      // Retornar resposta de erro em vez de lançar exceção
+      // Tentar fallback promocional mesmo em caso de erro crítico
+      try {
+        logger.info("🔄 [list_recommended_products] Tentando fallback após erro crítico");
+        const productService = ProductService.getInstance();
+        const promotionalProducts = await getPromotionalProductsForFallback(productService, Math.min(limit, 5));
+        
+        if (promotionalProducts && promotionalProducts.length > 0) {
+          logger.info("✅ [list_recommended_products] Fallback bem-sucedido após erro", { count: promotionalProducts.length });
+          return {
+            success: true,
+            message: `Houve um problema na busca, mas aqui estão algumas opções que podem ajudar. Consulte um farmacêutico para orientações sobre "${symptomOrNeed}".`,
+            data: { 
+              products: promotionalProducts, 
+              symptomOrNeed,
+              showInOverlay: true,
+              isFallback: true,
+              hasError: true
+            },
+          };
+        }
+      } catch (fallbackError) {
+        logger.error("❌ [list_recommended_products] Fallback também falhou", { fallbackError });
+      }
+      
+      // Último recurso: retornar erro estruturado
       return {
         success: false,
         message: `Não foi possível buscar produtos para "${symptomOrNeed}" no momento. Tente novamente ou consulte um farmacêutico.`,
