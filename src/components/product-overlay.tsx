@@ -17,6 +17,7 @@ export function ProductOverlay() {
   const { addItem, isItemLoading } = useCart();
   const [showPromotions, setShowPromotions] = useState(false);
   const [animateProducts, setAnimateProducts] = useState(false);
+  const [fallbackFetched, setFallbackFetched] = useState(false);
 
   const headerTitle = useMemo(() => {
     if (title) return title;
@@ -263,4 +264,3 @@ export function ProductOverlay() {
     </Sheet>
   );
 }
-

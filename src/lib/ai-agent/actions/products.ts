@@ -51,7 +51,7 @@ export const searchProductsTool = tool({
 
       if (promotionalProducts.length > 0) {
         const productsList = promotionalProducts
-          .map((product: any) => {
+          .map((product: Product) => {
             return `- ${product.name} - €${product.price.toFixed(2)}`;
           })
           .join("\n");
@@ -70,7 +70,7 @@ export const searchProductsTool = tool({
 
       if (bestSellers.length > 0) {
         const productsList = bestSellers
-          .map((product: any) => {
+          .map((product: Product) => {
             return `- ${product.name} - €${product.price.toFixed(2)}`;
           })
           .join("\n");
@@ -96,18 +96,18 @@ export const searchProductsTool = tool({
 });
 
 // Função auxiliar para buscar produtos promocionais como fallback
-async function getPromotionalProductsForFallback(productService: any, limit: number, query: string) {
+async function getPromotionalProductsForFallback(productService: any, limit: number, query: string): Promise<Product[]> {
   try {
     // Buscar produtos com preços mais baixos (simulando promoções)
     const allProducts = await productService.getAllProducts({ limit: 200 });
 
     // Ordenar por preço e pegar os mais baratos
-    const cheapestProducts = allProducts.sort((a: any, b: any) => a.price - b.price);
+    const cheapestProducts = allProducts.sort((a: Product, b: Product) => a.price - b.price);
 
     // Filtrar por relevância se uma query for fornecida
     if (query) {
       const searchTerms = getSearchTermsForSymptom(query.toLowerCase());
-      const filteredProducts = cheapestProducts.filter((product: any) => {
+      const filteredProducts = cheapestProducts.filter((product: Product) => {
         const productName = product.name.toLowerCase();
         const productCategory = product.category?.toLowerCase() || "";
         return searchTerms.some(term => productName.includes(term) || productCategory.includes(term));
@@ -128,16 +128,16 @@ async function getPromotionalProductsForFallback(productService: any, limit: num
 }
 
 // Função auxiliar para buscar best-sellers como fallback
-async function getBestSellersForFallback(productService: any, limit: number, query: string) {
+async function getBestSellersForFallback(productService: any, limit: number, query: string): Promise<Product[]> {
   try {
     const allProducts = await productService.getAllProducts({ limit: 100 });
     const bestSellerNames = ["Dipirona", "Paracetamol", "Ibuprofeno", "Vitamina C", "Vitamina D", "Álcool", "Termômetro", "Protetor Solar", "Hidratante", "Soro Fisiológico"];
-    let bestSellers = allProducts.filter((product: any) => bestSellerNames.some((name) => product.name.toLowerCase().includes(name.toLowerCase())));
+    let bestSellers = allProducts.filter((product: Product) => bestSellerNames.some((name) => product.name.toLowerCase().includes(name.toLowerCase())));
 
     // Filtrar por relevância se uma query for fornecida
     if (query) {
       const searchTerms = getSearchTermsForSymptom(query.toLowerCase());
-      const filteredBestSellers = bestSellers.filter((product: any) => {
+      const filteredBestSellers = bestSellers.filter((product: Product) => {
         const productName = product.name.toLowerCase();
         const productCategory = product.category?.toLowerCase() || "";
         return searchTerms.some(term => productName.includes(term) || productCategory.includes(term));
@@ -151,7 +151,7 @@ async function getBestSellersForFallback(productService: any, limit: number, que
     // Limitar e completar se necessário
     bestSellers = bestSellers.slice(0, limit);
     if (bestSellers.length < limit) {
-      const remainingProducts = allProducts.filter((product: any) => !bestSellers.find((bs) => bs.id === product.id)).slice(0, limit - bestSellers.length);
+      const remainingProducts = allProducts.filter((product: Product) => !bestSellers.find((bs: Product) => bs.id === product.id)).slice(0, limit - bestSellers.length);
       bestSellers.push(...remainingProducts);
     }
     
@@ -259,7 +259,7 @@ export const listRecommendedProductsTool = tool({
       const searchTerms = getSearchTermsForSymptom(symptomOrNeed.toLowerCase());
       logger.info("🔍 [list_recommended_products] Termos de busca mapeados", { searchTerms });
 
-      let allProducts: any[] = [];
+      let allProducts: Product[] = [];
 
       // Buscar por cada termo
       for (const term of searchTerms) {
