@@ -47,6 +47,61 @@ function extractImageUrls(text: string): string[] {
   return matches;
 }
 
+// Função para extrair produtos mencionados no texto da resposta
+function extractProductMentions(text: string): Array<{ name: string; price?: number }> {
+  const products = [];
+  
+  console.log('🔍 Tentando extrair produtos do texto:', text.substring(0, 300) + '...');
+  
+  // Dividir o texto em linhas e processar cada linha separadamente
+  const lines = text.split(/\n|\.|\s-\s/);
+  
+  for (const line of lines) {
+    // Procurar padrão: "- Nome do Produto — descrição €Preço"
+    const productRegex = /^[-•]\s*([A-Za-z][^—]*?)\s*—[^€]*€(\d+[.,]\d+)/;
+    const match = line.match(productRegex);
+    
+    if (match) {
+      const name = match[1].trim();
+      const priceStr = match[2].replace(',', '.');
+      const price = parseFloat(priceStr);
+      
+      console.log('🔍 Match encontrado na linha:', { line: line.substring(0, 100), name, priceStr, price });
+      
+      if (name && !isNaN(price) && name.length > 2 && name.length < 100) {
+        products.push({ name, price });
+      }
+    }
+  }
+  
+  // Se não encontrou nada, tentar buscar por padrão mais simples
+  if (products.length === 0) {
+    console.log('🔍 Tentando padrão simples...');
+    
+    // Buscar por qualquer nome seguido de € e preço
+    const simpleRegex = /([A-Za-z][A-Za-z0-9\s]{2,50})(?:[^\n€]{0,100})€(\d+[.,]\d+)/g;
+    let match;
+    
+    while ((match = simpleRegex.exec(text)) !== null) {
+      const name = match[1].trim();
+      const priceStr = match[2].replace(',', '.');
+      const price = parseFloat(priceStr);
+      
+      console.log('🔍 Match simples encontrado:', { name, priceStr, price });
+      
+      if (name && !isNaN(price) && name.length > 3 && name.length < 50) {
+        // Verificar se não é um nome duplicado
+        if (!products.find(p => p.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(p.name.toLowerCase()))) {
+          products.push({ name, price });
+        }
+      }
+    }
+  }
+  
+  console.log('🔍 Produtos extraídos do texto (total:', products.length, '):', products);
+  return products;
+}
+
 export function Chat() {
   const { isChatOpen, setIsChatOpen } = useChatContext();
   const { user } = useAuth();
@@ -273,6 +328,51 @@ export function Chat() {
                       if (msg.id === assistantMessage.id) {
                         const newText = msg.text + parsed.content;
                         const images = extractImageUrls(newText);
+                        
+                        // NOVO: Verificar se o texto contém produtos e exibê-los no overlay
+                        const extractedProducts = extractProductMentions(newText);
+                        if (extractedProducts.length > 0) {
+                          console.log('📦 Produtos detectados no texto da resposta:', extractedProducts);
+                          
+                          // Buscar produtos reais na base de dados baseados nos nomes extraídos
+                          setTimeout(async () => {
+                            try {
+                              const realProducts = [];
+                              for (const extractedProduct of extractedProducts) {
+                                // Buscar produto por nome similar
+                                const searchResponse = await fetch(`/api/products?q=${encodeURIComponent(extractedProduct.name)}&limit=1`);
+                                if (searchResponse.ok) {
+                                  const searchResults = await searchResponse.json();
+                                  if (searchResults && searchResults.length > 0) {
+                                    realProducts.push(searchResults[0]);
+                                  } else {
+                                    // Se não encontrou produto real, criar um fictício baseado na extração
+                                    realProducts.push({
+                                      id: `extracted-${Date.now()}-${Math.random()}`,
+                                      name: extractedProduct.name,
+                                      price: extractedProduct.price || 0,
+                                      category: 'Medicamentos',
+                                      description: 'Produto mencionado pelo assistente',
+                                      image: null
+                                    });
+                                  }
+                                }
+                              }
+                              
+                              if (realProducts.length > 0) {
+                                console.log('🎯 Exibindo produtos extraídos no overlay:', realProducts);
+                                productOverlay.showProducts({
+                                  title: "Produtos Mencionados",
+                                  query: userMessage.text,
+                                  products: realProducts
+                                });
+                              }
+                            } catch (error) {
+                              console.error('❌ Erro ao buscar produtos extraídos:', error);
+                            }
+                          }, 1000); // Aguardar 1 segundo para garantir que a resposta foi finalizada
+                        }
+                        
                         return { ...msg, text: newText, images: images.length > 0 ? images : undefined };
                       }
                       return msg;
@@ -285,7 +385,7 @@ export function Chat() {
                   
                   // Atualizar estado de pensamento
                   setThinkingState('processing');
-                  setThinkingMessage('Processando resultados...');
+                  setThinkingMessage('');
                   
                   // Verificar se é resultado de show_multiple_products
                   if (toolResult.result && toolResult.result.success && toolResult.result.data && toolResult.result.data.showInOverlay) {
@@ -293,6 +393,21 @@ export function Chat() {
                     console.log("📦 Exibindo produtos no overlay via tool result:", { products: products?.length, title, query });
                     setThinkingMessage(`Encontrados ${products?.length || 0} produtos!`);
                     productOverlay.showProducts({ title: title || "Produtos Recomendados", query, products: products || [] });
+                  }
+                  
+                  // NOVO: Extrair produtos automaticamente do resultado se não foram exibidos no overlay
+                  if (toolResult.result && toolResult.result.data && toolResult.result.data.products && toolResult.result.data.products.length > 0) {
+                    const products = toolResult.result.data.products;
+                    const symptom = toolResult.result.data.symptomOrNeed || toolResult.result.data.query;
+                    console.log("🔄 Forçando exibição no overlay - produtos encontrados:", { count: products.length, symptom });
+                    
+                    productOverlay.showProducts({
+                      title: symptom ? `Produtos para "${symptom}"` : "Produtos Encontrados",
+                      query: symptom,
+                      products: products
+                    });
+                    
+                    setThinkingMessage(`${products.length} produtos encontrados e exibidos!`);
                   }
                 } else if (parsed.type === "tool_call" && (parsed.toolCall || parsed.content)) {
                   // Tool call - não adicionar ao texto, apenas logar
@@ -405,6 +520,74 @@ export function Chat() {
                 }
 
                 if (parsed.type === "end") {
+                  // NOVO: Verificar se há produtos mencionados na resposta final e forçar overlay
+                  setMessages((prev) => {
+                    const lastMessage = prev[prev.length - 1];
+                    if (lastMessage && !lastMessage.isUser && lastMessage.text) {
+                      const extractedProducts = extractProductMentions(lastMessage.text);
+                      console.log('🔍 [END] Verificando produtos na mensagem final:', { 
+                        messageLength: lastMessage.text.length,
+                        extractedCount: extractedProducts.length,
+                        products: extractedProducts
+                      });
+                      
+                      if (extractedProducts.length > 0) {
+                        console.log('🎯 [END] Forçando overlay com produtos extraídos da resposta final');
+                        
+                        // Buscar produtos reais e forçar overlay
+                        setTimeout(async () => {
+                          try {
+                            const realProducts = [];
+                            for (const extractedProduct of extractedProducts) {
+                              try {
+                                const searchResponse = await fetch(`/api/products?q=${encodeURIComponent(extractedProduct.name)}&limit=1`);
+                                if (searchResponse.ok) {
+                                  const searchResults = await searchResponse.json();
+                                  if (searchResults && searchResults.length > 0) {
+                                    realProducts.push(searchResults[0]);
+                                  } else {
+                                    // Criar produto fictício baseado na extração
+                                    realProducts.push({
+                                      id: `extracted-${Date.now()}-${Math.random()}`,
+                                      name: extractedProduct.name,
+                                      price: extractedProduct.price || 0,
+                                      category: 'Medicamentos',
+                                      description: 'Produto recomendado pelo assistente',
+                                      image: null
+                                    });
+                                  }
+                                }
+                              } catch (err) {
+                                console.warn('Erro ao buscar produto:', extractedProduct.name, err);
+                                // Aêndir produto fictício como fallback
+                                realProducts.push({
+                                  id: `extracted-${Date.now()}-${Math.random()}`,
+                                  name: extractedProduct.name,
+                                  price: extractedProduct.price || 0,
+                                  category: 'Medicamentos',
+                                  description: 'Produto recomendado pelo assistente',
+                                  image: null
+                                });
+                              }
+                            }
+                            
+                            if (realProducts.length > 0) {
+                              console.log('✅ [END] Exibindo overlay com produtos:', realProducts.map(p => ({ name: p.name, price: p.price })));
+                              productOverlay.showProducts({
+                                title: "Produtos Recomendados",
+                                query: userMessage.text,
+                                products: realProducts
+                              });
+                            }
+                          } catch (error) {
+                            console.error('❌ [END] Erro ao processar produtos extraídos:', error);
+                          }
+                        }, 500);
+                      }
+                    }
+                    return prev;
+                  });
+                  
                   done = true;
                   break;
                 }

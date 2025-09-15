@@ -142,6 +142,11 @@ export async function POST(request: NextRequest) {
                   resultType: 'result' in chunk ? typeof chunk.result : 'undefined'
                 });
                 
+                // Log detalhado do conteúdo do tool result para debug
+                if ('result' in chunk && chunk.result) {
+                  console.log(`🔍 Conteúdo detalhado do tool result:`, JSON.stringify(chunk.result, null, 2));
+                }
+                
                 try {
                   const toolResult: any = 'result' in chunk ? chunk.result : null;
                   

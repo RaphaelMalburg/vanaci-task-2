@@ -327,15 +327,27 @@ export const listRecommendedProductsTool = tool({
       logger.info("✅ [list_recommended_products] Retornando produtos encontrados", { count: uniqueProducts.length });
       
       // Retornar resposta concisa - os produtos serão mostrados no overlay
-      return {
+      const result = {
         success: true,
         message: `Encontrei ${uniqueProducts.length} produtos recomendados para "${symptomOrNeed}". Consulte sempre um profissional de saúde antes de usar medicamentos.`,
         data: { 
           products: uniqueProducts, 
           symptomOrNeed,
-          showInOverlay: true // Flag para indicar que deve mostrar no overlay
+          showInOverlay: true, // Flag para indicar que deve mostrar no overlay
+          query: symptomOrNeed
         },
       };
+      
+      // Log detalhado para debug
+      logger.info("✅ [list_recommended_products] Resultado final:", {
+        success: result.success,
+        productCount: uniqueProducts.length,
+        showInOverlay: result.data.showInOverlay,
+        symptomOrNeed: result.data.symptomOrNeed,
+        products: uniqueProducts.map(p => ({ id: p.id, name: p.name, price: p.price }))
+      });
+      
+      return result;
     } catch (error) {
       logger.error("❌ [list_recommended_products] Erro crítico na execução", { 
         symptomOrNeed, 
