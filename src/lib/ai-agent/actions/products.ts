@@ -47,7 +47,7 @@ export const searchProductsTool = tool({
       // Se não encontrou produtos, mostrar produtos promocionais como sugestão
       logger.info("Nenhum produto encontrado, buscando produtos promocionais", { query });
 
-      const promotionalProducts = await getPromotionalProductsForFallback(productService, 15);
+      const promotionalProducts = await getPromotionalProductsForFallback(productService, 15, query);
 
       if (promotionalProducts.length > 0) {
         const productsList = promotionalProducts
@@ -60,6 +60,25 @@ export const searchProductsTool = tool({
           success: true,
           message: `Produto não encontrado. Veja estas promoções:\n\n${productsList}`,
           data: { products: promotionalProducts, total: promotionalProducts.length, query, fallbackType: "promotional" },
+        };
+      }
+
+      // Se não encontrou produtos promocionais, buscar best-sellers como fallback final
+      logger.info("Nenhum produto promocional encontrado, buscando best-sellers", { query });
+
+      const bestSellers = await getBestSellersForFallback(productService, 15, query);
+
+      if (bestSellers.length > 0) {
+        const productsList = bestSellers
+          .map((product: any) => {
+            return `- ${product.name} - €${product.price.toFixed(2)}`;
+          })
+          .join("\n");
+
+        return {
+          success: true,
+          message: `Produto não encontrado. Que tal dar uma olhada nos nossos produtos mais vendidos?\n\n${productsList}`,
+          data: { products: bestSellers, total: bestSellers.length, query, fallbackType: "best-sellers" },
         };
       }
 
@@ -77,20 +96,72 @@ export const searchProductsTool = tool({
 });
 
 // Função auxiliar para buscar produtos promocionais como fallback
-async function getPromotionalProductsForFallback(productService: any, limit: number) {
+async function getPromotionalProductsForFallback(productService: any, limit: number, query: string) {
   try {
     // Buscar produtos com preços mais baixos (simulando promoções)
     const allProducts = await productService.getAllProducts({ limit: 200 });
 
     // Ordenar por preço e pegar os mais baratos
-    const cheapestProducts = allProducts.sort((a: any, b: any) => a.price - b.price).slice(0, limit);
+    const cheapestProducts = allProducts.sort((a: any, b: any) => a.price - b.price);
 
-    return cheapestProducts;
+    // Filtrar por relevância se uma query for fornecida
+    if (query) {
+      const searchTerms = getSearchTermsForSymptom(query.toLowerCase());
+      const filteredProducts = cheapestProducts.filter((product: any) => {
+        const productName = product.name.toLowerCase();
+        const productCategory = product.category?.toLowerCase() || "";
+        return searchTerms.some(term => productName.includes(term) || productCategory.includes(term));
+      });
+
+      // Se encontrarmos produtos filtrados, retorná-los
+      if (filteredProducts.length > 0) {
+        return filteredProducts.slice(0, limit);
+      }
+    }
+
+    // Se não houver query ou nenhum produto filtrado, retornar os mais baratos
+    return cheapestProducts.slice(0, limit);
   } catch (error) {
     logger.error("Erro ao buscar produtos promocionais para fallback", { error });
     return [];
   }
 }
+
+// Função auxiliar para buscar best-sellers como fallback
+async function getBestSellersForFallback(productService: any, limit: number, query: string) {
+  try {
+    const allProducts = await productService.getAllProducts({ limit: 100 });
+    const bestSellerNames = ["Dipirona", "Paracetamol", "Ibuprofeno", "Vitamina C", "Vitamina D", "Álcool", "Termômetro", "Protetor Solar", "Hidratante", "Soro Fisiológico"];
+    let bestSellers = allProducts.filter((product: any) => bestSellerNames.some((name) => product.name.toLowerCase().includes(name.toLowerCase())));
+
+    // Filtrar por relevância se uma query for fornecida
+    if (query) {
+      const searchTerms = getSearchTermsForSymptom(query.toLowerCase());
+      const filteredBestSellers = bestSellers.filter((product: any) => {
+        const productName = product.name.toLowerCase();
+        const productCategory = product.category?.toLowerCase() || "";
+        return searchTerms.some(term => productName.includes(term) || productCategory.includes(term));
+      });
+
+      if (filteredBestSellers.length > 0) {
+        bestSellers = filteredBestSellers;
+      }
+    }
+
+    // Limitar e completar se necessário
+    bestSellers = bestSellers.slice(0, limit);
+    if (bestSellers.length < limit) {
+      const remainingProducts = allProducts.filter((product: any) => !bestSellers.find((bs) => bs.id === product.id)).slice(0, limit - bestSellers.length);
+      bestSellers.push(...remainingProducts);
+    }
+    
+    return bestSellers;
+  } catch (error) {
+    logger.error("Erro ao buscar best-sellers para fallback", { error });
+    return [];
+  }
+}
+
 
 // Tool: Obter detalhes do produto
 export const getProductDetailsTool = tool({
@@ -117,7 +188,7 @@ export const getProductDetailsTool = tool({
 
       return {
         success: true,
-        message: `Produto: ${product.name}\nPreço: €${product.price.toFixed(2)}\nDescrição: ${product.description || "Sem descrição"}\nCategoria: ${
+        message: `Produto: ${product.name}\nPreço: €${product.price.toFixed(2)}\nDescrição: ${product.description || "Sem descrição"}\nCategoria: ${ 
           product.category || "Sem categoria"
         }`,
         data: product,
@@ -210,7 +281,7 @@ export const listRecommendedProductsTool = tool({
       if (uniqueProducts.length === 0) {
         logger.info("🔄 [list_recommended_products] Nenhum produto encontrado, buscando fallback promocional");
         try {
-          const promotionalProducts = await getPromotionalProductsForFallback(productService, limit);
+          const promotionalProducts = await getPromotionalProductsForFallback(productService, limit, symptomOrNeed);
           logger.info("🎯 [list_recommended_products] Produtos promocionais como fallback", { count: promotionalProducts?.length || 0 });
           
           if (promotionalProducts && promotionalProducts.length > 0) {
@@ -225,6 +296,23 @@ export const listRecommendedProductsTool = tool({
               },
             };
           }
+
+          // Fallback para best-sellers se produtos promocionais também falharem
+          const bestSellers = await getBestSellersForFallback(productService, limit, symptomOrNeed);
+          if (bestSellers && bestSellers.length > 0) {
+            return {
+              success: true,
+              message: `Não encontrei produtos para "${symptomOrNeed}". Aqui estão nossos produtos mais vendidos que podem ser úteis. Consulte um profissional de saúde.`,
+              data: { 
+                products: bestSellers, 
+                symptomOrNeed,
+                showInOverlay: true,
+                isFallback: true,
+                fallbackType: "best-sellers"
+              },
+            };
+          }
+
         } catch (fallbackError) {
           logger.error("❌ [list_recommended_products] Erro no fallback promocional", { error: fallbackError });
         }
@@ -259,7 +347,7 @@ export const listRecommendedProductsTool = tool({
       try {
         logger.info("🔄 [list_recommended_products] Tentando fallback após erro crítico");
         const productService = ProductService.getInstance();
-        const promotionalProducts = await getPromotionalProductsForFallback(productService, Math.min(limit, 5));
+        const promotionalProducts = await getPromotionalProductsForFallback(productService, Math.min(limit, 5), symptomOrNeed);
         
         if (promotionalProducts && promotionalProducts.length > 0) {
           logger.info("✅ [list_recommended_products] Fallback bem-sucedido após erro", { count: promotionalProducts.length });
@@ -532,7 +620,7 @@ export const getPromotionalProductsTool = tool({
 
       return {
         success: true,
-        message: `${promotionalProducts.length} promoções${category ? ` em ${category}` : ""}:\n\n${productsList}`,
+        message: `${promotionalProducts.length} promoções${category ? ` em ${category}` : ""} disponíveis:\n\n${productsList}`,
         data: {
           products: promotionalProducts,
           total: promotionalProducts.length,
