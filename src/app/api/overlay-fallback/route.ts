@@ -48,6 +48,30 @@ function getFallbackForQuery(query: string): ProductFallback[] {
       image: "/imagensRemedios/Daflon-500-mg.png",
       description: "Suplemento para circulação",
     },
+    {
+      id: "p_brufen_400",
+      name: "Brufen 400mg",
+      price: 7.95,
+      category: "Analgesico",
+      image: "/imagensRemedios/Brufen-400-mg-Comprimidos-Ibuprofeno.png",
+      description: "Anti-inflamatório/analgésico; tomar com alimento",
+    },
+    {
+      id: "p_benuron_500",
+      name: "Benuron 500mg",
+      price: 5.25,
+      category: "Analgesico",
+      image: "/imagensRemedios/Benuron-500-mg.png",
+      description: "Paracetamol; analgésico/antipirético",
+    },
+    {
+      id: "p_aspirina_express",
+      name: "Aspirina Express 500mg",
+      price: 6.8,
+      category: "Analgesico",
+      image: "/imagensRemedios/Aspirina-Express.png",
+      description: "Analgesico/anti-inflamatório",
+    },
   ];
 
   // General/semelhante a sintomas sem correspondência exata
@@ -71,7 +95,7 @@ function getFallbackForQuery(query: string): ProductFallback[] {
   ];
 
   // Se o usuário descreve dor ou sintomas, retorna dor específicos
-  if (q.includes("dor") || /dor|dor-de-cabeça|dor-no-joelho|dor muscular/.test(q)) {
+  if (q.includes("dor") || /dor|dor-de-cabeça|dor-no-joelho|dor muscular/.test(q) || q.includes("joelho")) {
     return dorProdutos;
   }
 
@@ -100,4 +124,4 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ products });
 }
 
-// Puedes adicionar um POST se quiser aceitar dados customizados no futuro
+// Você pode adicionar um POST no futuro para dados personalizados

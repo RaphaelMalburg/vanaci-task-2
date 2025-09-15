@@ -18,6 +18,7 @@ export function ProductOverlay() {
   const [showPromotions, setShowPromotions] = useState(false);
   const [animateProducts, setAnimateProducts] = useState(false);
   const [fallbackFetched, setFallbackFetched] = useState(false);
+  const [fallbackRetry, setFallbackRetry] = useState(0);
 
   const headerTitle = useMemo(() => {
     if (title) return title;
