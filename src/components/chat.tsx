@@ -75,6 +75,8 @@ export function Chat() {
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [thinkingState, setThinkingState] = useState<'idle' | 'analyzing' | 'searching' | 'processing'>('idle');
+  const [thinkingMessage, setThinkingMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [sessionId, setSessionId] = useState<string>("");
   const [isListening, setIsListening] = useState(false);
@@ -188,6 +190,8 @@ export function Chat() {
     const currentInput = inputValue;
     setInputValue("");
     setIsLoading(true);
+    setThinkingState('analyzing');
+    setThinkingMessage('Analisando sua mensagem...');
 
     try {
       console.log("📤 Enviando mensagem:", currentInput);
@@ -279,10 +283,15 @@ export function Chat() {
                   const toolResult = parsed.toolResult;
                   console.log("Tool result recebido:", toolResult);
                   
+                  // Atualizar estado de pensamento
+                  setThinkingState('processing');
+                  setThinkingMessage('Processando resultados...');
+                  
                   // Verificar se é resultado de show_multiple_products
                   if (toolResult.result && toolResult.result.success && toolResult.result.data && toolResult.result.data.showInOverlay) {
                     const { products, title, query } = toolResult.result.data;
                     console.log("📦 Exibindo produtos no overlay via tool result:", { products: products?.length, title, query });
+                    setThinkingMessage(`Encontrados ${products?.length || 0} produtos!`);
                     productOverlay.showProducts({ title: title || "Produtos Recomendados", query, products: products || [] });
                   }
                 } else if (parsed.type === "tool_call" && (parsed.toolCall || parsed.content)) {
@@ -317,6 +326,9 @@ export function Chat() {
                   // Preparar sugestões de produtos e redirecionar para a página de produtos
                   const productTools = ["search_products", "list_recommended_products", "get_promotional_products", "get_best_sellers"];
                   if (toolPayload && toolPayload.toolName && (productTools.includes(toolPayload.toolName) || toolPayload.toolName === "suggest_within_budget")) {
+                    // Atualizar estado de pensamento para busca de produtos
+                    setThinkingState('searching');
+                    setThinkingMessage('Buscando produtos para você...');
                     try {
                       const args = toolPayload.args || {};
                       const query = args.query || args.symptomOrNeed || undefined;
@@ -433,6 +445,8 @@ export function Chat() {
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      setThinkingState('idle');
+      setThinkingMessage('');
     }
   };
 
@@ -549,16 +563,47 @@ export function Chat() {
             ))
           )}
 
-          {/* Loading indicator */}
+          {/* Enhanced Loading indicator */}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm transition-colors duration-300">
-                <div className="flex items-center gap-3">
-                  <Bot className="h-5 w-5 text-blue-600 dark:text-blue-400 transition-colors duration-300" />
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce transition-colors duration-300"></div>
-                    <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce transition-colors duration-300" style={{ animationDelay: "0.1s" }}></div>
-                    <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce transition-colors duration-300" style={{ animationDelay: "0.2s" }}></div>
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm transition-all duration-300 max-w-[85%]">
+                <div className="flex items-start gap-3">
+                  <Bot className="h-5 w-5 text-blue-600 dark:text-blue-400 transition-colors duration-300 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      {thinkingState === 'analyzing' && (
+                        <>
+                          <div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-pulse"></div>
+                          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Analisando...</span>
+                        </>
+                      )}
+                      {thinkingState === 'searching' && (
+                        <>
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></div>
+                          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Buscando...</span>
+                        </>
+                      )}
+                      {thinkingState === 'processing' && (
+                        <>
+                          <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-bounce"></div>
+                          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Processando...</span>
+                        </>
+                      )}
+                      {thinkingState === 'idle' && (
+                        <>
+                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                          <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">Pensando...</span>
+                        </>
+                      )}
+                    </div>
+                    {thinkingMessage && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{thinkingMessage}</p>
+                    )}
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce transition-colors duration-300"></div>
+                      <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce transition-colors duration-300" style={{ animationDelay: "0.15s" }}></div>
+                      <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce transition-colors duration-300" style={{ animationDelay: "0.3s" }}></div>
+                    </div>
                   </div>
                 </div>
               </div>

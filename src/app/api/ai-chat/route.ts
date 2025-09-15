@@ -143,18 +143,52 @@ export async function POST(request: NextRequest) {
                 });
                 
                 try {
-                  const toolResultData = JSON.stringify({
-                    type: 'tool_result',
-                    toolResult: {
-                      toolCallId: chunk.toolCallId,
-                      result: 'result' in chunk ? chunk.result : null
-                    },
-                    sessionId: finalSessionId,
-                    timestamp: new Date().toISOString(),
-                  });
-                  console.log(`📤 Enviando tool result data para ${chunk.toolCallId}`);
-                  controller.enqueue(new TextEncoder().encode(`data: ${toolResultData}\n\n`));
-                  console.log(`✅ Tool result enviado com sucesso para ${chunk.toolCallId}`);
+                  const toolResult: any = 'result' in chunk ? chunk.result : null;
+                  
+                  // Verificar se é resultado de uma tool de busca de produtos
+                  if (toolResult && toolResult.data && toolResult.data.products && toolResult.data.products.length > 0) {
+                    console.log(`📦 Tool result contém produtos (${toolResult.data.products.length}), processando overlay...`);
+                    
+                    // Criar dados específicos para o overlay
+                    const overlayData = {
+                      products: toolResult.data.products,
+                      title: toolResult.data.symptomOrNeed ? `Produtos para "${toolResult.data.symptomOrNeed}"` : "Produtos Encontrados",
+                      query: toolResult.data.symptomOrNeed || toolResult.data.query,
+                      showInOverlay: true
+                    };
+                    
+                    // Enviar dados específicos do overlay
+                    const overlayResultData = JSON.stringify({
+                      type: 'tool_result',
+                      toolResult: {
+                        toolCallId: chunk.toolCallId,
+                        result: {
+                          success: true,
+                          data: overlayData
+                        }
+                      },
+                      sessionId: finalSessionId,
+                      timestamp: new Date().toISOString(),
+                    });
+                    
+                    console.log(`📦 Enviando dados do overlay:`, overlayData);
+                    controller.enqueue(new TextEncoder().encode(`data: ${overlayResultData}\n\n`));
+                    console.log(`✅ Dados do overlay enviados com sucesso`);
+                  } else {
+                    // Enviar tool result normal
+                    const toolResultData = JSON.stringify({
+                      type: 'tool_result',
+                      toolResult: {
+                        toolCallId: chunk.toolCallId,
+                        result: toolResult
+                      },
+                      sessionId: finalSessionId,
+                      timestamp: new Date().toISOString(),
+                    });
+                    console.log(`📤 Enviando tool result data para ${chunk.toolCallId}`);
+                    controller.enqueue(new TextEncoder().encode(`data: ${toolResultData}\n\n`));
+                    console.log(`✅ Tool result enviado com sucesso para ${chunk.toolCallId}`);
+                  }
                 } catch (toolResultError) {
                   console.error(`❌ Erro ao processar tool result ${chunk.toolCallId}:`, toolResultError);
                 }

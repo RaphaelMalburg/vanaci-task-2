@@ -38,8 +38,8 @@ const SYSTEM_PROMPT = `Você é um assistente virtual da Farmácia Vanaci. Seja 
    - Promoções/ofertas/descontos → get_promotional_products
    - Dor/sintomas → list_recommended_products  
    - Outros produtos → search_products
-2. SEMPRE execute show_multiple_products com TODOS os IDs encontrados
-3. Responda de forma natural e concisa
+2. OS PRODUTOS SERÃO AUTOMATICAMENTE EXIBIDOS NO OVERLAY
+3. Responda de forma natural e concisa sobre os produtos encontrados
 
 **REGRAS DE CARRINHO:**
 - Adicionar: search_products → add_to_cart
@@ -403,69 +403,14 @@ export class PharmacyAIAgent {
             // NÃO adicionar resultado da tool à sessão para evitar vazamento de informações técnicas
             // Apenas fazer log interno para debugging
             
-            // Executar show_multiple_products automaticamente após tools de busca
-            logger.debug("Verificando se deve executar show_multiple_products", {
+            // Armazenar tool result para processamento posterior no streaming
+            logger.debug("Armazenando resultado da tool", {
               toolName: part.toolName,
-              isProductSearchTool: productSearchTools.includes(part.toolName),
-              hasToolResult: !!toolResult,
+              hasResult: !!toolResult,
               hasData: !!toolResult?.data,
               hasProducts: !!toolResult?.data?.products,
               productCount: toolResult?.data?.products?.length || 0
             });
-            
-            if (productSearchTools.includes(part.toolName)) {
-              logger.debug("Tool de busca de produtos detectada", { toolName: part.toolName });
-              
-              if (toolResult?.data?.products && toolResult.data.products.length > 0) {
-                const products = toolResult.data.products;
-                try {
-                  const productIds = products.map((p: any) => p.id).filter(Boolean);
-                  logger.debug("Produtos encontrados para overlay", { 
-                    toolName: part.toolName, 
-                    productIds,
-                    productCount: productIds.length,
-                    products: products.map((p: any) => ({ id: p.id, name: p.name }))
-                  });
-                  
-                  if (productIds.length > 0) {
-                    const showMultipleTool = allTools.show_multiple_products;
-                    if (showMultipleTool && showMultipleTool.execute) {
-                      logger.debug("Executando show_multiple_products automaticamente", { 
-                        productIds,
-                        title: "Produtos Encontrados",
-                        query: processedMessage
-                      });
-                      
-                      const overlayResult = await (showMultipleTool.execute as any)({
-                        productIds,
-                        title: "Produtos Encontrados",
-                        query: processedMessage
-                      });
-                      
-                      logger.debug("show_multiple_products executado com sucesso", { 
-                        productCount: productIds.length,
-                        overlayResult 
-                      });
-                    } else {
-                      logger.error("show_multiple_products tool não encontrada ou não executável");
-                    }
-                  } else {
-                    logger.warn("Nenhum ID de produto válido encontrado", { products });
-                  }
-                } catch (error) {
-                  logger.error("Erro ao executar show_multiple_products automaticamente", { 
-                    toolName: part.toolName,
-                    error: error instanceof Error ? error.message : error,
-                    stack: error instanceof Error ? error.stack : undefined
-                  });
-                }
-              } else {
-                logger.warn("Tool de busca não retornou produtos", {
-                  toolName: part.toolName,
-                  toolResult: toolResult?.data
-                });
-              }
-            }
 
             // Tools serão executadas naturalmente pelo LLM conforme o prompt
           } catch (error) {
