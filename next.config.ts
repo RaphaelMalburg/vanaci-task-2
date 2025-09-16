@@ -5,6 +5,11 @@ import NodePolyfillPlugin from "node-polyfill-webpack-plugin";
 const nextConfig: NextConfig = {
   webpack: (config, { isServer }) => {
     if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        crypto: "crypto-browserify",
+        stream: "stream-browserify",
+      };
       config.plugins.push(
         new NodePolyfillPlugin(),
         new webpack.ProvidePlugin({
@@ -15,6 +20,10 @@ const nextConfig: NextConfig = {
     }
     return config;
   },
+  env: {
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  },
+  transpilePackages: [],
 };
 
 export default nextConfig;
