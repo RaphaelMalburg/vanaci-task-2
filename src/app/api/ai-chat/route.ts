@@ -3,7 +3,7 @@ import { getPharmacyAgent } from "@/lib/ai-agent";
 import { generateId } from "@/lib/ai-agent/utils";
 
 // Configuração para permitir streaming
-export const runtime = "edge";
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // POST - Processar mensagem do usuário
