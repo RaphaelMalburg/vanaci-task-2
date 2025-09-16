@@ -14,6 +14,8 @@ export interface ProductSearchParams {
 
 export class ProductService {
   private static instance: ProductService
+  private cache: Map<string, { data: Product[], timestamp: number }> = new Map()
+  private readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
   static getInstance(): ProductService {
     if (!ProductService.instance) {
@@ -22,8 +24,25 @@ export class ProductService {
     return ProductService.instance
   }
 
+  private getCacheKey(params: ProductSearchParams): string {
+    return JSON.stringify(params)
+  }
+
+  private isValidCache(timestamp: number): boolean {
+    return Date.now() - timestamp < this.CACHE_TTL
+  }
+
   async getAllProducts(params: ProductSearchParams = {}): Promise<Product[]> {
     try {
+      // Check cache first
+      const cacheKey = this.getCacheKey(params)
+      const cached = this.cache.get(cacheKey)
+      
+      if (cached && this.isValidCache(cached.timestamp)) {
+        logger.info('Returning cached products', { params, cacheHit: true })
+        return cached.data
+      }
+
       const {
         search,
         category,
@@ -59,7 +78,16 @@ export class ProductService {
         orderBy: { name: 'asc' }
       })
 
-      return products.map(databaseProductToProduct)
+      const result = products.map(databaseProductToProduct)
+      
+      // Store in cache
+      this.cache.set(cacheKey, {
+        data: result,
+        timestamp: Date.now()
+      })
+      
+      logger.info('Products fetched and cached', { params, count: result.length })
+      return result
     } catch (error) {
       logger.error('Erro ao buscar produtos:', {
         params,
