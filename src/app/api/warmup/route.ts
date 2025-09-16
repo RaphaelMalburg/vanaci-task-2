@@ -1,24 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { getPharmacyAgent } from "@/lib/ai-agent";
 
 // Endpoint para warmup da aplicação e evitar cold starts
 export async function GET(request: NextRequest) {
   try {
-    // Simula uma operação rápida para "aquecer" a aplicação
+    // Simula uma operação rápida para "aquecer" a aplicação e inicializar o agente em memória
+    getPharmacyAgent();
     const timestamp = new Date().toISOString();
-    
-    return NextResponse.json({
-      status: 'ok',
-      message: 'Application warmed up successfully',
-      timestamp,
-      uptime: process.uptime()
-    }, { status: 200 });
+
+    return NextResponse.json(
+      {
+        status: "ok",
+        message: "Application warmed up successfully",
+        timestamp,
+        uptime: process.uptime(),
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('Warmup error:', error);
-    return NextResponse.json({
-      status: 'error',
-      message: 'Warmup failed',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error("Warmup error:", error);
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "Warmup failed",
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
 

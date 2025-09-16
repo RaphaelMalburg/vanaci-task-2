@@ -11,6 +11,9 @@ import { extraTools } from "./actions/extras";
 import { logger } from "@/lib/logger";
 import { SessionService } from "@/lib/services/session.service";
 import type { AgentMessage, AgentSession } from "./types";
+
+// In-memory cache for session context to reduce database calls
+const sessionCache = new Map<string, AgentSession>();
 import type { LLMConfig } from "./config";
 
 // Combinar todas as tools
@@ -24,7 +27,7 @@ export const allTools = {
 };
 
 // Sistema de prompt para o agente
-const SYSTEM_PROMPT = `Você é um assistente virtual da Farmácia Vanaci. Seja amigável, profissional e direto.
+const SYSTEM_PROMPT = `Você é o assistente virtual da Farmácia Vanaci. Seja amigável, profissional e direto.
 
 **REGRAS ESSENCIAIS:**
 - Respostas CONCISAS e OBJETIVAS
@@ -34,12 +37,12 @@ const SYSTEM_PROMPT = `Você é um assistente virtual da Farmácia Vanaci. Seja 
 - Use emojis moderadamente
 
 **FLUXO OBRIGATÓRIO PARA BUSCAS:**
-1. Escolha a tool apropriada:
-   - Promoções/ofertas/descontos → get_promotional_products
-   - Dor/sintomas → list_recommended_products  
-   - Outros produtos → search_products
-2. OS PRODUTOS SERÃO AUTOMATICAMENTE EXIBIDOS NO OVERLAY
-3. Responda de forma natural e concisa sobre os produtos encontrados
+1. Para medicamentos específicos (ex: dipirona, paracetamol, ibuprofeno) → use search_products
+2. Para sintomas ou necessidades gerais (ex: dor de cabeça, gripe) → use list_recommended_products
+3. Para promoções/ofertas/descontos → use get_promotional_products
+4. Para outros produtos → use search_products
+5. Os resultados serão exibidos automaticamente no overlay
+6. Responda de forma natural e concisa, destacando nome, dosagem, preço e descrição breve em cada item
 
 **REGRAS DE CARRINHO:**
 - Adicionar: search_products → add_to_cart
@@ -48,11 +51,12 @@ const SYSTEM_PROMPT = `Você é um assistente virtual da Farmácia Vanaci. Seja 
 - Limpar: clear_cart
 
 **ESTILO DE RESPOSTA:**
-- Seja direto: "Encontrei 8 produtos para dor no joelho" (não "vou buscar...")
-- Confirme ações: "Produto adicionado!" (não "executando adição...")
+- Use frases diretas: ex. "Encontrei 2 opções de Dipirona para você:"
+- Formate a lista no overlay com bullets, incluindo dosagem e preço: ex. "• Dipirona 500 mg (com 10 comprimidos) – €4,95"
+- Confirme ações de carrinho: ex. "✅ Dipirona 500 mg adicionada ao seu carrinho."
 - Foque no cliente, não no processo
 
-Sempre priorize o bem-estar do cliente e mantenha os padrões farmacêuticos.`;
+Sempre priorize o bem-estar do cliente e mantenha padrões farmacêuticos.`;
 
 // Classe do Agente AI
 export class PharmacyAIAgent {
@@ -71,16 +75,25 @@ export class PharmacyAIAgent {
 
   // Criar ou obter sessão
   private async getSession(sessionId: string): Promise<AgentSession> {
+    // Check in-memory cache first
+    if (sessionCache.has(sessionId)) {
+      return sessionCache.get(sessionId)!;
+    }
     try {
       const session = await this.sessionService.getSession(sessionId);
       if (!session) {
         logger.debug("Sessão não encontrada, criando nova", { sessionId });
-        return await this.sessionService.createSession(sessionId);
+        const newSession = await this.sessionService.createSession(sessionId);
+        sessionCache.set(sessionId, newSession);
+        return newSession;
       }
+      sessionCache.set(sessionId, session);
       return session;
     } catch (error) {
       logger.debug("Erro ao obter sessão, criando nova", { sessionId });
-      return await this.sessionService.createSession(sessionId);
+      const newSession = await this.sessionService.createSession(sessionId);
+      sessionCache.set(sessionId, newSession);
+      return newSession;
     }
   }
 
@@ -376,7 +389,7 @@ export class PharmacyAIAgent {
       // Processar tool calls do resultado com suporte a múltiplas execuções
       let executionCount = 0;
       const maxExecutions = 3; // Limite para evitar loops infinitos
-      const productSearchTools = ['search_products', 'get_promotional_products', 'list_recommended_products', 'get_best_sellers'];
+      const productSearchTools = ["search_products", "get_promotional_products", "list_recommended_products", "get_best_sellers"];
 
       for await (const part of result.fullStream) {
         if (part.type === "tool-call") {
@@ -402,14 +415,14 @@ export class PharmacyAIAgent {
 
             // NÃO adicionar resultado da tool à sessão para evitar vazamento de informações técnicas
             // Apenas fazer log interno para debugging
-            
+
             // Armazenar tool result para processamento posterior no streaming
             logger.debug("Armazenando resultado da tool", {
               toolName: part.toolName,
               hasResult: !!toolResult,
               hasData: !!toolResult?.data,
               hasProducts: !!toolResult?.data?.products,
-              productCount: toolResult?.data?.products?.length || 0
+              productCount: toolResult?.data?.products?.length || 0,
             });
 
             // Tools serão executadas naturalmente pelo LLM conforme o prompt
@@ -477,6 +490,7 @@ export class PharmacyAIAgent {
   async clearSession(sessionId: string): Promise<void> {
     try {
       await this.sessionService.deleteSession(sessionId);
+      sessionCache.delete(sessionId);
       logger.info("Sessão limpa com sucesso", { sessionId });
     } catch (error) {
       logger.error("Erro ao limpar sessão", { sessionId, error });
