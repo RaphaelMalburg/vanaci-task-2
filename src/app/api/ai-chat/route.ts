@@ -1,83 +1,80 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getPharmacyAgent } from '@/lib/ai-agent';
-import { generateId } from '@/lib/ai-agent/utils';
+import { NextRequest, NextResponse } from "next/server";
+import { getPharmacyAgent } from "@/lib/ai-agent";
+import { generateId } from "@/lib/ai-agent/utils";
 
 // Configuração para permitir streaming
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 // POST - Processar mensagem do usuário
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚀 API ai-chat: Recebendo requisição POST');
+    console.log("🚀 API ai-chat: Recebendo requisição POST");
     const body = await request.json();
-    console.log('📦 Dados recebidos:', JSON.stringify(body, null, 2));
-    
+    console.log("📦 Dados recebidos:", JSON.stringify(body, null, 2));
+
     const { message, sessionId, context, streaming = true, llmConfig } = body;
 
     // Validações
-    if (!message || typeof message !== 'string') {
-      console.log('❌ Erro: Mensagem inválida ou ausente');
-      return NextResponse.json(
-        { error: 'Mensagem é obrigatória' },
-        { status: 400 }
-      );
+    if (!message || typeof message !== "string") {
+      console.log("❌ Erro: Mensagem inválida ou ausente");
+      return NextResponse.json({ error: "Mensagem é obrigatória" }, { status: 400 });
     }
 
     // Extrair userId do contexto
     const userId = context?.userId || context?.user?.id;
-    console.log('👤 User ID extraído do contexto:', userId);
+    console.log("👤 User ID extraído do contexto:", userId);
 
     // Gerar sessionId se não fornecido
     const finalSessionId = sessionId || generateId();
-    console.log('🆔 Session ID:', finalSessionId);
-    console.log('📝 Mensagem:', message);
-    console.log('🔄 Streaming habilitado:', streaming);
+    console.log("🆔 Session ID:", finalSessionId);
+    console.log("📝 Mensagem:", message);
+    console.log("🔄 Streaming habilitado:", streaming);
 
     // Configuração do LLM - usando configuração do .env
     const finalLlmConfig = llmConfig || {
-      provider: (process.env.DEFAULT_LLM_PROVIDER as 'google' | 'openai' | 'anthropic' | 'mistral') || 'google',
-      temperature: parseFloat(process.env.LLM_TEMPERATURE || '0.7'),
-      maxTokens: parseInt(process.env.LLM_MAX_TOKENS || '2000'),
+      provider: (process.env.DEFAULT_LLM_PROVIDER as "google" | "openai" | "anthropic" | "mistral") || "google",
+      temperature: parseFloat(process.env.LLM_TEMPERATURE || "0.7"),
+      maxTokens: parseInt(process.env.LLM_MAX_TOKENS || "2000"),
     };
-    console.log('⚙️ Configuração LLM:', finalLlmConfig);
+    console.log("⚙️ Configuração LLM:", finalLlmConfig);
 
     // Obter instância do agente
-    console.log('🤖 Criando instância do agente...');
+    console.log("🤖 Criando instância do agente...");
     const agent = getPharmacyAgent(finalLlmConfig);
-    console.log('✅ Agente criado com sucesso');
+    console.log("✅ Agente criado com sucesso");
 
     // Processar com ou sem streaming
     if (streaming) {
-      console.log('🌊 Iniciando processamento com streaming...');
+      console.log("🌊 Iniciando processamento com streaming...");
       // Streaming response
       const streamResult = await agent.streamMessage(finalSessionId, message, context);
-      console.log('📡 Stream result obtido:', !!streamResult);
-      
+      console.log("📡 Stream result obtido:", !!streamResult);
+
       // Converter para ReadableStream
       const stream = new ReadableStream({
         async start(controller) {
           try {
-            console.log('🚀 Iniciando stream para sessão:', finalSessionId);
-            console.log('📡 Stream result obtido:', !!streamResult);
-            console.log('📡 Stream result keys:', Object.keys(streamResult));
+            console.log("🚀 Iniciando stream para sessão:", finalSessionId);
+            console.log("📡 Stream result obtido:", !!streamResult);
+            console.log("📡 Stream result keys:", Object.keys(streamResult));
 
             // Log detalhado do resultado
             if (streamResult.toolCalls) {
-              console.log('🔧 Tool calls promise detectado no resultado inicial');
+              console.log("🔧 Tool calls promise detectado no resultado inicial");
               try {
                 const toolCallsResolved = await streamResult.toolCalls;
-                console.log('🔧 Tool calls no resultado inicial:', toolCallsResolved?.length || 0);
+                console.log("🔧 Tool calls no resultado inicial:", toolCallsResolved?.length || 0);
                 if (toolCallsResolved && toolCallsResolved.length > 0) {
-                   toolCallsResolved.forEach((tc, index) => {
-                     console.log(`🛠️ Tool Call ${index}:`, {
-                       toolName: tc.toolName,
-                       toolCallId: tc.toolCallId
-                     });
-                   });
-                 }
+                  toolCallsResolved.forEach((tc, index) => {
+                    console.log(`🛠️ Tool Call ${index}:`, {
+                      toolName: tc.toolName,
+                      toolCallId: tc.toolCallId,
+                    });
+                  });
+                }
               } catch (toolError) {
-                console.error('❌ Erro ao resolver tool calls iniciais:', toolError);
+                console.error("❌ Erro ao resolver tool calls iniciais:", toolError);
               }
             }
 
@@ -86,106 +83,110 @@ export async function POST(request: NextRequest) {
             let hasProcessedToolCalls = false;
 
             // Processar stream completo incluindo texto após tool calls
-            console.log('🌊 Iniciando iteração do fullStream...');
+            console.log("🌊 Iniciando iteração do fullStream...");
             let chunkIndex = 0;
             for await (const chunk of streamResult.fullStream) {
               chunkIndex++;
               console.log(`🔄 Processando chunk ${chunkIndex} do fullStream:`, {
                 type: chunk.type,
-                hasText: chunk.type === 'text-delta' ? !!chunk.text : false,
-                hasToolCall: chunk.type === 'tool-call' ? !!chunk.toolName : false,
-                chunkData: chunk.type === 'text-delta' ? chunk.text?.substring(0, 50) + '...' : 'N/A'
+                hasText: chunk.type === "text-delta" ? !!chunk.text : false,
+                hasToolCall: chunk.type === "tool-call" ? !!chunk.toolName : false,
+                chunkData: chunk.type === "text-delta" ? chunk.text?.substring(0, 50) + "..." : "N/A",
               });
-              
-              if (chunk.type === 'text-delta') {
+
+              if (chunk.type === "text-delta") {
                 textChunkCount++;
                 console.log(`📝 Chunk de texto ${textChunkCount} (${chunk.text?.length || 0} chars):`, chunk.text);
                 console.log(`📤 Enviando chunk de texto para cliente...`);
                 const data = JSON.stringify({
-                  type: 'text',
+                  type: "text",
                   content: chunk.text,
                   sessionId: finalSessionId,
                   timestamp: new Date().toISOString(),
                 });
                 controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
                 console.log(`✅ Chunk de texto ${textChunkCount} enviado com sucesso`);
-              } else if (chunk.type === 'tool-call') {
+              } else if (chunk.type === "tool-call") {
                 toolCallCount++;
                 hasProcessedToolCalls = true;
                 console.log(`🛠️ Processando tool call ${toolCallCount}:`, {
-                    toolName: chunk.toolName,
-                    toolCallId: chunk.toolCallId,
-                    args: chunk.input,
-                    argsKeys: Object.keys(chunk.input || {})
-                  });
-                
+                  toolName: chunk.toolName,
+                  toolCallId: chunk.toolCallId,
+                  args: chunk.input,
+                  argsKeys: Object.keys(chunk.input || {}),
+                });
+
                 try {
                   const toolData = JSON.stringify({
-                    type: 'tool_call',
+                    type: "tool_call",
                     toolCall: {
                       ...chunk,
-                      args: chunk.input
+                      args: chunk.input,
                     },
                     sessionId: finalSessionId,
                     timestamp: new Date().toISOString(),
                   });
-                  console.log(`📤 Enviando tool call data:`, toolData.substring(0, 200) + '...');
+                  console.log(`📤 Enviando tool call data:`, toolData.substring(0, 200) + "...");
                   controller.enqueue(new TextEncoder().encode(`data: ${toolData}\n\n`));
                   console.log(`✅ Tool call ${toolCallCount} enviado com sucesso`);
                 } catch (toolError) {
                   console.error(`❌ Erro ao processar tool call ${toolCallCount}:`, toolError);
                 }
-              } else if (chunk.type === 'tool-result') {
+              } else if (chunk.type === "tool-result") {
                 console.log(`🔧 Tool result recebido para ${chunk.toolCallId}:`, {
                   toolCallId: chunk.toolCallId,
-                  result: ('result' in chunk && chunk.result) ? 'presente' : 'ausente',
-                  resultType: 'result' in chunk ? typeof chunk.result : 'undefined'
+                  result: "result" in chunk && chunk.result ? "presente" : "ausente",
+                  resultType: "result" in chunk ? typeof chunk.result : "undefined",
                 });
-                
+
                 // Log detalhado do conteúdo do tool result para debug
-                if ('result' in chunk && chunk.result) {
+                if ("result" in chunk && chunk.result) {
                   console.log(`🔍 Conteúdo detalhado do tool result:`, JSON.stringify(chunk.result, null, 2));
                 }
-                
+
                 try {
-                  const toolResult: any = 'result' in chunk ? chunk.result : null;
-                  
+                  const toolResult: any = "result" in chunk ? chunk.result : null;
+
                   // Verificar se é resultado de uma tool de busca de produtos
                   if (toolResult && toolResult.data && toolResult.data.products && toolResult.data.products.length > 0) {
                     console.log(`📦 Tool result contém produtos (${toolResult.data.products.length}), processando overlay...`);
-                    
+
                     // Criar dados específicos para o overlay
+                    const products = toolResult.data.products;
+                    const count = products.length;
+                    const searchTerm = toolResult.data.symptomOrNeed || toolResult.data.query;
+                    const title = count > 1 ? `Encontrei ${count} opções de ${searchTerm}` : `Encontrei ${count} opção de ${searchTerm}`;
                     const overlayData = {
-                      products: toolResult.data.products,
-                      title: toolResult.data.symptomOrNeed ? `Produtos para "${toolResult.data.symptomOrNeed}"` : "Produtos Encontrados",
-                      query: toolResult.data.symptomOrNeed || toolResult.data.query,
-                      showInOverlay: true
+                      products,
+                      title,
+                      query: searchTerm,
+                      showInOverlay: true,
                     };
-                    
+
                     // Enviar dados específicos do overlay
                     const overlayResultData = JSON.stringify({
-                      type: 'tool_result',
+                      type: "tool_result",
                       toolResult: {
                         toolCallId: chunk.toolCallId,
                         result: {
                           success: true,
-                          data: overlayData
-                        }
+                          data: overlayData,
+                        },
                       },
                       sessionId: finalSessionId,
                       timestamp: new Date().toISOString(),
                     });
-                    
+
                     console.log(`📦 Enviando dados do overlay:`, overlayData);
                     controller.enqueue(new TextEncoder().encode(`data: ${overlayResultData}\n\n`));
                     console.log(`✅ Dados do overlay enviados com sucesso`);
                   } else {
                     // Enviar tool result normal
                     const toolResultData = JSON.stringify({
-                      type: 'tool_result',
+                      type: "tool_result",
                       toolResult: {
                         toolCallId: chunk.toolCallId,
-                        result: toolResult
+                        result: toolResult,
                       },
                       sessionId: finalSessionId,
                       timestamp: new Date().toISOString(),
@@ -206,42 +207,42 @@ export async function POST(request: NextRequest) {
             console.log(`📊 Total de tool calls processados: ${toolCallCount}`);
             console.log(`🔧 Tool calls foram processados: ${hasProcessedToolCalls}`);
             console.log(`📊 Total de chunks processados: ${chunkIndex}`);
-            
+
             // Detectar stream vazio
             if (chunkIndex === 0) {
-              console.log('⚠️ PROBLEMA DETECTADO: Stream está completamente vazio!');
-              console.log('⚠️ Isso indica um problema com o modelo LLM ou configuração');
+              console.log("⚠️ PROBLEMA DETECTADO: Stream está completamente vazio!");
+              console.log("⚠️ Isso indica um problema com o modelo LLM ou configuração");
             }
 
             // Solução híbrida: Se tool calls foram processados mas nenhum texto foi gerado,
             // força uma segunda chamada ao modelo para gerar resposta textual
             if (hasProcessedToolCalls && textChunkCount === 0) {
-              console.log('🔄 Implementando solução híbrida: forçando resposta textual após tool calls');
+              console.log("🔄 Implementando solução híbrida: forçando resposta textual após tool calls");
               try {
                 const followUpResult = await agent.processMessage(
                   finalSessionId,
-                  'Por favor, explique o que foi feito com base nos resultados das ferramentas executadas.',
+                  "Por favor, explique o que foi feito com base nos resultados das ferramentas executadas.",
                   context
                 );
-                
+
                 if (followUpResult && followUpResult.trim()) {
-                  console.log('📝 Resposta textual forçada gerada:', followUpResult.substring(0, 100) + '...');
+                  console.log("📝 Resposta textual forçada gerada:", followUpResult.substring(0, 100) + "...");
                   const followUpData = JSON.stringify({
-                    type: 'text',
+                    type: "text",
                     content: followUpResult,
                     sessionId: finalSessionId,
                     timestamp: new Date().toISOString(),
                   });
                   controller.enqueue(new TextEncoder().encode(`data: ${followUpData}\n\n`));
                 } else {
-                  console.log('⚠️ Resposta textual forçada está vazia');
+                  console.log("⚠️ Resposta textual forçada está vazia");
                 }
               } catch (followUpError) {
-                console.error('❌ Erro ao gerar resposta textual forçada:', followUpError);
+                console.error("❌ Erro ao gerar resposta textual forçada:", followUpError);
                 // Enviar uma resposta padrão em caso de erro
                 const fallbackData = JSON.stringify({
-                  type: 'text',
-                  content: 'Ação executada com sucesso! Como posso ajudá-lo mais?',
+                  type: "text",
+                  content: "Ação executada com sucesso! Como posso ajudá-lo mais?",
                   sessionId: finalSessionId,
                   timestamp: new Date().toISOString(),
                 });
@@ -250,23 +251,23 @@ export async function POST(request: NextRequest) {
             }
 
             // Finalizar stream
-            console.log('🏁 Finalizando stream');
+            console.log("🏁 Finalizando stream");
             const endData = JSON.stringify({
-              type: 'end',
+              type: "end",
               sessionId: finalSessionId,
               timestamp: new Date().toISOString(),
             });
             controller.enqueue(new TextEncoder().encode(`data: ${endData}\n\n`));
             controller.close();
-            console.log('✅ Stream finalizado com sucesso');
+            console.log("✅ Stream finalizado com sucesso");
           } catch (error) {
-            console.error('❌ Erro durante streaming:', error);
-            console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível');
+            console.error("❌ Erro durante streaming:", error);
+            console.error("❌ Stack trace:", error instanceof Error ? error.stack : "Stack não disponível");
             const errorData = JSON.stringify({
-              type: 'error',
-              error: 'Erro interno do servidor',
-              content: 'Erro interno do servidor',
-              sessionId: finalSessionId 
+              type: "error",
+              error: "Erro interno do servidor",
+              content: "Erro interno do servidor",
+              sessionId: finalSessionId,
             });
             controller.enqueue(new TextEncoder().encode(`data: ${errorData}\n\n`));
             controller.close();
@@ -276,18 +277,18 @@ export async function POST(request: NextRequest) {
 
       return new Response(stream, {
         headers: {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
         },
       });
     } else {
       // Resposta normal (não streaming)
       const response = await agent.processMessage(finalSessionId, message, context);
-      
+
       return NextResponse.json({
         response,
         sessionId: finalSessionId,
@@ -295,11 +296,11 @@ export async function POST(request: NextRequest) {
       });
     }
   } catch (error) {
-    console.error('Erro na API ai-chat:', error);
+    console.error("Erro na API ai-chat:", error);
     return NextResponse.json(
-      { 
-        error: 'Erro interno do servidor',
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      {
+        error: "Erro interno do servidor",
+        details: process.env.NODE_ENV === "development" ? String(error) : undefined,
       },
       { status: 500 }
     );
@@ -310,43 +311,37 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const sessionId = searchParams.get('sessionId');
-    const action = searchParams.get('action');
+    const sessionId = searchParams.get("sessionId");
+    const action = searchParams.get("action");
 
     if (!sessionId) {
-      return NextResponse.json(
-        { error: 'SessionId é obrigatório' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "SessionId é obrigatório" }, { status: 400 });
     }
 
     const agent = getPharmacyAgent();
 
     switch (action) {
-      case 'history':
+      case "history":
         const history = agent.getSessionHistory(sessionId);
         return NextResponse.json({ history, sessionId });
-      
-      case 'context':
+
+      case "context":
         const context = agent.getSessionContext(sessionId);
         return NextResponse.json({ context, sessionId });
-      
-      case 'config':
+
+      case "config":
         const config = agent.getLLMConfig();
         return NextResponse.json({ config });
-      
+
       default:
-        return NextResponse.json(
-          { error: 'Ação não suportada. Use: history, context, ou config' },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Ação não suportada. Use: history, context, ou config" }, { status: 400 });
     }
   } catch (error) {
-    console.error('Erro na API ai-chat GET:', error);
+    console.error("Erro na API ai-chat GET:", error);
     return NextResponse.json(
-      { 
-        error: 'Erro interno do servidor',
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      {
+        error: "Erro interno do servidor",
+        details: process.env.NODE_ENV === "development" ? String(error) : undefined,
       },
       { status: 500 }
     );
@@ -357,28 +352,25 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const sessionId = searchParams.get('sessionId');
+    const sessionId = searchParams.get("sessionId");
 
     if (!sessionId) {
-      return NextResponse.json(
-        { error: 'SessionId é obrigatório' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "SessionId é obrigatório" }, { status: 400 });
     }
 
     const agent = getPharmacyAgent();
     agent.clearSession(sessionId);
 
-    return NextResponse.json({ 
-      message: 'Sessão limpa com sucesso',
-      sessionId 
+    return NextResponse.json({
+      message: "Sessão limpa com sucesso",
+      sessionId,
     });
   } catch (error) {
-    console.error('Erro na API ai-chat DELETE:', error);
+    console.error("Erro na API ai-chat DELETE:", error);
     return NextResponse.json(
-      { 
-        error: 'Erro interno do servidor',
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      {
+        error: "Erro interno do servidor",
+        details: process.env.NODE_ENV === "development" ? String(error) : undefined,
       },
       { status: 500 }
     );
@@ -392,25 +384,22 @@ export async function PUT(request: NextRequest) {
     const { llmConfig } = body;
 
     if (!llmConfig) {
-      return NextResponse.json(
-        { error: 'Configuração do LLM é obrigatória' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Configuração do LLM é obrigatória" }, { status: 400 });
     }
 
     const agent = getPharmacyAgent();
     agent.updateLLMConfig(llmConfig);
 
-    return NextResponse.json({ 
-      message: 'Configuração atualizada com sucesso',
-      config: agent.getLLMConfig()
+    return NextResponse.json({
+      message: "Configuração atualizada com sucesso",
+      config: agent.getLLMConfig(),
     });
   } catch (error) {
-    console.error('Erro na API ai-chat PUT:', error);
+    console.error("Erro na API ai-chat PUT:", error);
     return NextResponse.json(
-      { 
-        error: 'Erro interno do servidor',
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+      {
+        error: "Erro interno do servidor",
+        details: process.env.NODE_ENV === "development" ? String(error) : undefined,
       },
       { status: 500 }
     );
@@ -422,9 +411,9 @@ export async function OPTIONS() {
   return new Response(null, {
     status: 200,
     headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
     },
   });
 }

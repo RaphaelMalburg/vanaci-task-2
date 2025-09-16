@@ -22,9 +22,14 @@ export function ProductOverlay() {
 
   const headerTitle = useMemo(() => {
     if (title) return title;
-    if (query) return `Resultados para "${query}"`;
+    if (query) {
+      const count = products.length;
+      if (count > 1) return `Encontrei ${count} produtos para "${query}"`;
+      if (count === 1) return `Encontrei 1 produto para "${query}"`;
+      return `Nenhum resultado para "${query}"`;
+    }
     return "Recomendações";
-  }, [title, query]);
+  }, [title, query, products.length]);
 
   // Animação de entrada dos produtos
   useEffect(() => {
