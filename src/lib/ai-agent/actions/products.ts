@@ -246,8 +246,29 @@ async function getRelevantProductsForSymptom(productService: ProductService, que
 // Função auxiliar para buscar produtos promocionais como fallback
 async function getPromotionalProductsForFallback(productService: any, limit: number, query: string): Promise<Product[]> {
   try {
-    // Buscar produtos com preços mais baixos (simulando promoções)
-    const allProducts = await productService.getAllProducts({ limit: 200 });
+    // Primeiro, tentar buscar produtos específicos para a query
+    if (query) {
+      const searchResults = await productService.getAllProducts({ 
+        search: query, 
+        limit: limit * 2 // Buscar mais para ter opções
+      });
+      
+      if (searchResults && searchResults.length > 0) {
+        logger.info("✅ [getPromotionalProductsForFallback] Produtos encontrados para query", { 
+          query, 
+          count: searchResults.length 
+        });
+        return searchResults.slice(0, limit);
+      }
+    }
+
+    // Se não encontrou produtos específicos, buscar produtos com preços mais baixos
+    const allProducts = await productService.getAllProducts({ limit: 100 });
+    
+    if (!allProducts || allProducts.length === 0) {
+      logger.warn("⚠️ [getPromotionalProductsForFallback] Nenhum produto encontrado no banco");
+      return [];
+    }
 
     // Ordenar por preço e pegar os mais baratos
     const cheapestProducts = allProducts.sort((a: Product, b: Product) => a.price - b.price);
@@ -267,8 +288,9 @@ async function getPromotionalProductsForFallback(productService: any, limit: num
       }
     }
 
-    // Se não houver query ou nenhum produto filtrado, retornar os mais baratos
-    return cheapestProducts.slice(0, limit);
+    // Se não houver query ou nenhum produto filtrado, retornar apenas se realmente não há alternativa
+    logger.info("ℹ️ [getPromotionalProductsForFallback] Retornando produtos mais baratos como último recurso");
+    return cheapestProducts.slice(0, Math.min(limit, 3)); // Limitar a 3 produtos como último recurso
   } catch (error) {
     logger.error("Erro ao buscar produtos promocionais para fallback", { error });
     return [];
@@ -278,32 +300,47 @@ async function getPromotionalProductsForFallback(productService: any, limit: num
 // Função auxiliar para buscar best-sellers como fallback
 async function getBestSellersForFallback(productService: any, limit: number, query: string): Promise<Product[]> {
   try {
-    const allProducts = await productService.getAllProducts({ limit: 100 });
-    const bestSellerNames = ["Dipirona", "Paracetamol", "Ibuprofeno", "Vitamina C", "Vitamina D", "Álcool", "Termômetro", "Protetor Solar", "Hidratante", "Soro Fisiológico"];
-    let bestSellers = allProducts.filter((product: Product) => bestSellerNames.some((name) => product.name.toLowerCase().includes(name.toLowerCase())));
+    // Primeiro, tentar buscar produtos específicos para a query
+    if (query) {
+      const searchResults = await productService.getAllProducts({ 
+        search: query, 
+        limit: limit * 2 
+      });
+      
+      if (searchResults && searchResults.length > 0) {
+        logger.info("✅ [getBestSellersForFallback] Produtos encontrados para query", { 
+          query, 
+          count: searchResults.length 
+        });
+        return searchResults.slice(0, limit);
+      }
+    }
 
-    // Filtrar por relevância se uma query for fornecida
+    // Se não encontrou produtos específicos, buscar todos os produtos disponíveis
+    const allProducts = await productService.getAllProducts({ limit: 100 });
+    
+    if (!allProducts || allProducts.length === 0) {
+      logger.warn("⚠️ [getBestSellersForFallback] Nenhum produto encontrado no banco");
+      return [];
+    }
+
+    // Tentar encontrar produtos comuns de farmácia se uma query for fornecida
+    let relevantProducts = allProducts;
     if (query) {
       const searchTerms = getSearchTermsForSymptom(query.toLowerCase());
-      const filteredBestSellers = bestSellers.filter((product: Product) => {
+      const filteredProducts = allProducts.filter((product: Product) => {
         const productName = product.name.toLowerCase();
         const productCategory = product.category?.toLowerCase() || "";
         return searchTerms.some((term) => productName.includes(term) || productCategory.includes(term));
       });
 
-      if (filteredBestSellers.length > 0) {
-        bestSellers = filteredBestSellers;
+      if (filteredProducts.length > 0) {
+        relevantProducts = filteredProducts;
       }
     }
 
-    // Limitar e completar se necessário
-    bestSellers = bestSellers.slice(0, limit);
-    if (bestSellers.length < limit) {
-      const remainingProducts = allProducts.filter((product: Product) => !bestSellers.find((bs: Product) => bs.id === product.id)).slice(0, limit - bestSellers.length);
-      bestSellers.push(...remainingProducts);
-    }
-
-    return bestSellers;
+    // Retornar produtos limitados
+    return relevantProducts.slice(0, Math.min(limit, 5)); // Limitar a 5 produtos
   } catch (error) {
     logger.error("Erro ao buscar best-sellers para fallback", { error });
     return [];
