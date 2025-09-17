@@ -80,26 +80,28 @@ export async function createLLMModel(config: Partial<LLMConfig> = {}) {
 }
 
 /**
- * Cria modelo com fallback automático - prioriza OpenAI
+ * Cria modelo com fallback automático - respeita o provider configurado
  */
 export async function createLLMModelWithFallback(config: Partial<LLMConfig> = {}) {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
-  // Tenta OpenAI primeiro (padrão)
+  // Tenta o provider configurado primeiro
   try {
-    return await createLLMModel({ ...finalConfig, provider: "openai" });
+    return await createLLMModel(finalConfig);
   } catch (error) {
-    // Fallback para Google Gemini se disponível
-    if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+    // Fallback para outros providers disponíveis
+    const availableProviders = getAvailableProviders().filter(p => p !== finalConfig.provider);
+    
+    for (const provider of availableProviders) {
       try {
-        return await createLLMModel({ ...finalConfig, provider: "google" });
+        return await createLLMModel({ ...finalConfig, provider });
       } catch (fallbackError) {
-        // Se ambos falharem, lança erro
-        throw new Error("Nenhum provider LLM disponível. Verifique OPENAI_API_KEY ou GOOGLE_GENERATIVE_AI_API_KEY.");
+        // Continue para o próximo provider
+        continue;
       }
     }
 
-    throw new Error("OpenAI não disponível e nenhum fallback configurado. Verifique OPENAI_API_KEY.");
+    throw new Error(`Nenhum provider LLM disponível. Provider configurado: ${finalConfig.provider}. Verifique as chaves de API.`);
   }
 }
 
