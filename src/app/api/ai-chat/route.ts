@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Configuração do LLM - usando configuração do .env
     const finalLlmConfig = llmConfig || {
-      provider: (process.env.DEFAULT_LLM_PROVIDER as "google" | "openai" | "anthropic" | "mistral") || "google",
+      provider: (process.env.DEFAULT_LLM_PROVIDER as "google" | "openai" | "anthropic" | "mistral" | "openrouter") || "openrouter",
       temperature: parseFloat(process.env.LLM_TEMPERATURE || "0.7"),
       maxTokens: parseInt(process.env.LLM_MAX_TOKENS || "2000"),
     };

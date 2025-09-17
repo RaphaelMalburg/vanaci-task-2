@@ -65,7 +65,7 @@ export class PharmacyAIAgent {
 
   constructor(llmConfig?: ConfigLLMConfig) {
     this.llmConfig = llmConfig || {
-      provider: (process.env.DEFAULT_LLM_PROVIDER as ConfigLLMConfig["provider"]) || "openai",
+      provider: (process.env.DEFAULT_LLM_PROVIDER as ConfigLLMConfig["provider"]) || "openrouter",
       temperature: parseFloat(process.env.LLM_TEMPERATURE || "0.7"),
       maxTokens: parseInt(process.env.LLM_MAX_TOKENS || "2000"),
     };

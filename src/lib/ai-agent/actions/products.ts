@@ -33,37 +33,38 @@ export const searchProductsTool = tool({
       // Se encontrou produtos, ordenar por relevância
       if (products.length > 0) {
         // Calcular score de relevância para cada produto
-        const scoredProducts = products.map(product => {
-          const productName = product.name.toLowerCase();
-          const productDesc = (product.description || "").toLowerCase();
-          
-          let score = 0;
-          
-          // Correspondência exata no nome (score mais alto)
-          if (productName.includes(queryLower)) {
-            if (productName === queryLower) score += 100;
-            else if (productName.startsWith(queryLower)) score += 80;
-            else score += 60;
-          }
-          
-          // Correspondência na descrição
-          if (productDesc.includes(queryLower)) {
-            score += 30;
-          }
-          
-          // Correspondência em palavras-chave do sintoma
-          const searchTerms = getSearchTermsForSymptom(queryLower);
-          searchTerms.forEach(term => {
-            if (productName.includes(term)) score += 40;
-            if (productDesc.includes(term)) score += 20;
-          });
-          
-          return { product, score };
-        })
-        .filter(item => item.score > 0) // Só manter produtos com alguma relevância
-        .sort((a, b) => b.score - a.score) // Ordenar por score decrescente
-        .slice(0, limit)
-        .map(item => item.product);
+        const scoredProducts = products
+          .map((product) => {
+            const productName = product.name.toLowerCase();
+            const productDesc = (product.description || "").toLowerCase();
+
+            let score = 0;
+
+            // Correspondência exata no nome (score mais alto)
+            if (productName.includes(queryLower)) {
+              if (productName === queryLower) score += 100;
+              else if (productName.startsWith(queryLower)) score += 80;
+              else score += 60;
+            }
+
+            // Correspondência na descrição
+            if (productDesc.includes(queryLower)) {
+              score += 30;
+            }
+
+            // Correspondência em palavras-chave do sintoma
+            const searchTerms = getSearchTermsForSymptom(queryLower);
+            searchTerms.forEach((term) => {
+              if (productName.includes(term)) score += 40;
+              if (productDesc.includes(term)) score += 20;
+            });
+
+            return { product, score };
+          })
+          .filter((item) => item.score > 0) // Só manter produtos com alguma relevância
+          .sort((a, b) => b.score - a.score) // Ordenar por score decrescente
+          .slice(0, limit)
+          .map((item) => item.product);
 
         if (scoredProducts.length > 0) {
           const productsList = scoredProducts
@@ -82,11 +83,11 @@ export const searchProductsTool = tool({
 
       // Se não encontrou produtos relevantes, verificar se é um produto específico
       const isSpecificProduct = isSpecificProductQuery(queryLower);
-      
+
       if (isSpecificProduct) {
         // Para produtos específicos, sugerir alternativas similares
         const alternatives = await getRelevantAlternatives(productService, queryLower, limit);
-        
+
         if (alternatives.length > 0) {
           const productsList = alternatives
             .map((product: Product) => {
@@ -110,7 +111,7 @@ export const searchProductsTool = tool({
 
       // Para buscas gerais (sintomas, categorias), mostrar produtos relevantes
       const relevantProducts = await getRelevantProductsForSymptom(productService, queryLower, limit);
-      
+
       if (relevantProducts.length > 0) {
         const productsList = relevantProducts
           .map((product: Product) => {
@@ -141,49 +142,59 @@ export const searchProductsTool = tool({
 // Função para verificar se a query é um produto específico
 function isSpecificProductQuery(query: string): boolean {
   const specificProductIndicators = [
-    'dipirona', 'paracetamol', 'ibuprofeno', 'aspirina', 'omeprazol',
-    'amoxicilina', 'azitromicina', 'diclofenaco', 'nimesulida', 'cetoprofeno',
-    'dorflex', 'tylenol', 'advil', 'voltaren', 'buscopan', 'plasil',
-    'dramamine', 'luftal', 'mylanta', 'gaviscon', 'nexium', 'losec'
+    "dipirona",
+    "paracetamol",
+    "ibuprofeno",
+    "aspirina",
+    "omeprazol",
+    "amoxicilina",
+    "azitromicina",
+    "diclofenaco",
+    "nimesulida",
+    "cetoprofeno",
+    "dorflex",
+    "tylenol",
+    "advil",
+    "voltaren",
+    "buscopan",
+    "plasil",
+    "dramamine",
+    "luftal",
+    "mylanta",
+    "gaviscon",
+    "nexium",
+    "losec",
   ];
-  
-  return specificProductIndicators.some(indicator => 
-    query.includes(indicator) || indicator.includes(query)
-  );
+
+  return specificProductIndicators.some((indicator) => query.includes(indicator) || indicator.includes(query));
 }
 
 // Função para buscar alternativas relevantes para produtos específicos
-async function getRelevantAlternatives(
-  productService: ProductService,
-  query: string,
-  limit: number
-): Promise<Product[]> {
+async function getRelevantAlternatives(productService: ProductService, query: string, limit: number): Promise<Product[]> {
   try {
     // Mapear produtos específicos para suas alternativas
     const alternativesMap: Record<string, string[]> = {
-      'dipirona': ['paracetamol', 'ibuprofeno', 'aspirina', 'dor', 'febre', 'analgésico'],
-      'paracetamol': ['dipirona', 'ibuprofeno', 'dor', 'febre', 'analgésico'],
-      'ibuprofeno': ['paracetamol', 'dipirona', 'anti-inflamatório', 'dor'],
-      'aspirina': ['paracetamol', 'ibuprofeno', 'dor', 'febre'],
-      'omeprazol': ['estômago', 'azia', 'gastrite', 'protetor gástrico'],
-      'amoxicilina': ['antibiótico', 'infecção'],
-      'diclofenaco': ['anti-inflamatório', 'dor', 'ibuprofeno'],
+      dipirona: ["paracetamol", "ibuprofeno", "aspirina", "dor", "febre", "analgésico"],
+      paracetamol: ["dipirona", "ibuprofeno", "dor", "febre", "analgésico"],
+      ibuprofeno: ["paracetamol", "dipirona", "anti-inflamatório", "dor"],
+      aspirina: ["paracetamol", "ibuprofeno", "dor", "febre"],
+      omeprazol: ["estômago", "azia", "gastrite", "protetor gástrico"],
+      amoxicilina: ["antibiótico", "infecção"],
+      diclofenaco: ["anti-inflamatório", "dor", "ibuprofeno"],
     };
-    
+
     const searchTerms = alternativesMap[query] || getSearchTermsForSymptom(query);
-    
+
     // Buscar produtos usando os termos alternativos
     const allProducts = await productService.getAllProducts({ limit: limit * 3 });
-    
+
     const relevantProducts = allProducts.filter((product: Product) => {
       const productName = product.name.toLowerCase();
       const productDesc = (product.description || "").toLowerCase();
-      
-      return searchTerms.some(term => 
-        productName.includes(term) || productDesc.includes(term)
-      );
+
+      return searchTerms.some((term) => productName.includes(term) || productDesc.includes(term));
     });
-    
+
     return relevantProducts.slice(0, limit);
   } catch (error) {
     logger.error("Erro ao buscar alternativas relevantes", { error });
@@ -192,42 +203,39 @@ async function getRelevantAlternatives(
 }
 
 // Função para buscar produtos relevantes baseados em sintomas
-async function getRelevantProductsForSymptom(
-  productService: ProductService,
-  query: string,
-  limit: number
-): Promise<Product[]> {
+async function getRelevantProductsForSymptom(productService: ProductService, query: string, limit: number): Promise<Product[]> {
   try {
     const searchTerms = getSearchTermsForSymptom(query);
-    
+
     if (searchTerms.length === 0) {
       return [];
     }
-    
+
     const allProducts = await productService.getAllProducts({ limit: limit * 2 });
-    
+
     // Calcular relevância para cada produto
-    const scoredProducts = allProducts.map((product: Product) => {
-      const productName = product.name.toLowerCase();
-      const productDesc = (product.description || "").toLowerCase();
-      
-      let score = 0;
-      
-      searchTerms.forEach(term => {
-        if (productName.includes(term)) score += 10;
-        if (productDesc.includes(term)) score += 5;
-        
-        // Bonus para correspondências exatas
-        if (productName === term) score += 20;
-      });
-      
-      return { product, score };
-    })
-    .filter(item => item.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map(item => item.product);
-    
+    const scoredProducts = allProducts
+      .map((product: Product) => {
+        const productName = product.name.toLowerCase();
+        const productDesc = (product.description || "").toLowerCase();
+
+        let score = 0;
+
+        searchTerms.forEach((term) => {
+          if (productName.includes(term)) score += 10;
+          if (productDesc.includes(term)) score += 5;
+
+          // Bonus para correspondências exatas
+          if (productName === term) score += 20;
+        });
+
+        return { product, score };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map((item) => item.product);
+
     return scoredProducts;
   } catch (error) {
     logger.error("Erro ao buscar produtos por sintoma", { error });
@@ -250,7 +258,7 @@ async function getPromotionalProductsForFallback(productService: any, limit: num
       const filteredProducts = cheapestProducts.filter((product: Product) => {
         const productName = product.name.toLowerCase();
         const productCategory = product.category?.toLowerCase() || "";
-        return searchTerms.some(term => productName.includes(term) || productCategory.includes(term));
+        return searchTerms.some((term) => productName.includes(term) || productCategory.includes(term));
       });
 
       // Se encontrarmos produtos filtrados, retorná-los
@@ -280,7 +288,7 @@ async function getBestSellersForFallback(productService: any, limit: number, que
       const filteredBestSellers = bestSellers.filter((product: Product) => {
         const productName = product.name.toLowerCase();
         const productCategory = product.category?.toLowerCase() || "";
-        return searchTerms.some(term => productName.includes(term) || productCategory.includes(term));
+        return searchTerms.some((term) => productName.includes(term) || productCategory.includes(term));
       });
 
       if (filteredBestSellers.length > 0) {
@@ -294,14 +302,13 @@ async function getBestSellersForFallback(productService: any, limit: number, que
       const remainingProducts = allProducts.filter((product: Product) => !bestSellers.find((bs: Product) => bs.id === product.id)).slice(0, limit - bestSellers.length);
       bestSellers.push(...remainingProducts);
     }
-    
+
     return bestSellers;
   } catch (error) {
     logger.error("Erro ao buscar best-sellers para fallback", { error });
     return [];
   }
 }
-
 
 // Tool: Obter detalhes do produto
 export const getProductDetailsTool = tool({
@@ -328,7 +335,7 @@ export const getProductDetailsTool = tool({
 
       return {
         success: true,
-        message: `Produto: ${product.name}\nPreço: €${product.price.toFixed(2)}\nDescrição: ${product.description || "Sem descrição"}\nCategoria: ${ 
+        message: `Produto: ${product.name}\nPreço: €${product.price.toFixed(2)}\nDescrição: ${product.description || "Sem descrição"}\nCategoria: ${
           product.category || "Sem categoria"
         }`,
         data: product,
@@ -385,9 +392,9 @@ export const listCategoriesTool = tool({
 export const listRecommendedProductsTool = tool({
   description: "Recomenda produtos baseado em sintomas ou necessidades específicas",
   inputSchema: z.object({
-      symptomOrNeed: z.string().describe('Sintoma ou necessidade do usuário (ex: "dor de cabeça", "vitaminas", "gripe")'),
-      limit: z.number().min(1).max(20).default(15).describe("Número máximo de recomendações"),
-    }),
+    symptomOrNeed: z.string().describe('Sintoma ou necessidade do usuário (ex: "dor de cabeça", "vitaminas", "gripe")'),
+    limit: z.number().min(1).max(20).default(15).describe("Número máximo de recomendações"),
+  }),
   execute: async ({ symptomOrNeed, limit }: { symptomOrNeed: string; limit: number }) => {
     logger.info("🔍 [list_recommended_products] Iniciando busca", { symptomOrNeed, limit });
 
@@ -423,16 +430,16 @@ export const listRecommendedProductsTool = tool({
         try {
           const promotionalProducts = await getPromotionalProductsForFallback(productService, limit, symptomOrNeed);
           logger.info("🎯 [list_recommended_products] Produtos promocionais como fallback", { count: promotionalProducts?.length || 0 });
-          
+
           if (promotionalProducts && promotionalProducts.length > 0) {
             return {
               success: true,
               message: `Não encontrei produtos específicos para "${symptomOrNeed}", mas aqui estão algumas opções que podem ajudar. Consulte sempre um profissional de saúde.`,
-              data: { 
-                products: promotionalProducts, 
+              data: {
+                products: promotionalProducts,
                 symptomOrNeed,
                 showInOverlay: true,
-                isFallback: true
+                isFallback: true,
               },
             };
           }
@@ -443,20 +450,19 @@ export const listRecommendedProductsTool = tool({
             return {
               success: true,
               message: `Não encontrei produtos para "${symptomOrNeed}". Aqui estão nossos produtos mais vendidos que podem ser úteis. Consulte um profissional de saúde.`,
-              data: { 
-                products: bestSellers, 
+              data: {
+                products: bestSellers,
                 symptomOrNeed,
                 showInOverlay: true,
                 isFallback: true,
-                fallbackType: "best-sellers"
+                fallbackType: "best-sellers",
               },
             };
           }
-
         } catch (fallbackError) {
           logger.error("❌ [list_recommended_products] Erro no fallback promocional", { error: fallbackError });
         }
-        
+
         return {
           success: true,
           message: `Nenhum produto encontrado para "${symptomOrNeed}". Consulte um farmacêutico para orientações.`,
@@ -465,60 +471,60 @@ export const listRecommendedProductsTool = tool({
       }
 
       logger.info("✅ [list_recommended_products] Retornando produtos encontrados", { count: uniqueProducts.length });
-      
+
       // Retornar resposta concisa - os produtos serão mostrados no overlay
       const result = {
         success: true,
         message: `Encontrei ${uniqueProducts.length} produtos recomendados para "${symptomOrNeed}". Consulte sempre um profissional de saúde antes de usar medicamentos.`,
-        data: { 
-          products: uniqueProducts, 
+        data: {
+          products: uniqueProducts,
           symptomOrNeed,
           showInOverlay: true, // Flag para indicar que deve mostrar no overlay
-          query: symptomOrNeed
+          query: symptomOrNeed,
         },
       };
-      
+
       // Log detalhado para debug
       logger.info("✅ [list_recommended_products] Resultado final:", {
         success: result.success,
         productCount: uniqueProducts.length,
         showInOverlay: result.data.showInOverlay,
         symptomOrNeed: result.data.symptomOrNeed,
-        products: uniqueProducts.map(p => ({ id: p.id, name: p.name, price: p.price }))
+        products: uniqueProducts.map((p) => ({ id: p.id, name: p.name, price: p.price })),
       });
-      
+
       return result;
     } catch (error) {
-      logger.error("❌ [list_recommended_products] Erro crítico na execução", { 
-        symptomOrNeed, 
+      logger.error("❌ [list_recommended_products] Erro crítico na execução", {
+        symptomOrNeed,
         error: error instanceof Error ? error.message : error,
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
       });
-      
+
       // Tentar fallback promocional mesmo em caso de erro crítico
       try {
         logger.info("🔄 [list_recommended_products] Tentando fallback após erro crítico");
         const productService = ProductService.getInstance();
         const promotionalProducts = await getPromotionalProductsForFallback(productService, Math.min(limit, 5), symptomOrNeed);
-        
+
         if (promotionalProducts && promotionalProducts.length > 0) {
           logger.info("✅ [list_recommended_products] Fallback bem-sucedido após erro", { count: promotionalProducts.length });
           return {
             success: true,
             message: `Houve um problema na busca, mas aqui estão algumas opções que podem ajudar. Consulte um farmacêutico para orientações sobre "${symptomOrNeed}".`,
-            data: { 
-              products: promotionalProducts, 
+            data: {
+              products: promotionalProducts,
               symptomOrNeed,
               showInOverlay: true,
               isFallback: true,
-              hasError: true
+              hasError: true,
             },
           };
         }
       } catch (fallbackError) {
         logger.error("❌ [list_recommended_products] Fallback também falhou", { fallbackError });
       }
-      
+
       // Último recurso: retornar erro estruturado
       return {
         success: false,

@@ -8,8 +8,9 @@ module.exports = {
     "^.+.ts$": "ts-jest",
   },
   collectCoverageFrom: ["src/**/*.ts", "!src/**/*.d.ts"],
-  moduleNameMapping: {
+  moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^@ai-sdk/openrouter$": "@ai-sdk/openai",
   },
   setupFilesAfterEnv: ["<rootDir>/tests/setup.ts"],
   testTimeout: 30000,

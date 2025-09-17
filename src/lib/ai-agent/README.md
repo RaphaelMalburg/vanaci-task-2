@@ -26,7 +26,7 @@ src/lib/ai-agent/
 ### 1. Configuração Básica
 
 ```typescript
-import { createAIAgent } from '@/lib/ai-agent';
+import { createAIAgent } from "@/lib/ai-agent";
 
 // Criar o agente
 const agent = createAIAgent();
@@ -34,7 +34,7 @@ const agent = createAIAgent();
 // Processar mensagem
 const response = await agent.processMessage({
   message: "Olá, preciso de ajuda",
-  sessionId: "user-123"
+  sessionId: "user-123",
 });
 ```
 
@@ -42,14 +42,14 @@ const response = await agent.processMessage({
 
 ```typescript
 // app/api/chat/route.ts
-import { createAIAgent } from '@/lib/ai-agent';
+import { createAIAgent } from "@/lib/ai-agent";
 
 export async function POST(request: Request) {
   const { message, sessionId } = await request.json();
-  
+
   const agent = createAIAgent();
   const response = await agent.processMessage({ message, sessionId });
-  
+
   return Response.json(response);
 }
 ```
@@ -58,20 +58,20 @@ export async function POST(request: Request) {
 
 ```typescript
 // server.js
-import express from 'express';
-import { createAIAgent } from './lib/ai-agent';
+import express from "express";
+import { createAIAgent } from "./lib/ai-agent";
 
 const app = express();
 const agent = createAIAgent();
 
-app.post('/api/chat', async (req, res) => {
+app.post("/api/chat", async (req, res) => {
   const { message, sessionId } = req.body;
-  
+
   try {
     const response = await agent.processMessage({ message, sessionId });
     res.json(response);
   } catch (error) {
-    res.status(500).json({ error: 'Erro interno do servidor' });
+    res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
 ```
@@ -88,9 +88,11 @@ OPENAI_API_KEY="your_openai_key"
 GOOGLE_GENERATIVE_AI_API_KEY="your_google_key"
 ANTHROPIC_API_KEY="your_anthropic_key"
 MISTRAL_API_KEY="your_mistral_key"
+OPENROUTER_API_KEY="your_openrouter_key"
+OPENROUTER_BASE_URL="https://openrouter.ai/api/v1"
 
 # Provedor padrão
-DEFAULT_LLM_PROVIDER="openai"
+DEFAULT_LLM_PROVIDER="openrouter"
 
 # Modelos específicos
 OPENAI_MODEL="gpt-4-turbo-preview"
@@ -99,16 +101,43 @@ ANTHROPIC_MODEL="claude-3-sonnet-20240229"
 MISTRAL_MODEL="mistral-large-latest"
 ```
 
+### Configuração do OpenRouter
+
+Para usar OpenRouter em vez de OpenAI, defina as variáveis de ambiente acima (incluindo `OPENROUTER_BASE_URL`) e selecione `openrouter` como `DEFAULT_LLM_PROVIDER` ou `provider`.
+
+### Exemplo Programático com createOpenRouter
+
+```typescript
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { createAIAgent } from "@/lib/ai-agent";
+
+const openRouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY!,
+  baseURL: process.env.OPENROUTER_BASE_URL,
+});
+
+const agent = createAIAgent(
+  {
+    provider: "openrouter",
+    model: "openrouter/anthropic/claude-3-sonnet:thinking",
+    temperature: 0.7,
+    maxTokens: 2000,
+    enableMessageRewriter: true,
+  },
+  openRouter
+);
+```
+
 ### Configuração Programática
 
 ```typescript
-import { createAIAgent } from '@/lib/ai-agent';
+import { createAIAgent } from "@/lib/ai-agent";
 
 const agent = createAIAgent({
-  provider: 'mistral',
-  model: 'mistral-large-latest',
+  provider: "mistral",
+  model: "mistral-large-latest",
   temperature: 0.7,
-  maxTokens: 2000
+  maxTokens: 2000,
 });
 ```
 
@@ -117,21 +146,21 @@ const agent = createAIAgent({
 ### 1. Estrutura de um Tool
 
 ```typescript
-import { z } from 'zod';
-import { tool } from 'ai';
+import { z } from "zod";
+import { tool } from "ai";
 
 export const meuTool = tool({
-  description: 'Descrição do que o tool faz',
+  description: "Descrição do que o tool faz",
   parameters: z.object({
-    parametro: z.string().describe('Descrição do parâmetro')
+    parametro: z.string().describe("Descrição do parâmetro"),
   }),
   execute: async ({ parametro }: { parametro: string }) => {
     // Lógica do tool
     return {
       success: true,
-      data: 'Resultado'
+      data: "Resultado",
     };
-  }
+  },
 });
 ```
 
@@ -141,15 +170,15 @@ export const meuTool = tool({
 // actions/meus-tools.ts
 export const meusTools = {
   meu_tool: meuTool,
-  outro_tool: outroTool
+  outro_tool: outroTool,
 };
 
 // index.ts
-import { meusTools } from './actions/meus-tools';
+import { meusTools } from "./actions/meus-tools";
 
 const allTools = {
   ...existingTools,
-  ...meusTools
+  ...meusTools,
 };
 ```
 
@@ -192,7 +221,7 @@ DEFAULT_LLM_PROVIDER="openai"
 ```typescript
 const response = await agent.processMessage({
   message: "Olá!",
-  sessionId: "user-123"
+  sessionId: "user-123",
 });
 console.log(response.content);
 ```
@@ -203,7 +232,7 @@ console.log(response.content);
 const response = await agent.processMessage({
   message: "Lembra do que conversamos?",
   sessionId: "user-123",
-  context: previousMessages
+  context: previousMessages,
 });
 ```
 
@@ -212,7 +241,7 @@ const response = await agent.processMessage({
 ```typescript
 const stream = await agent.streamMessage({
   message: "Conte uma história",
-  sessionId: "user-123"
+  sessionId: "user-123",
 });
 
 for await (const chunk of stream) {
@@ -227,7 +256,7 @@ for await (const chunk of stream) {
 ```typescript
 const agent = createAIAgent({
   debug: true,
-  logLevel: 'verbose'
+  logLevel: "verbose",
 });
 ```
 
@@ -239,7 +268,7 @@ const response = await agent.processMessage({
   sessionId: "user-123",
   onToolCall: (toolName, params) => {
     console.log(`Tool chamado: ${toolName}`, params);
-  }
+  },
 });
 ```
 
