@@ -380,7 +380,13 @@ export function Chat() {
                   }
                   
                   // NOVO: Extrair produtos automaticamente do resultado se não foram exibidos no overlay
-                  if (toolResult.result && toolResult.result.data && toolResult.result.data.products && toolResult.result.data.products.length > 0) {
+                  // IMPORTANTE: Filtrar resultados de ferramentas de carrinho para evitar interferência no overlay
+                  const cartToolNames = ['add_to_cart', 'remove_from_cart', 'update_cart_quantity', 'view_cart', 'clear_cart'];
+                  const isCartToolResult = cartToolNames.some(toolName => 
+                    toolResult.toolCallId && toolResult.toolCallId.includes(toolName)
+                  );
+                  
+                  if (!isCartToolResult && toolResult.result && toolResult.result.data && toolResult.result.data.products && toolResult.result.data.products.length > 0) {
                     const products = toolResult.result.data.products;
                     const symptom = toolResult.result.data.symptomOrNeed || toolResult.result.data.query;
                     // 🕐 PERFORMANCE LOG: Início da montagem do overlay (forçado)
@@ -398,6 +404,8 @@ export function Chat() {
                     console.log(`✅ [PERFORMANCE] Overlay montado (forçado) em ${(overlayEndTime - overlayStartTime).toFixed(2)}ms`);
                     
                     setThinkingMessage(`${products.length} produtos encontrados e exibidos!`);
+                  } else if (isCartToolResult) {
+                    console.log("🛒 Resultado de ferramenta de carrinho ignorado para overlay:", toolResult.toolCallId);
                   }
                 } else if (parsed.type === "tool_call" && (parsed.toolCall || parsed.content)) {
                   // Tool call - não adicionar ao texto, apenas logar
