@@ -488,7 +488,8 @@ export class CartService {
 
       const response = await fetch(this.baseUrl, {
         method: 'DELETE',
-        headers: this.getAuthHeaders()
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ clearAll: true })
       });
 
       if (response.status === 401) {
