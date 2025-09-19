@@ -100,9 +100,18 @@ export class CartService {
       });
       
       if (response.status === 401) {
+        // Clear authentication data
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          
+          // Redirect to login or show auth modal
+          window.location.href = '/';
+        }
+        
         return {
           success: false,
-          message: 'Usuário não autenticado',
+          message: 'Sessão expirada. Faça login novamente.',
           error: 'AUTHENTICATION_REQUIRED'
         };
       }
@@ -215,9 +224,38 @@ export class CartService {
         originalItems.forEach(originalItem => {
           store.addItem(originalItem, originalItem.quantity);
         });
-        throw new Error('Usuário não autenticado');
+        
+        // Clear authentication data
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          
+          // Redirect to login or show auth modal
+          window.location.href = '/';
+        }
+        
+        throw new Error('Sessão expirada. Faça login novamente.');
       }
 
+      if (response.status === 401) {
+        // Rollback optimistic update
+        store.clearCart();
+        originalItems.forEach(originalItem => {
+          store.addItem(originalItem, originalItem.quantity);
+        });
+        
+        // Clear authentication data
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          
+          // Redirect to login or show auth modal
+          window.location.href = '/';
+        }
+        
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+      
       if (!response.ok) {
         // Rollback optimistic update
         store.clearCart();
@@ -294,7 +332,17 @@ export class CartService {
         originalItems.forEach(originalItem => {
           store.addItem(originalItem, originalItem.quantity);
         });
-        throw new Error('Usuário não autenticado');
+        
+        // Clear authentication data
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          
+          // Redirect to login or show auth modal
+          window.location.href = '/';
+        }
+        
+        throw new Error('Sessão expirada. Faça login novamente.');
       }
 
       if (!response.ok) {
@@ -443,6 +491,24 @@ export class CartService {
         headers: this.getAuthHeaders()
       });
 
+      if (response.status === 401) {
+        // Rollback optimistic update
+        originalItems.forEach(originalItem => {
+          store.addItem(originalItem, originalItem.quantity);
+        });
+        
+        // Clear authentication data
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          
+          // Redirect to login or show auth modal
+          window.location.href = '/';
+        }
+        
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+      
       if (!response.ok) {
         // Rollback optimistic update
         originalItems.forEach(originalItem => {
