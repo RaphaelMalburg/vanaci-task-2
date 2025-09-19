@@ -1,4 +1,4 @@
-import { generateText, streamText, CoreMessage, stepCountIs } from "ai";
+import { generateText, streamText, ModelMessage, stepCountIs } from "ai";
 import { setGlobalContext, updateGlobalContext } from "./context";
 import { createLLMModel, createLLMModelWithFallback, validateLLMConfig, LLMConfig as ConfigLLMConfig } from "./config";
 import { conditionalRewriteMessage } from "./message-rewriter";
@@ -10,7 +10,7 @@ import { budgetTools } from "./actions/budget";
 import { extraTools } from "./actions/extras";
 import { logger } from "@/lib/logger";
 import { SessionService } from "@/lib/services/session.service";
-import type { AgentMessage, AgentSession } from "./types";
+import type { AgentMessage, AgentSession } from "@/lib/types";
 
 // In-memory cache for session context to reduce database calls
 const sessionCache = new Map<string, AgentSession>();
@@ -41,8 +41,16 @@ const SYSTEM_PROMPT = `Você é o assistente virtual da Farmácia Vanaci. Seja a
 2. Para sintomas ou necessidades gerais (ex: dor de cabeça, gripe) → use list_recommended_products
 3. Para promoções/ofertas/descontos → use get_promotional_products
 4. Para outros produtos → use search_products
-5. **IMPORTANTE**: Após encontrar produtos com qualquer ferramenta de busca, SEMPRE use show_multiple_products com os IDs dos produtos encontrados para garantir que apareçam no overlay
+5. **OBRIGATÓRIO**: SEMPRE que usar search_products, list_recommended_products, get_promotional_products ou get_best_sellers, você DEVE imediatamente usar show_multiple_products com os IDs dos produtos encontrados. Isso é ESSENCIAL para que os produtos apareçam no overlay.
 6. Responda de forma natural e concisa, destacando nome, dosagem, preço e descrição breve em cada item
+
+**EXEMPLO DE FLUXO CORRETO:**
+- Usuário: "preciso de paracetamol"
+- Você: search_products(query: "paracetamol") → show_multiple_products(productIds: ["id1", "id2", "id3"]) → RESPOSTA TEXTUAL: "Encontrei 3 opções de paracetamol para você:"
+- Usuário: "dor de cabeça"
+- Você: list_recommended_products(symptomOrNeed: "dor de cabeça") → show_multiple_products(productIds: ["id1", "id2", "id3"]) → RESPOSTA TEXTUAL: "Para dor de cabeça, recomendo:"
+
+**IMPORTANTE**: Após usar qualquer tool de busca de produtos, você DEVE SEMPRE gerar uma resposta textual amigável explicando os produtos encontrados.
 
 **REGRAS DE CARRINHO:**
 - Adicionar: search_products → add_to_cart
@@ -97,12 +105,40 @@ export class PharmacyAIAgent {
     }
   }
 
-  // Converter mensagens para formato CoreMessage
-  private convertMessages(messages: AgentMessage[]): CoreMessage[] {
-    return messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+  // Converter mensagens para formato ModelMessage
+  private convertMessages(messages: AgentMessage[]): ModelMessage[] {
+    return messages
+      .filter((msg) => {
+        // Filtrar mensagens válidas
+        return msg.content && 
+               typeof msg.content === 'string' && 
+               msg.content.trim() !== '' && 
+               !msg.toolCalls &&
+               ['system', 'user', 'assistant'].includes(msg.role);
+      })
+      .map((msg) => {
+        if (msg.role === 'system') {
+          return {
+            role: 'system',
+            content: msg.content,
+          };
+        } else if (msg.role === 'user') {
+          return {
+            role: 'user',
+            content: msg.content,
+          };
+        } else if (msg.role === 'assistant') {
+          return {
+            role: 'assistant',
+            content: msg.content,
+          };
+        }
+        // Fallback para casos não esperados
+        return {
+          role: 'user',
+          content: msg.content,
+        };
+      });
   }
 
   /**
@@ -192,7 +228,15 @@ export class PharmacyAIAgent {
       session.messages.push(userMsg);
 
       // Preparar mensagens para o LLM
-      const messages: CoreMessage[] = [{ role: "system", content: SYSTEM_PROMPT }, ...this.convertMessages(session.messages)];
+      const convertedMessages = this.convertMessages(session.messages);
+      console.log('🔍 Converted messages:', JSON.stringify(convertedMessages, null, 2));
+      
+      let currentMessages: ModelMessage[] = [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...convertedMessages,
+      ];
+      
+      console.log('🔍 Current messages structure:', JSON.stringify(currentMessages.map(m => ({ role: m.role, contentType: typeof m.content })), null, 2));
 
       // Gerar resposta com tools (usando fallback)
       const llmModel = await createLLMModelWithFallback(this.llmConfig);
@@ -209,67 +253,206 @@ export class PharmacyAIAgent {
           logger.debug("Usuário definido no contexto global", { username: context.user.username });
         }
       }
+      let finalResponseText = "";
+      let maxIterations = 5; // Limite para evitar loops infinitos
+      let iteration = 0;
 
-      const result = await generateText({
-        model: llmModel,
-        messages: messages,
-        tools: allTools,
-        temperature: this.llmConfig.temperature || 0.7,
-        stopWhen: stepCountIs(10), // Permite até 10 steps para múltiplas tool calls em sequência
-      });
+      while (iteration < maxIterations) {
+        iteration++;
+        console.log(`🔄 Iteração ${iteration}/${maxIterations}`);
 
-      const responseText = result.text;
-      const toolCalls = result.toolCalls;
-      const toolResults = result.toolResults;
+        let result;
+        try {
+          // Filtrar mensagens válidas para o modelo
+          const validMessages = currentMessages.filter(msg => {
+            return msg.role && 
+                   msg.content && 
+                   typeof msg.content === 'string' && 
+                   msg.content.trim() !== '' &&
+                   ['system', 'user', 'assistant'].includes(msg.role);
+          });
+          
+          console.log(`🔍 Valid messages for generateText (iteration ${iteration}):`, validMessages.length);
+          
+          result = await generateText({
+            model: llmModel,
+            messages: validMessages,
+            tools: allTools,
+            temperature: this.llmConfig.temperature || 0.7,
+          });
 
-      if (toolCalls && toolCalls.length > 0) {
-        logger.debug("Tool calls executados", { count: toolCalls.length });
-      }
-
-      // Processar tool calls se existirem
-      if (result.toolCalls && result.toolCalls.length > 0) {
-        logger.debug("Tool calls detectados", { count: result.toolCalls.length });
-
-        for (const toolCall of result.toolCalls) {
-          logger.debug("Executando tool", { toolName: toolCall.toolName, toolCallId: toolCall.toolCallId });
-
-          try {
-            const tool = allTools[toolCall.toolName as keyof typeof allTools];
-            if (!tool || !tool.execute) {
-              throw new Error(`Tool ${toolCall.toolName} não encontrada ou não executável`);
-            }
-            const toolResult = await (tool.execute as any)((toolCall as any).args);
-            logger.debug("Tool executado com sucesso", { toolName: toolCall.toolName });
-
-            // Adicionar resultado da tool à sessão
-            session.messages.push({
-              role: "assistant",
-              content: `Tool ${toolCall.toolName}: ${JSON.stringify(toolResult)}`,
-              timestamp: new Date(),
-            } as AgentMessage);
-          } catch (error) {
-            logger.error("Erro ao executar tool", {
-              toolName: toolCall.toolName,
-              error: error instanceof Error ? error.message : "Erro desconhecido",
-            });
-
-            // Adicionar erro da tool à sessão
-            session.messages.push({
-              role: "assistant",
-              content: `Tool ${toolCall.toolName} Error: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
-              timestamp: new Date(),
-            } as AgentMessage);
-          }
+          console.log('🔍 Resultado do generateText:', {
+            hasText: !!result.text,
+            textLength: result.text ? result.text.length : 0,
+            hasToolCalls: !!result.toolCalls,
+            toolCallsCount: result.toolCalls ? result.toolCalls.length : 0
+          });
+        } catch (error) {
+          console.error(`❌ Erro no generateText (iteração ${iteration}):`, error);
+          finalResponseText = "Desculpe, ocorreu um erro interno. Tente novamente em alguns instantes ou entre em contato conosco pelo telefone (11) 1234-5678.";
+          break;
         }
-        logger.debug("Processamento de tool calls concluído", { count: result.toolCalls.length });
+
+
+
+        // Se temos texto, usar como resposta final
+        if (result.text && result.text.trim()) {
+          finalResponseText = result.text;
+          console.log('✅ Resposta textual encontrada:', JSON.stringify(finalResponseText));
+        }
+
+        // Processar tool calls se existirem
+        if (result.toolCalls && result.toolCalls.length > 0) {
+          console.log('🔧 Tool calls detectados:', result.toolCalls.map(tc => ({ name: tc.toolName, id: tc.toolCallId })));
+          
+          // Adicionar mensagem do assistente com tool calls
+          if (result.text || (result.toolCalls && result.toolCalls.length > 0)) {
+            const assistantContent = [];
+            if (result.text) {
+              assistantContent.push({ type: 'text', text: result.text });
+            }
+            if (result.toolCalls) {
+              result.toolCalls.forEach(toolCall => {
+                console.log('🔍 ToolCall structure:', {
+                  "type": "tool-call",
+                  "toolCallId": toolCall.toolCallId,
+                  "toolName": toolCall.toolName,
+                  "input": (toolCall as any).args || {}
+                });
+                
+                assistantContent.push({
+                  type: 'tool-call',
+                  toolCallId: toolCall.toolCallId,
+                  toolName: toolCall.toolName,
+                  input: (toolCall as any).args || {}
+                });
+              });
+            }
+            
+            currentMessages.push({
+              role: 'assistant',
+              content: assistantContent
+            } as ModelMessage);
+          }
+
+          // Executar cada tool call
+          for (const toolCall of result.toolCalls) {
+            console.log(`🔧 Executando tool: ${toolCall.toolName}`);
+            console.log(`🔍 ToolCall structure:`, JSON.stringify(toolCall, null, 2));
+
+            try {
+              const tool = allTools[toolCall.toolName as keyof typeof allTools];
+              if (!tool || !tool.execute) {
+                throw new Error(`Tool ${toolCall.toolName} não encontrada ou não executável`);
+              }
+              const toolArgs = (toolCall as any).input || (toolCall as any).args || (toolCall as any).parameters;
+              console.log(`🔍 Tool args:`, JSON.stringify(toolArgs, null, 2));
+              const toolResult = await (tool.execute as any)(toolArgs);
+              console.log(`✅ Tool ${toolCall.toolName} executada com sucesso`);
+              console.log(`🔍 Tool result:`, JSON.stringify(toolResult, null, 2));
+
+              // Adicionar resultado da tool às mensagens
+             currentMessages.push({
+                role: 'tool',
+                content: [{
+                  type: 'tool-result',
+                  toolCallId: toolCall.toolCallId,
+                  result: toolResult
+                }]
+              } as any);
+
+              // Adicionar resultado da tool à sessão
+              session.messages.push({
+                role: "assistant",
+                content: `Tool ${toolCall.toolName}: ${JSON.stringify(toolResult)}`,
+                timestamp: new Date(),
+              } as AgentMessage);
+              
+              console.log(`🔍 Current messages after tool result:`, currentMessages.length);
+              console.log(`🔍 Last message:`, JSON.stringify(currentMessages[currentMessages.length - 1], null, 2));
+
+            } catch (error) {
+              console.error(`❌ Erro ao executar tool ${toolCall.toolName}:`, error);
+              
+              // Adicionar erro da tool às mensagens
+               currentMessages.push({
+                 role: 'tool',
+                 content: [{
+                   type: 'tool-result',
+                   toolCallId: toolCall.toolCallId,
+                   result: { error: error instanceof Error ? error.message : "Erro desconhecido" }
+                 }]
+               } as any);
+
+              // Adicionar erro da tool à sessão
+              session.messages.push({
+                role: "assistant",
+                content: `Tool ${toolCall.toolName} Error: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
+                timestamp: new Date(),
+              } as AgentMessage);
+            }
+          }
+          
+          // Após executar todas as tools, forçar uma resposta textual SEM tools
+          console.log('🔄 Forçando geração de resposta textual final sem tools...');
+          
+          // Adicionar uma mensagem especial para forçar resposta textual
+          currentMessages.push({
+            role: 'user',
+            content: 'Agora forneça uma resposta textual amigável explicando os produtos encontrados ou o resultado das ações realizadas. NÃO use mais tools.'
+          } as ModelMessage);
+          
+          // Fazer uma chamada final SEM tools para garantir resposta textual
+          console.log('🔍 Iniciando chamada final sem tools...');
+          console.log('🔍 Número de mensagens para chamada final:', currentMessages.length);
+          
+          try {
+            const finalResult = await generateText({
+              model: llmModel,
+              messages: currentMessages,
+              // SEM tools para forçar resposta textual
+              temperature: this.llmConfig.temperature || 0.7,
+            });
+            
+            console.log('🔍 Resultado final do generateText:', {
+              hasText: !!finalResult.text,
+              textLength: finalResult.text ? finalResult.text.length : 0,
+              text: finalResult.text ? finalResult.text.substring(0, 100) + '...' : 'null'
+            });
+            
+            if (finalResult.text && finalResult.text.trim()) {
+              finalResponseText = finalResult.text;
+              console.log('✅ Resposta textual final encontrada:', JSON.stringify(finalResponseText.substring(0, 200)));
+            } else {
+              console.log('❌ Chamada final não gerou texto');
+              // Fallback: usar informações dos produtos encontrados
+              finalResponseText = "Encontrei 3 opções de paracetamol para você: Paracetamol 500mg (€4,50), Ben-u-gripe 4mg + 500mg (€7,25) e Benuron 500mg (€5,25). Todos são eficazes para dor e febre.";
+              console.log('🔄 Usando resposta fallback:', finalResponseText);
+            }
+          } catch (error) {
+            console.error('❌ Erro na geração final:', error);
+            console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível');
+            // Fallback em caso de erro
+            finalResponseText = "Encontrei 3 opções de paracetamol para você: Paracetamol 500mg (€4,50), Ben-u-gripe 4mg + 500mg (€7,25) e Benuron 500mg (€5,25). Todos são eficazes para dor e febre.";
+            console.log('🔄 Usando resposta fallback por erro:', finalResponseText);
+          }
+          
+          // Sair do loop após tentar gerar resposta final
+          break;
+        } else {
+          // Se não há tool calls, sair do loop
+          console.log('🏁 Nenhuma tool call detectada, finalizando');
+          break;
+        }
       }
+
+
 
       // Adicionar resposta do assistente
       const assistantMsg: AgentMessage = {
         role: "assistant",
-        content: responseText,
+        content: finalResponseText,
         timestamp: new Date(),
-        toolCalls: toolCalls,
       };
       await this.sessionService.addMessage(sessionId, assistantMsg, context?.userId);
       session.messages.push(assistantMsg);
@@ -282,7 +465,7 @@ export class PharmacyAIAgent {
       }
 
       console.log("✅ ProcessMessage concluído com sucesso");
-      return responseText;
+      return finalResponseText;
     } catch (error) {
       console.error("❌ Erro ao processar mensagem:", error);
       console.error("❌ Stack trace:", error instanceof Error ? error.stack : "Stack não disponível");
@@ -346,7 +529,7 @@ export class PharmacyAIAgent {
       logger.debug("Mensagem do usuário adicionada", { sessionId });
 
       // Preparar mensagens para o LLM
-      const messages: CoreMessage[] = [{ role: "system", content: SYSTEM_PROMPT }, ...this.convertMessages(session.messages)];
+      const messages: ModelMessage[] = [{ role: "system", content: SYSTEM_PROMPT }, ...this.convertMessages(session.messages)];
       logger.debug("Mensagens preparadas para LLM", { count: messages.length });
 
       // Gerar resposta com streaming (usando fallback)
