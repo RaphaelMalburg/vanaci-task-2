@@ -190,6 +190,10 @@ export function Chat() {
   const sendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
+    // 🕐 PERFORMANCE LOG: Início do processo de envio
+    const chatStartTime = performance.now();
+    console.log(`🚀 [PERFORMANCE] Chat iniciado às ${new Date().toLocaleTimeString()}.${Date.now() % 1000}`);
+
     const userMessage: Message = {
       id: Date.now().toString(),
       text: inputValue,
@@ -210,6 +214,10 @@ export function Chat() {
       console.log("📤 URL da API:", "/api/ai-chat");
       console.log("📤 URL completa:", window.location.origin + "/api/ai-chat");
       console.log("📤 Iniciando fetch...");
+      
+      // 🕐 PERFORMANCE LOG: Início da requisição
+      const requestStartTime = performance.now();
+      console.log(`⏱️ [PERFORMANCE] Requisição iniciada em ${(requestStartTime - chatStartTime).toFixed(2)}ms`);
       const response = await fetch("/api/ai-chat", {
         method: "POST",
         headers: {
@@ -231,11 +239,15 @@ export function Chat() {
           })),
         }),
       });
-      console.log("Resposta recebida:", response.status, response.headers.get("content-type"));
+       
+       // 🕐 PERFORMANCE LOG: Resposta recebida
+       const responseReceivedTime = performance.now();
+       console.log(`📥 [PERFORMANCE] Resposta recebida em ${(responseReceivedTime - requestStartTime).toFixed(2)}ms`);
+       console.log("Resposta recebida:", response.status, response.headers.get("content-type"));
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+       if (!response.ok) {
+         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+       }
 
       const reader = response.body?.getReader();
       if (!reader) {
@@ -267,6 +279,10 @@ export function Chat() {
               const data = line.slice(6);
               console.log("Dados recebidos:", data);
               if (data === "[DONE]") {
+                // 🕐 PERFORMANCE LOG: Streaming finalizado
+                const streamEndTime = performance.now();
+                console.log(`🏁 [PERFORMANCE] Streaming finalizado em ${(streamEndTime - responseReceivedTime).toFixed(2)}ms`);
+                console.log(`⏱️ [PERFORMANCE] Tempo total de resposta: ${(streamEndTime - chatStartTime).toFixed(2)}ms`);
                 done = true;
                 break;
               }
@@ -316,12 +332,18 @@ export function Chat() {
                               }
                               
                               if (realProducts.length > 0) {
+                                // 🕐 PERFORMANCE LOG: Início da montagem do overlay
+                                const overlayStartTime = performance.now();
+                                console.log(`🎨 [PERFORMANCE] Iniciando montagem do overlay em ${(overlayStartTime - chatStartTime).toFixed(2)}ms`);
                                 console.log('🎯 Exibindo produtos extraídos no overlay:', realProducts);
                                 productOverlay.showProducts({
                                   title: "Produtos Mencionados",
                                   query: userMessage.text,
                                   products: realProducts
                                 });
+                                // 🕐 PERFORMANCE LOG: Overlay montado
+                                const overlayEndTime = performance.now();
+                                console.log(`✅ [PERFORMANCE] Overlay montado em ${(overlayEndTime - overlayStartTime).toFixed(2)}ms`);
                               }
                             } catch (error) {
                               console.error('❌ Erro ao buscar produtos extraídos:', error);
@@ -346,15 +368,24 @@ export function Chat() {
                   // Verificar se é resultado de show_multiple_products
                   if (toolResult.result && toolResult.result.success && toolResult.result.data && toolResult.result.data.showInOverlay) {
                     const { products, title, query } = toolResult.result.data;
+                    // 🕐 PERFORMANCE LOG: Início da montagem do overlay (tool result)
+                    const overlayStartTime = performance.now();
+                    console.log(`🎨 [PERFORMANCE] Iniciando montagem do overlay (tool result) em ${(overlayStartTime - chatStartTime).toFixed(2)}ms`);
                     console.log("📦 Exibindo produtos no overlay via tool result:", { products: products?.length, title, query });
                     setThinkingMessage(`Encontrados ${products?.length || 0} produtos!`);
                     productOverlay.showProducts({ title: title || "Produtos Recomendados", query, products: products || [] });
+                    // 🕐 PERFORMANCE LOG: Overlay montado (tool result)
+                    const overlayEndTime = performance.now();
+                    console.log(`✅ [PERFORMANCE] Overlay montado (tool result) em ${(overlayEndTime - overlayStartTime).toFixed(2)}ms`);
                   }
                   
                   // NOVO: Extrair produtos automaticamente do resultado se não foram exibidos no overlay
                   if (toolResult.result && toolResult.result.data && toolResult.result.data.products && toolResult.result.data.products.length > 0) {
                     const products = toolResult.result.data.products;
                     const symptom = toolResult.result.data.symptomOrNeed || toolResult.result.data.query;
+                    // 🕐 PERFORMANCE LOG: Início da montagem do overlay (forçado)
+                    const overlayStartTime = performance.now();
+                    console.log(`🎨 [PERFORMANCE] Iniciando montagem do overlay (forçado) em ${(overlayStartTime - chatStartTime).toFixed(2)}ms`);
                     console.log("🔄 Forçando exibição no overlay - produtos encontrados:", { count: products.length, symptom });
                     
                     productOverlay.showProducts({
@@ -362,6 +393,9 @@ export function Chat() {
                       query: symptom,
                       products: products
                     });
+                    // 🕐 PERFORMANCE LOG: Overlay montado (forçado)
+                    const overlayEndTime = performance.now();
+                    console.log(`✅ [PERFORMANCE] Overlay montado (forçado) em ${(overlayEndTime - overlayStartTime).toFixed(2)}ms`);
                     
                     setThinkingMessage(`${products.length} produtos encontrados e exibidos!`);
                   }
