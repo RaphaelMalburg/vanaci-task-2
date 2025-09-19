@@ -142,6 +142,63 @@ export class PharmacyAIAgent {
   }
 
   /**
+   * Gera uma resposta fallback dinâmica baseada no contexto
+   */
+  private generateDynamicFallback(userMessage: string, currentMessages: ModelMessage[]): string {
+    const lowerMessage = userMessage.toLowerCase();
+    
+    // Extrair informações de produtos das mensagens anteriores
+    const productMentions = currentMessages
+      .filter(msg => msg.content && typeof msg.content === 'string')
+      .map(msg => msg.content as string)
+      .join(' ')
+      .toLowerCase();
+    
+    // Respostas baseadas em sintomas/necessidades
+    if (lowerMessage.includes('dor') && (lowerMessage.includes('cabeça') || lowerMessage.includes('cabeca'))) {
+      return "Para dor de cabeça, temos várias opções eficazes disponíveis. Recomendo consultar nosso farmacêutico para a melhor escolha baseada no seu caso específico.";
+    }
+    
+    if (lowerMessage.includes('dor') && lowerMessage.includes('barriga')) {
+      return "Para desconforto abdominal, temos produtos que podem ajudar. É importante identificar a causa - recomendo falar com nosso farmacêutico para orientação adequada.";
+    }
+    
+    if (lowerMessage.includes('gripe') || lowerMessage.includes('resfriado')) {
+      return "Para sintomas de gripe e resfriado, temos uma linha completa de produtos. Posso ajudar você a encontrar o mais adequado para seus sintomas específicos.";
+    }
+    
+    // Respostas baseadas em medicamentos específicos
+    if (lowerMessage.includes('paracetamol')) {
+      return "Temos diferentes apresentações de paracetamol disponíveis. Cada uma tem suas características específicas - posso ajudar você a escolher a mais adequada.";
+    }
+    
+    if (lowerMessage.includes('dipirona')) {
+      return "A dipirona é um analgésico muito eficaz. Temos várias opções disponíveis com diferentes dosagens e apresentações.";
+    }
+    
+    if (lowerMessage.includes('ibuprofeno')) {
+      return "O ibuprofeno é excelente para dor e inflamação. Temos diferentes marcas e dosagens disponíveis em nossa farmácia.";
+    }
+    
+    // Respostas para carrinho
+    if (lowerMessage.includes('carrinho') || lowerMessage.includes('comprar')) {
+      return "Posso ajudar você com seu carrinho de compras. Me diga qual produto gostaria de adicionar ou se precisa ver o que já está selecionado.";
+    }
+    
+    // Resposta genérica mais variada
+    const genericResponses = [
+      "Estou aqui para ajudar você a encontrar os produtos que precisa. Pode me contar mais sobre o que está procurando?",
+      "Nossa farmácia tem uma ampla variedade de produtos. Como posso ajudar você hoje?",
+      "Posso ajudar você a encontrar medicamentos e produtos de saúde. Qual é sua necessidade específica?",
+      "Estou à disposição para orientar sobre nossos produtos. Me conte o que você está buscando."
+    ];
+    
+    // Usar timestamp para variar a resposta
+    const responseIndex = Math.floor(Date.now() / 10000) % genericResponses.length;
+    return genericResponses[responseIndex];
+  }
+
+  /**
    * Detecta se uma mensagem deve obrigatoriamente usar tools
    */
   private shouldForceToolUsage(message: string): boolean {
@@ -329,9 +386,19 @@ export class PharmacyAIAgent {
               });
             }
             
+            // Converter assistantContent para string simples
+            let contentString = '';
+            if (result.text) {
+              contentString = result.text;
+            }
+            if (result.toolCalls && result.toolCalls.length > 0) {
+              const toolCallsInfo = result.toolCalls.map(tc => `[Tool: ${tc.toolName}]`).join(' ');
+              contentString = contentString ? `${contentString} ${toolCallsInfo}` : toolCallsInfo;
+            }
+            
             currentMessages.push({
               role: 'assistant',
-              content: assistantContent
+              content: contentString || '[Tool calls executed]'
             } as ModelMessage);
           }
 
@@ -352,14 +419,12 @@ export class PharmacyAIAgent {
               console.log(`🔍 Tool result:`, JSON.stringify(toolResult, null, 2));
 
               // Adicionar resultado da tool às mensagens
+             // Converter tool result para string simples
+             const toolResultString = `Tool ${toolCall.toolName} result: ${JSON.stringify(toolResult)}`;
              currentMessages.push({
-                role: 'tool',
-                content: [{
-                  type: 'tool-result',
-                  toolCallId: toolCall.toolCallId,
-                  result: toolResult
-                }]
-              } as any);
+                role: 'assistant',
+                content: toolResultString
+              } as ModelMessage);
 
               // Adicionar resultado da tool à sessão
               session.messages.push({
@@ -375,14 +440,12 @@ export class PharmacyAIAgent {
               console.error(`❌ Erro ao executar tool ${toolCall.toolName}:`, error);
               
               // Adicionar erro da tool às mensagens
+               // Converter tool error para string simples
+               const toolErrorString = `Tool ${toolCall.toolName} error: ${error instanceof Error ? error.message : "Erro desconhecido"}`;
                currentMessages.push({
-                 role: 'tool',
-                 content: [{
-                   type: 'tool-result',
-                   toolCallId: toolCall.toolCallId,
-                   result: { error: error instanceof Error ? error.message : "Erro desconhecido" }
-                 }]
-               } as any);
+                 role: 'assistant',
+                 content: toolErrorString
+               } as ModelMessage);
 
               // Adicionar erro da tool à sessão
               session.messages.push({
@@ -425,16 +488,16 @@ export class PharmacyAIAgent {
               console.log('✅ Resposta textual final encontrada:', JSON.stringify(finalResponseText.substring(0, 200)));
             } else {
               console.log('❌ Chamada final não gerou texto');
-              // Fallback: usar informações dos produtos encontrados
-              finalResponseText = "Encontrei 3 opções de paracetamol para você: Paracetamol 500mg (€4,50), Ben-u-gripe 4mg + 500mg (€7,25) e Benuron 500mg (€5,25). Todos são eficazes para dor e febre.";
-              console.log('🔄 Usando resposta fallback:', finalResponseText);
+              // Fallback dinâmico baseado no contexto
+              finalResponseText = this.generateDynamicFallback(userMessage, currentMessages);
+              console.log('🔄 Usando resposta fallback dinâmica:', finalResponseText);
             }
           } catch (error) {
             console.error('❌ Erro na geração final:', error);
             console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível');
-            // Fallback em caso de erro
-            finalResponseText = "Encontrei 3 opções de paracetamol para você: Paracetamol 500mg (€4,50), Ben-u-gripe 4mg + 500mg (€7,25) e Benuron 500mg (€5,25). Todos são eficazes para dor e febre.";
-            console.log('🔄 Usando resposta fallback por erro:', finalResponseText);
+            // Fallback dinâmico em caso de erro
+            finalResponseText = this.generateDynamicFallback(userMessage, currentMessages);
+            console.log('🔄 Usando resposta fallback dinâmica por erro:', finalResponseText);
           }
           
           // Sair do loop após tentar gerar resposta final
