@@ -17,7 +17,7 @@ export function CartSyncProvider({ children }: CartSyncProviderProps) {
   useEffect(() => {
     // Only start sync if user is authenticated
     if (user) {
-      logger.info('Iniciando sincronização do carrinho para usuário autenticado');
+      logger.info('Usuário autenticado detectado - fazendo sincronização inicial do carrinho');
       
       // Fazer uma sincronização inicial imediata apenas uma vez
       if (!hasInitialSyncRef.current) {
@@ -25,18 +25,22 @@ export function CartSyncProvider({ children }: CartSyncProviderProps) {
         hasInitialSyncRef.current = true;
       }
       
-      // Reduzir drasticamente a frequência de polling para 30 segundos
-      // Em vez de 5 segundos que estava causando spam
-      startAutoSync(30000);
+      // DESABILITADO: Auto-sync polling que estava causando chamadas excessivas à API
+      // O carrinho agora será sincronizado apenas:
+      // 1. Na inicialização (acima)
+      // 2. Em ações específicas do usuário (via cart service)
+      // 3. Quando necessário (via manual sync)
+      
+      // startAutoSync(30000); // COMENTADO - não mais necessário
     } else {
-      logger.info('Parando sincronização automática - usuário não autenticado');
-      stopAutoSync();
+      logger.info('Usuário não autenticado - limpando estado de sincronização');
+      stopAutoSync(); // Garantir que qualquer sync ativo seja parado
       hasInitialSyncRef.current = false;
     }
 
     // Cleanup: parar sincronização quando o componente desmonta
     return () => {
-      logger.info('Parando sincronização automática do carrinho');
+      logger.info('Parando qualquer sincronização ativa do carrinho');
       stopAutoSync();
     };
   }, [user, startAutoSync, stopAutoSync, manualSync]);

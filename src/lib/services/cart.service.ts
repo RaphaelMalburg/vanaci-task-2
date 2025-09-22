@@ -25,6 +25,9 @@ export class CartService {
   private readonly baseUrl = '/api/cart';
   private isClient = typeof window !== 'undefined';
   private carts: Map<string, CartData> = new Map();
+  private lastFetchTime: number = 0;
+  private cacheExpiry: number = 30000; // Cache por 30 segundos
+  private cachedCartData: CartData | null = null;
 
   private constructor() {
     // Singleton pattern
@@ -93,6 +96,17 @@ export class CartService {
         };
       }
 
+      // Verificar cache antes de fazer requisição HTTP
+      const now = Date.now();
+      if (this.cachedCartData && (now - this.lastFetchTime) < this.cacheExpiry) {
+        logger.debug('Usando carrinho do cache', { cacheAge: now - this.lastFetchTime });
+        return {
+          success: true,
+          message: 'Carrinho carregado do cache',
+          data: this.cachedCartData
+        };
+      }
+
       // Se estamos no cliente, fazer requisição HTTP
       const response = await fetch(this.baseUrl, {
         method: 'GET',
@@ -121,6 +135,10 @@ export class CartService {
       }
 
       const cartData: CartData = await response.json();
+      
+      // Atualizar cache
+      this.cachedCartData = cartData;
+      this.lastFetchTime = Date.now();
       
       // Atualizar store local
       this.updateLocalStore(cartData);
@@ -179,6 +197,9 @@ export class CartService {
         }
 
         this.updateCartTotals(cart);
+        
+        // Invalidar cache após modificação
+        this.invalidateCache();
         
         logger.info('Item adicionado com sucesso (servidor)', { productId });
         
@@ -357,6 +378,9 @@ export class CartService {
       const result = await response.json();
       const cartData: CartData = result.cart;
       
+      // Invalidar cache após modificação
+      this.invalidateCache();
+      
       // Sincronizar com dados do backend
       this.updateLocalStore(cartData);
       
@@ -435,6 +459,9 @@ export class CartService {
 
       const result = await response.json();
       const cartData: CartData = result.cart;
+      
+      // Invalidar cache após modificação
+      this.invalidateCache();
       
       // Sincronizar com dados do backend
       this.updateLocalStore(cartData);
@@ -521,6 +548,9 @@ export class CartService {
       const result = await response.json();
       const cartData: CartData = result.cart;
       
+      // Invalidar cache após modificação
+      this.invalidateCache();
+      
       // Sincronizar com dados do backend
       this.updateLocalStore(cartData);
       
@@ -548,6 +578,15 @@ export class CartService {
    */
   async syncCart(sessionId?: string): Promise<CartOperationResult> {
     return this.getCart(sessionId);
+  }
+
+  /**
+   * Invalida o cache do carrinho
+   */
+  private invalidateCache(): void {
+    this.cachedCartData = null;
+    this.lastFetchTime = 0;
+    logger.debug('Cache do carrinho invalidado');
   }
 
   /**
