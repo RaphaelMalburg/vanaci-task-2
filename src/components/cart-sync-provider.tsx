@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useCartSync } from '@/lib/services/cart-sync.service';
 import { useAuth } from '@/contexts/auth-context';
 import { logger } from '@/lib/logger';
@@ -10,17 +10,28 @@ interface CartSyncProviderProps {
 }
 
 export function CartSyncProvider({ children }: CartSyncProviderProps) {
-  const { startAutoSync, stopAutoSync } = useCartSync();
+  const { startAutoSync, stopAutoSync, manualSync } = useCartSync();
   const { user } = useAuth();
+  const hasInitialSyncRef = useRef(false);
 
   useEffect(() => {
     // Only start sync if user is authenticated
     if (user) {
-      logger.info('Iniciando sincronização automática do carrinho para usuário autenticado');
-      startAutoSync(5000); // Sincronizar a cada 5 segundos (reduzido de 3s)
+      logger.info('Iniciando sincronização do carrinho para usuário autenticado');
+      
+      // Fazer uma sincronização inicial imediata apenas uma vez
+      if (!hasInitialSyncRef.current) {
+        manualSync();
+        hasInitialSyncRef.current = true;
+      }
+      
+      // Reduzir drasticamente a frequência de polling para 30 segundos
+      // Em vez de 5 segundos que estava causando spam
+      startAutoSync(30000);
     } else {
       logger.info('Parando sincronização automática - usuário não autenticado');
       stopAutoSync();
+      hasInitialSyncRef.current = false;
     }
 
     // Cleanup: parar sincronização quando o componente desmonta
@@ -28,7 +39,7 @@ export function CartSyncProvider({ children }: CartSyncProviderProps) {
       logger.info('Parando sincronização automática do carrinho');
       stopAutoSync();
     };
-  }, [user, startAutoSync, stopAutoSync]); // Add user as dependency
+  }, [user, startAutoSync, stopAutoSync, manualSync]);
 
   return <>{children}</>;
 }

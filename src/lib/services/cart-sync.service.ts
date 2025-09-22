@@ -21,6 +21,10 @@ export class CartSyncService {
   private static instance: CartSyncService;
   private syncInterval: NodeJS.Timeout | null = null;
   private isClient = typeof window !== 'undefined';
+  private lastSyncTime: number = 0;
+  private syncInProgress: boolean = false;
+  private cachedCart: CartSyncData | null = null;
+  private cacheExpiry: number = 10000; // Cache por 10 segundos
 
   static getInstance(): CartSyncService {
     if (!CartSyncService.instance) {
@@ -42,13 +46,28 @@ export class CartSyncService {
       return;
     }
 
+    // Evitar múltiplas sincronizações simultâneas
+    if (this.syncInProgress) {
+      logger.debug('Sincronização já em progresso, pulando...');
+      return;
+    }
+
+    // Verificar cache
+    const now = Date.now();
+    if (this.cachedCart && (now - this.lastSyncTime) < this.cacheExpiry) {
+      logger.debug('Usando carrinho do cache');
+      return;
+    }
+
     // Check if user is authenticated before attempting sync
     const token = localStorage.getItem('token');
     if (!token) {
       return;
     }
 
+    this.syncInProgress = true;
     const sessionId = this.getSessionId();
+    
     try {
       const response = await fetch(`/api/cart?sessionId=${sessionId}`, {
         headers: {
@@ -68,6 +87,10 @@ export class CartSyncService {
       }
 
       const backendCart: CartSyncData = await response.json();
+      
+      // Atualizar cache
+      this.cachedCart = backendCart;
+      this.lastSyncTime = now;
       
       const cartStore = useCartStore.getState();
       
@@ -95,6 +118,8 @@ export class CartSyncService {
       }
     } catch (error) {
       logger.error('Erro ao sincronizar carrinho do backend', { error });
+    } finally {
+      this.syncInProgress = false;
     }
   }
 

@@ -3,6 +3,26 @@ import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth-utils'
 import { getOrCreateUserCart, addToUserCart, updateUserCartQuantity, removeFromUserCart, clearUserCart } from '@/lib/cart-storage-user'
 
+// Cache simples para carrinho (em memória)
+const cartCache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_TTL = 5000 // 5 segundos
+
+function getCachedCart(userId: string) {
+  const cached = cartCache.get(userId)
+  if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+    return cached.data
+  }
+  return null
+}
+
+function setCachedCart(userId: string, data: any) {
+  cartCache.set(userId, { data, timestamp: Date.now() })
+}
+
+function invalidateCartCache(userId: string) {
+  cartCache.delete(userId)
+}
+
 // GET - Obter carrinho do usuário autenticado
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +35,16 @@ export async function GET(request: NextRequest) {
       )
     }
     
+    // Verificar cache primeiro
+    const cachedCart = getCachedCart(user.id)
+    if (cachedCart) {
+      return NextResponse.json(cachedCart)
+    }
+    
     const cart = await getOrCreateUserCart(user.id)
+    
+    // Armazenar no cache
+    setCachedCart(user.id, cart)
 
     return NextResponse.json(cart)
   } catch (error) {
@@ -92,6 +121,9 @@ export async function POST(request: NextRequest) {
     console.log(`➕ [DEBUG] Adicionando item ao carrinho usando addToUserCart`);
     const updatedCart = await addToUserCart(user.id, productId, quantity);
     console.log(`✅ [DEBUG] Item adicionado com sucesso`);
+    
+    // Invalidar cache após modificação
+    invalidateCartCache(user.id);
 
     const response = {
       message: 'Item adicionado ao carrinho',
@@ -137,6 +169,10 @@ export async function PUT(request: NextRequest) {
     if (quantity <= 0) {
       // Remover item se quantidade for 0 ou negativa
       const updatedCart = await removeFromUserCart(user.id, productId)
+      
+      // Invalidar cache após modificação
+      invalidateCartCache(user.id)
+      
       return NextResponse.json({
         message: 'Item removido do carrinho',
         cart: updatedCart
@@ -163,6 +199,9 @@ export async function PUT(request: NextRequest) {
 
       // Atualizar quantidade
       const updatedCart = await updateUserCartQuantity(user.id, productId, quantity)
+      
+      // Invalidar cache após modificação
+      invalidateCartCache(user.id)
       
       return NextResponse.json({
         message: 'Carrinho atualizado',
@@ -208,6 +247,9 @@ export async function DELETE(request: NextRequest) {
     if (clearAll) {
       const cart = await clearUserCart(user.id);
       
+      // Invalidar cache após modificação
+      invalidateCartCache(user.id);
+      
       return NextResponse.json({
         message: 'Carrinho limpo com sucesso',
         cart
@@ -224,6 +266,9 @@ export async function DELETE(request: NextRequest) {
 
     // Remover item específico
     const cart = await removeFromUserCart(user.id, productId)
+    
+    // Invalidar cache após modificação
+    invalidateCartCache(user.id)
 
     return NextResponse.json({
       message: 'Item removido do carrinho',
