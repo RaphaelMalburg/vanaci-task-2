@@ -53,10 +53,15 @@ const SYSTEM_PROMPT = `Você é o assistente virtual da Farmácia Vanaci. Seja a
 **IMPORTANTE**: Após usar qualquer tool de busca de produtos, você DEVE SEMPRE gerar uma resposta textual amigável explicando os produtos encontrados.
 
 **REGRAS DE CARRINHO:**
-- Adicionar: search_products → add_to_cart
+- Adicionar novo produto: search_products → add_to_cart
+- Incrementar quantidade existente (quando usuário diz "mais X", "adicionar mais X", "add mais X"): increment_cart
 - Remover: view_cart → remove_from_cart
 - Ver carrinho: view_cart
 - Limpar: clear_cart
+
+**IMPORTANTE PARA INCREMENTO:**
+- Use increment_cart quando o usuário mencionar "mais", "adicionar mais", "add mais"
+- Use add_to_cart apenas para produtos novos no carrinho
 
 **ESTILO DE RESPOSTA:**
 - Use frases diretas: ex. "Encontrei 2 opções de Dipirona para você:"
@@ -217,6 +222,11 @@ export class PharmacyAIAgent {
       /\b(adicionar?|add|colocar?)\s+.+\s+(ao\s+)?carrinho\b/,
       /\b(adicionar?|add|colocar?)\s+\d+\s+.+/,
       /\bquero\s+(adicionar?|comprar)\b/,
+
+      // Incrementar quantidade no carrinho
+      /\b(adicionar?|add)\s+(mais|more)\s+\d+\b/,
+      /\b(mais|more)\s+\d+\s+.+/,
+      /\bincrement(ar)?\b/,
 
       // Buscar produtos
       /\b(buscar?|procurar?|encontrar?)\s+.+/,
