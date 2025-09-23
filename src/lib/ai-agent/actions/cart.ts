@@ -401,7 +401,7 @@ export const incrementCartTool = tool({
 
       // First get current cart to check existing quantity
       const currentCart = await apiCall("/cart", { method: "GET" });
-      const existingItem = currentCart.items?.find((item: any) => item.productId === actualProductId);
+      const existingItem = currentCart.items?.find((item: any) => item.id === actualProductId);
       
       if (!existingItem) {
         // If item doesn't exist, add it with the increment quantity
