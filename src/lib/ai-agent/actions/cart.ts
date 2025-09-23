@@ -14,14 +14,16 @@ function getUser(): { id: string; username: string } | null {
     return contextUser;
   }
 
-  // Fallback para localStorage se não estiver no contexto
-  const fallbackUser = getUserFromLocalStorage();
-  if (fallbackUser) {
-    console.log("⚠️ [Cart Tool] Usando usuário fallback do localStorage:", fallbackUser.username);
-    return fallbackUser;
+  // Fallback para localStorage se não estiver no contexto (apenas no browser)
+  if (typeof window !== 'undefined') {
+    const fallbackUser = getUserFromLocalStorage();
+    if (fallbackUser) {
+      console.log("⚠️ [Cart Tool] Usando usuário fallback do localStorage:", fallbackUser.username);
+      return fallbackUser;
+    }
   }
 
-  console.error("❌ [Cart Tool] Nenhum usuário encontrado - usuário deve estar logado");
+  console.log("ℹ️ [Cart Tool] Nenhum usuário autenticado encontrado - usando carrinho de sessão");
   return null;
 }
 
@@ -31,35 +33,64 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
 
   // Obter token do usuário para autenticação
   const user = getUser();
-  if (!user) {
-    throw new Error("Usuário deve estar logado para usar o carrinho");
+  
+  // Se há usuário autenticado, usar API de carrinho de usuário
+  if (user) {
+    // Tentar obter token JWT do localStorage primeiro (apenas no browser)
+    let token = null;
+    if (typeof window !== 'undefined') {
+      token = getTokenFromLocalStorage();
+    }
+
+    // Se não houver token no localStorage, gerar um novo JWT
+    if (!token) {
+      console.log("🔑 [Cart Tool] Gerando novo token JWT para usuário:", user.username);
+      token = generateJWTToken(user);
+    }
+
+    const response = await fetch(`${baseUrl}/api${endpoint}`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...options.headers,
+      },
+      ...options,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ [Cart Tool] API Error:", response.status, errorText);
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+
+    return response.json();
+  } else {
+    // Se não há usuário autenticado, usar API de carrinho simples com sessionId
+    const sessionId = getGlobalContext("sessionId");
+    if (!sessionId) {
+      throw new Error("Session ID não encontrado no contexto global");
+    }
+
+    const response = await fetch(`${baseUrl}/api/cart-simple`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      ...options,
+      body: options.body ? JSON.stringify({
+        ...JSON.parse(options.body as string),
+        sessionId
+      }) : JSON.stringify({ sessionId }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ [Cart Tool] Simple Cart API Error:", response.status, errorText);
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+
+    return response.json();
   }
-
-  // Tentar obter token JWT do localStorage primeiro
-  let token = getTokenFromLocalStorage();
-
-  // Se não houver token no localStorage, gerar um novo JWT
-  if (!token) {
-    console.log("🔑 [Cart Tool] Gerando novo token JWT para usuário:", user.username);
-    token = generateJWTToken(user);
-  }
-
-  const response = await fetch(`${baseUrl}/api${endpoint}`, {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-    ...options,
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("❌ [Cart Tool] API Error:", response.status, errorText);
-    throw new Error(`API Error: ${response.statusText}`);
-  }
-
-  return response.json();
 }
 
 // Tool: Adicionar produto ao carrinho
@@ -72,38 +103,48 @@ export const addToCartTool = tool({
   execute: async ({ productId, quantity }: { productId: string; quantity: number }) => {
     try {
       const user = getUser();
-      if (!user) {
-        return {
-          success: false,
-          message: "Você precisa estar logado para adicionar produtos ao carrinho.",
-          data: null,
-        } as ToolResult;
-      }
-
-      logger.info("Adicionando produto ao carrinho via API", { productId, quantity, userId: user.id });
-
-      const cart = await apiCall("/cart", {
-        method: "POST",
-        body: JSON.stringify({
-          productId,
-          quantity,
-        }),
+      const sessionId = getGlobalContext("sessionId");
+      
+      console.log("🛒 [Cart Tool] Adicionando produto ao carrinho", { 
+        productId, 
+        quantity, 
+        hasUser: !!user, 
+        sessionId: sessionId?.substring(0, 8) + "..." 
       });
 
-      // Forçar sincronização imediata com o frontend
-      try {
-        // Trigger uma sincronização do carrinho no frontend
-        // Isso será capturado pelo polling do CartSyncService
-        logger.info("Produto adicionado com sucesso, sincronização será feita pelo polling", { productId, quantity, userId: user.id });
-      } catch (syncError) {
-        logger.warn("Erro na sincronização imediata, mas item foi adicionado", { syncError });
-      }
+      if (user) {
+        logger.info("Adicionando produto ao carrinho de usuário via API", { productId, quantity, userId: user.id });
+        
+        const cart = await apiCall("/cart", {
+          method: "POST",
+          body: JSON.stringify({
+            productId,
+            quantity,
+          }),
+        });
 
-      return {
-        success: true,
-        message: `Produto adicionado ao carrinho! Quantidade: ${quantity}`,
-        data: cart,
-      } as ToolResult;
+        return {
+          success: true,
+          message: `Produto adicionado ao carrinho! Quantidade: ${quantity}`,
+          data: cart,
+        } as ToolResult;
+      } else {
+        logger.info("Adicionando produto ao carrinho de sessão via API", { productId, quantity, sessionId });
+        
+        const result = await apiCall("/cart-simple", {
+          method: "POST",
+          body: JSON.stringify({
+            productId,
+            quantity,
+          }),
+        });
+
+        return {
+          success: true,
+          message: `Produto adicionado ao carrinho! Quantidade: ${quantity}`,
+          data: result.cart,
+        } as ToolResult;
+      }
     } catch (error) {
       logger.error("Erro ao adicionar produto ao carrinho", { error, productId, quantity });
       return {
@@ -124,15 +165,8 @@ export const removeFromCartTool = tool({
   execute: async ({ productId }: { productId: string }) => {
     try {
       const user = getUser();
-      if (!user) {
-        return {
-          success: false,
-          message: "Você precisa estar logado para remover produtos do carrinho.",
-          data: null,
-        } as ToolResult;
-      }
-
-      logger.info("Removendo produto do carrinho via API", { productId, userId: user.id });
+      
+      logger.info("Removendo produto do carrinho via API", { productId, userId: user?.id || 'session' });
 
       const cart = await apiCall("/cart", {
         method: "DELETE",
@@ -167,15 +201,8 @@ export const updateCartQuantityTool = tool({
   execute: async ({ productId, quantity }: { productId: string; quantity: number }) => {
     try {
       const user = getUser();
-      if (!user) {
-        return {
-          success: false,
-          message: "Você precisa estar logado para atualizar o carrinho.",
-          data: null,
-        } as ToolResult;
-      }
-
-      logger.info("Atualizando quantidade no carrinho via API", { productId, quantity, userId: user.id });
+      
+      logger.info("Atualizando quantidade no carrinho via API", { productId, quantity, userId: user?.id || 'session' });
 
       const cart = await apiCall("/cart", {
         method: "PUT",
@@ -185,11 +212,9 @@ export const updateCartQuantityTool = tool({
         }),
       });
 
-      const message = quantity === 0 ? "Produto removido do carrinho!" : `Quantidade atualizada para ${quantity}!`;
-
       return {
         success: true,
-        message,
+        message: quantity === 0 ? "Produto removido do carrinho!" : "Quantidade atualizada!",
         data: cart,
       } as ToolResult;
     } catch (error) {
@@ -210,41 +235,25 @@ export const viewCartTool = tool({
   execute: async (): Promise<ToolResult> => {
     try {
       const user = getUser();
-      if (!user) {
-        return {
-          success: false,
-          message: "Você precisa estar logado para visualizar o carrinho.",
-          data: null,
-        } as ToolResult;
-      }
-
-      logger.info("Visualizando carrinho via API", { userId: user.id });
+      
+      logger.info("Visualizando carrinho via API", { userId: user?.id || 'session' });
 
       const cart = await apiCall("/cart", {
         method: "GET",
       });
 
-      const itemCount = cart.items?.length || 0;
-      const total = cart.total || 0;
-
-      let message = "Carrinho vazio.";
-      if (itemCount > 0) {
-        const itemsText = cart.items.map((item: any) => `${item.name} (${item.quantity}x - €${(item.price * item.quantity).toFixed(2)})`).join(", ");
-        message = `Carrinho: ${itemsText}. Total: €${total.toFixed(2)}`;
-      }
-
       return {
         success: true,
-        message,
+        message: "Carrinho carregado com sucesso!",
         data: cart,
-      };
+      } as ToolResult;
     } catch (error) {
-      logger.error("Erro ao visualizar carrinho", { error });
+      logger.error("Erro ao carregar carrinho", { error });
       return {
         success: false,
-        message: `Erro ao visualizar carrinho: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
+        message: `Erro ao carregar carrinho: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
         data: null,
-      };
+      } as ToolResult;
     }
   },
 });
@@ -256,35 +265,25 @@ export const clearCartTool = tool({
   execute: async (): Promise<ToolResult> => {
     try {
       const user = getUser();
-      if (!user) {
-        return {
-          success: false,
-          message: "Você precisa estar logado para limpar o carrinho.",
-          data: null,
-        } as ToolResult;
-      }
+      
+      logger.info("Limpando carrinho via API", { userId: user?.id || 'session' });
 
-      logger.info("Limpando carrinho via API", { userId: user.id });
-
-      const cart = await apiCall("/cart", {
-        method: "DELETE",
-        body: JSON.stringify({
-          clearAll: true,
-        }),
+      const cart = await apiCall("/cart/clear", {
+        method: "POST",
       });
 
       return {
         success: true,
-        message: "Carrinho limpo com sucesso! 🧹",
+        message: "Carrinho limpo com sucesso!",
         data: cart,
-      };
+      } as ToolResult;
     } catch (error) {
       logger.error("Erro ao limpar carrinho", { error });
       return {
         success: false,
         message: `Erro ao limpar carrinho: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
         data: null,
-      };
+      } as ToolResult;
     }
   },
 });
