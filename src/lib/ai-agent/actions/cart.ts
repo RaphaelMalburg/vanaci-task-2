@@ -93,11 +93,44 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
   }
 }
 
+// Helper function to find product by name or ID
+async function findProductByNameOrId(productIdentifier: string): Promise<{ id: string; name: string } | null> {
+  try {
+    // First try to find by exact ID
+    const productByIdResult = await apiCall(`/products?q=${encodeURIComponent(productIdentifier)}`, {
+      method: "GET",
+    });
+    
+    if (productByIdResult && Array.isArray(productByIdResult)) {
+      // Check if any product has the exact ID
+      const exactIdMatch = productByIdResult.find((p: any) => p.id === productIdentifier);
+      if (exactIdMatch) {
+        return { id: exactIdMatch.id, name: exactIdMatch.name };
+      }
+      
+      // If no exact ID match, search by name (case insensitive)
+      const nameMatch = productByIdResult.find((p: any) => 
+        p.name.toLowerCase().includes(productIdentifier.toLowerCase()) ||
+        productIdentifier.toLowerCase().includes(p.name.toLowerCase())
+      );
+      
+      if (nameMatch) {
+        return { id: nameMatch.id, name: nameMatch.name };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    logger.error("Error finding product", { error, productIdentifier });
+    return null;
+  }
+}
+
 // Tool: Adicionar produto ao carrinho
 export const addToCartTool = tool({
-  description: "Adiciona um produto ao carrinho de compras",
+  description: "Adiciona um produto ao carrinho de compras. Pode usar o ID do produto ou o nome do produto.",
   inputSchema: z.object({
-    productId: z.string().describe("ID do produto a ser adicionado"),
+    productId: z.string().describe("ID ou nome do produto a ser adicionado (ex: 'cmfb675a10002vb7gsu4jeaf8' ou 'Aspirina Express')"),
     quantity: z.number().min(1).describe("Quantidade do produto"),
   }),
   execute: async ({ productId, quantity }: { productId: string; quantity: number }) => {
@@ -112,36 +145,49 @@ export const addToCartTool = tool({
         sessionId: sessionId?.substring(0, 8) + "..." 
       });
 
+      // Find the actual product ID if a name was provided
+      const product = await findProductByNameOrId(productId);
+      if (!product) {
+        return {
+          success: false,
+          message: `Produto não encontrado: ${productId}`,
+          data: null,
+        } as ToolResult;
+      }
+
+      const actualProductId = product.id;
+      const productName = product.name;
+
       if (user) {
-        logger.info("Adicionando produto ao carrinho de usuário via API", { productId, quantity, userId: user.id });
+        logger.info("Adicionando produto ao carrinho de usuário via API", { productId: actualProductId, quantity, userId: user.id });
         
         const cart = await apiCall("/cart", {
           method: "POST",
           body: JSON.stringify({
-            productId,
+            productId: actualProductId,
             quantity,
           }),
         });
 
         return {
           success: true,
-          message: `Produto adicionado ao carrinho! Quantidade: ${quantity}`,
+          message: `${productName} adicionado ao carrinho! Quantidade: ${quantity}`,
           data: cart,
         } as ToolResult;
       } else {
-        logger.info("Adicionando produto ao carrinho de sessão via API", { productId, quantity, sessionId });
+        logger.info("Adicionando produto ao carrinho de sessão via API", { productId: actualProductId, quantity, sessionId });
         
         const result = await apiCall("/cart-simple", {
           method: "POST",
           body: JSON.stringify({
-            productId,
+            productId: actualProductId,
             quantity,
           }),
         });
 
         return {
           success: true,
-          message: `Produto adicionado ao carrinho! Quantidade: ${quantity}`,
+          message: `${productName} adicionado ao carrinho! Quantidade: ${quantity}`,
           data: result.cart,
         } as ToolResult;
       }
@@ -158,26 +204,39 @@ export const addToCartTool = tool({
 
 // Tool: Remover produto do carrinho
 export const removeFromCartTool = tool({
-  description: "Remove um produto do carrinho de compras",
+  description: "Remove um produto do carrinho de compras. Pode usar o ID do produto ou o nome do produto.",
   inputSchema: z.object({
-    productId: z.string().describe("ID do produto a ser removido"),
+    productId: z.string().describe("ID ou nome do produto a ser removido (ex: 'cmfb675a10002vb7gsu4jeaf8' ou 'Aspirina Express')"),
   }),
   execute: async ({ productId }: { productId: string }) => {
     try {
       const user = getUser();
       
-      logger.info("Removendo produto do carrinho via API", { productId, userId: user?.id || 'session' });
+      // Find the actual product ID if a name was provided
+      const product = await findProductByNameOrId(productId);
+      if (!product) {
+        return {
+          success: false,
+          message: `Produto não encontrado: ${productId}`,
+          data: null,
+        } as ToolResult;
+      }
+
+      const actualProductId = product.id;
+      const productName = product.name;
+      
+      logger.info("Removendo produto do carrinho via API", { productId: actualProductId, userId: user?.id || 'session' });
 
       const cart = await apiCall("/cart", {
         method: "DELETE",
         body: JSON.stringify({
-          productId,
+          productId: actualProductId,
         }),
       });
 
       return {
         success: true,
-        message: "Produto removido do carrinho!",
+        message: `${productName} removido do carrinho!`,
         data: cart,
       } as ToolResult;
     } catch (error) {
@@ -193,28 +252,41 @@ export const removeFromCartTool = tool({
 
 // Tool: Atualizar quantidade no carrinho
 export const updateCartQuantityTool = tool({
-  description: "Atualiza a quantidade de um produto no carrinho",
+  description: "Atualiza a quantidade de um produto no carrinho. Pode usar o ID do produto ou o nome do produto.",
   inputSchema: z.object({
-    productId: z.string().describe("ID do produto"),
+    productId: z.string().describe("ID ou nome do produto (ex: 'cmfb675a10002vb7gsu4jeaf8' ou 'Aspirina Express')"),
     quantity: z.number().min(0).describe("Nova quantidade (0 para remover)"),
   }),
   execute: async ({ productId, quantity }: { productId: string; quantity: number }) => {
     try {
       const user = getUser();
       
-      logger.info("Atualizando quantidade no carrinho via API", { productId, quantity, userId: user?.id || 'session' });
+      // Find the actual product ID if a name was provided
+      const product = await findProductByNameOrId(productId);
+      if (!product) {
+        return {
+          success: false,
+          message: `Produto não encontrado: ${productId}`,
+          data: null,
+        } as ToolResult;
+      }
+
+      const actualProductId = product.id;
+      const productName = product.name;
+      
+      logger.info("Atualizando quantidade no carrinho via API", { productId: actualProductId, quantity, userId: user?.id || 'session' });
 
       const cart = await apiCall("/cart", {
         method: "PUT",
         body: JSON.stringify({
-          productId,
+          productId: actualProductId,
           quantity,
         }),
       });
 
       return {
         success: true,
-        message: quantity === 0 ? "Produto removido do carrinho!" : "Quantidade atualizada!",
+        message: quantity === 0 ? `${productName} removido do carrinho!` : `Quantidade de ${productName} atualizada para ${quantity}!`,
         data: cart,
       } as ToolResult;
     } catch (error) {

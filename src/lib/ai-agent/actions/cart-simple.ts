@@ -64,11 +64,44 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
+// Helper function to find product by name or ID (same as in cart.ts)
+async function findProductByNameOrId(productIdentifier: string): Promise<{ id: string; name: string } | null> {
+  try {
+    // First try to find by exact ID
+    const productByIdResult = await apiCall(`/products?q=${encodeURIComponent(productIdentifier)}`, {
+      method: "GET",
+    });
+    
+    if (productByIdResult && Array.isArray(productByIdResult)) {
+      // Check if any product has the exact ID
+      const exactIdMatch = productByIdResult.find((p: any) => p.id === productIdentifier);
+      if (exactIdMatch) {
+        return { id: exactIdMatch.id, name: exactIdMatch.name };
+      }
+      
+      // If no exact ID match, search by name (case insensitive)
+      const nameMatch = productByIdResult.find((p: any) => 
+        p.name.toLowerCase().includes(productIdentifier.toLowerCase()) ||
+        productIdentifier.toLowerCase().includes(p.name.toLowerCase())
+      );
+      
+      if (nameMatch) {
+        return { id: nameMatch.id, name: nameMatch.name };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    logger.error("Error finding product", { error, productIdentifier });
+    return null;
+  }
+}
+
 // Tool: Add product to cart (simplified)
 export const addToCartSimpleTool = tool({
-  description: "Adds a product to the shopping cart with validation",
+  description: "Adds a product to the shopping cart with validation. Can use product ID or product name.",
   inputSchema: z.object({
-    productId: z.string().describe("ID of the product to add"),
+    productId: z.string().describe("ID or name of the product to add (e.g., 'cmfb675a10002vb7gsu4jeaf8' or 'Aspirina Express')"),
     quantity: z.number().min(1).default(1).describe("Quantity to add"),
   }),
   execute: async ({ productId, quantity }: { productId: string; quantity: number }) => {
@@ -81,19 +114,33 @@ export const addToCartSimpleTool = tool({
           data: null,
         } as ToolResult;
       }
-      logger.info("Adding product to cart via simple API", { productId, quantity, userId: user.id });
+
+      // Find the actual product ID if a name was provided
+      const product = await findProductByNameOrId(productId);
+      if (!product) {
+        return {
+          success: false,
+          message: `Product not found: ${productId}`,
+          data: null,
+        } as ToolResult;
+      }
+
+      const actualProductId = product.id;
+      const productName = product.name;
+
+      logger.info("Adding product to cart via simple API", { productId: actualProductId, quantity, userId: user.id });
 
       const result = await apiCall("/cart", {
         method: "POST",
         body: JSON.stringify({
-          productId,
+          productId: actualProductId,
           quantity,
         }),
       });
 
       return {
         success: true,
-        message: `Successfully added ${quantity} of product ${productId} to cart`,
+        message: `Successfully added ${quantity} of ${productName} to cart`,
         data: result.cart,
       } as ToolResult;
     } catch (error) {
@@ -109,9 +156,9 @@ export const addToCartSimpleTool = tool({
 
 // Tool: Remove product from cart (simplified)
 export const removeFromCartSimpleTool = tool({
-  description: "Removes a product from the shopping cart",
+  description: "Removes a product from the shopping cart. Can use product ID or product name.",
   inputSchema: z.object({
-    productId: z.string().describe("ID of the product to remove"),
+    productId: z.string().describe("ID or name of the product to remove (e.g., 'cmfb675a10002vb7gsu4jeaf8' or 'Aspirina Express')"),
   }),
   execute: async ({ productId }: { productId: string }) => {
     try {
@@ -124,18 +171,31 @@ export const removeFromCartSimpleTool = tool({
         } as ToolResult;
       }
 
-      logger.info("Removing product from cart via simple API", { productId, userId: user.id });
+      // Find the actual product ID if a name was provided
+      const product = await findProductByNameOrId(productId);
+      if (!product) {
+        return {
+          success: false,
+          message: `Product not found: ${productId}`,
+          data: null,
+        } as ToolResult;
+      }
+
+      const actualProductId = product.id;
+      const productName = product.name;
+
+      logger.info("Removing product from cart via simple API", { productId: actualProductId, userId: user.id });
 
       const result = await apiCall("/cart", {
         method: "DELETE",
         body: JSON.stringify({
-          productId,
+          productId: actualProductId,
         }),
       });
 
       return {
         success: true,
-        message: `Successfully removed product ${productId} from cart`,
+        message: `Successfully removed ${productName} from cart`,
         data: result.cart,
       } as ToolResult;
     } catch (error) {
@@ -151,9 +211,9 @@ export const removeFromCartSimpleTool = tool({
 
 // Tool: Update product quantity in cart (simplified)
 export const updateCartQuantitySimpleTool = tool({
-  description: "Updates the quantity of a product in the shopping cart",
+  description: "Updates the quantity of a product in the shopping cart. Can use product ID or product name.",
   inputSchema: z.object({
-    productId: z.string().describe("ID of the product to update"),
+    productId: z.string().describe("ID or name of the product to update (e.g., 'cmfb675a10002vb7gsu4jeaf8' or 'Aspirina Express')"),
     quantity: z.number().min(0).describe("New quantity (0 to remove)"),
   }),
   execute: async ({ productId, quantity }: { productId: string; quantity: number }) => {
@@ -167,17 +227,30 @@ export const updateCartQuantitySimpleTool = tool({
         } as ToolResult;
       }
 
-      logger.info("Updating cart quantity via simple API", { productId, quantity, userId: user.id });
+      // Find the actual product ID if a name was provided
+      const product = await findProductByNameOrId(productId);
+      if (!product) {
+        return {
+          success: false,
+          message: `Product not found: ${productId}`,
+          data: null,
+        } as ToolResult;
+      }
+
+      const actualProductId = product.id;
+      const productName = product.name;
+
+      logger.info("Updating cart quantity via simple API", { productId: actualProductId, quantity, userId: user.id });
 
       const result = await apiCall("/cart", {
         method: "PUT",
         body: JSON.stringify({
-          productId,
+          productId: actualProductId,
           quantity,
         }),
       });
 
-      const message = quantity === 0 ? `Successfully removed product ${productId} from cart` : `Successfully updated quantity to ${quantity} for product ${productId}`;
+      const message = quantity === 0 ? `Successfully removed ${productName} from cart` : `Successfully updated quantity to ${quantity} for ${productName}`;
 
       return {
         success: true,
