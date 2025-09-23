@@ -370,6 +370,145 @@ export const clearCartTool = tool({
   },
 });
 
+// Tool: Incrementar quantidade de produto no carrinho
+export const incrementCartTool = tool({
+  description: "Incrementa a quantidade de um produto já existente no carrinho. Use quando o usuário disser 'adicionar mais X' ou 'mais X unidades'.",
+  inputSchema: z.object({
+    productId: z.string().describe("ID ou nome do produto (ex: 'cmfb675a10002vb7gsu4jeaf8' ou 'Benuron')"),
+    incrementBy: z.number().min(1).describe("Quantidade a incrementar (ex: 2 para 'adicionar mais 2')"),
+  }),
+  execute: async ({ productId, incrementBy }: { productId: string; incrementBy: number }) => {
+    try {
+      console.log(`🤖 [AI Agent] Incrementando carrinho: productId=${productId}, incrementBy=${incrementBy}`);
+      
+      const user = getUser();
+      console.log(`🤖 [AI Agent] Usuário: ${user ? `autenticado (${user.id})` : 'não autenticado'}`);
+      
+      // Find the actual product ID if a name was provided
+      const product = await findProductByNameOrId(productId);
+      if (!product) {
+        console.log(`🤖 [AI Agent] Produto não encontrado: ${productId}`);
+        return {
+          success: false,
+          message: `Produto não encontrado: ${productId}`,
+          data: null,
+        } as ToolResult;
+      }
+
+      const actualProductId = product.id;
+      const productName = product.name;
+      console.log(`🤖 [AI Agent] Produto encontrado: ${productName} (ID: ${actualProductId})`);
+
+      // First get current cart to check existing quantity
+      const currentCart = await apiCall("/cart", { method: "GET" });
+      const existingItem = currentCart.items?.find((item: any) => item.productId === actualProductId);
+      
+      if (!existingItem) {
+        // If item doesn't exist, add it with the increment quantity
+        console.log(`🤖 [AI Agent] Item não existe no carrinho, adicionando ${incrementBy} unidades`);
+        
+        // Call the add to cart logic directly
+        if (user) {
+          const cart = await apiCall("/cart", {
+            method: "POST",
+            body: JSON.stringify({
+              productId: actualProductId,
+              quantity: incrementBy,
+            }),
+          });
+          return {
+            success: true,
+            message: `${productName} adicionado ao carrinho! Quantidade: ${incrementBy}`,
+            data: cart,
+          } as ToolResult;
+        } else {
+          const result = await apiCall("/cart-simple", {
+            method: "POST",
+            body: JSON.stringify({
+              productId: actualProductId,
+              quantity: incrementBy,
+            }),
+          });
+          return {
+            success: true,
+            message: `${productName} adicionado ao carrinho! Quantidade: ${incrementBy}`,
+            data: result.cart,
+          } as ToolResult;
+        }
+      }
+
+      const newQuantity = existingItem.quantity + incrementBy;
+      console.log(`🤖 [AI Agent] Incrementando de ${existingItem.quantity} para ${newQuantity}`);
+      
+      logger.info("Incrementando quantidade no carrinho via API", { 
+        productId: actualProductId, 
+        currentQuantity: existingItem.quantity,
+        incrementBy,
+        newQuantity,
+        userId: user?.id || 'session' 
+      });
+
+      const cart = await apiCall("/cart", {
+        method: "PUT",
+        body: JSON.stringify({
+          productId: actualProductId,
+          quantity: newQuantity,
+        }),
+      });
+
+      console.log(`🤖 [AI Agent] Carrinho atualizado: ${cart.items?.length || 0} itens, total: R$ ${cart.total || 0}`);
+      return {
+        success: true,
+        message: `${productName} incrementado! Agora você tem ${newQuantity} unidades no carrinho.`,
+        data: cart,
+      } as ToolResult;
+    } catch (error) {
+      console.error('🤖 [AI Agent] Erro ao incrementar produto no carrinho:', error);
+      logger.error("Erro ao incrementar produto no carrinho", { error, productId, incrementBy });
+      return {
+        success: false,
+        message: `Erro ao incrementar produto no carrinho: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
+        data: null,
+      } as ToolResult;
+    }
+  },
+});
+
+// Tool: Redirecionar para carrinho ou checkout
+export const redirectToCartTool = tool({
+  description: "Redireciona o usuário para a página do carrinho ou checkout quando solicitado",
+  inputSchema: z.object({
+    destination: z.enum(["cart", "checkout"]).describe("Destino: 'cart' para página do carrinho, 'checkout' para finalizar compra"),
+  }),
+  execute: async ({ destination }: { destination: "cart" | "checkout" }) => {
+    try {
+      console.log(`🤖 [AI Agent] Redirecionando para: ${destination}`);
+      
+      const redirectUrl = destination === "cart" ? "/cart" : "/cart"; // Both go to cart page for now
+      
+      // Set a global context to trigger redirect
+      setGlobalContext("redirectTo", redirectUrl);
+      
+      const message = destination === "cart" 
+        ? "Redirecionando você para o carrinho de compras..." 
+        : "Redirecionando você para finalizar a compra...";
+      
+      return {
+        success: true,
+        message,
+        data: { redirectUrl },
+      } as ToolResult;
+    } catch (error) {
+      console.error('🤖 [AI Agent] Erro ao redirecionar:', error);
+      return {
+        success: false,
+        message: `Erro ao redirecionar: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
+        data: null,
+      } as ToolResult;
+    }
+  },
+});
+
 // Tool search_products removido daqui - está definido em products.ts
 
 // Exportar todas as tools do carrinho
@@ -379,4 +518,6 @@ export const cartTools = {
   update_cart_quantity: updateCartQuantityTool,
   view_cart: viewCartTool,
   clear_cart: clearCartTool,
+  increment_cart: incrementCartTool,
+  redirect_to_cart: redirectToCartTool,
 };

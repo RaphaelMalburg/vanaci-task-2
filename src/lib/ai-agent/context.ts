@@ -7,6 +7,7 @@ interface GlobalContext {
   userId?: string;
   currentPage?: string;
   user?: { id: string; username: string };
+  redirectTo?: string;
 }
 
 // Contexto global para armazenar dados da sessão
