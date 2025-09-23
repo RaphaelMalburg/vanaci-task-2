@@ -118,11 +118,12 @@ export async function addToUserCart(
     })
 
     if (existingItem) {
-      // Atualizar quantidade
+      // Atualizar quantidade (substituir, não somar)
+      console.log(`🔄 [UserCart] Item já existe, atualizando quantidade de ${existingItem.quantity} para ${quantity}`)
       await prisma.userCartItem.update({
         where: { id: existingItem.id },
         data: {
-          quantity: existingItem.quantity + quantity
+          quantity: quantity
         }
       })
     } else {
@@ -146,6 +147,86 @@ export async function addToUserCart(
     return await getOrCreateUserCart(userId)
   } catch (error) {
     console.error('❌ [UserCart] Erro ao adicionar item:', error)
+    throw error
+  }
+}
+
+/**
+ * Incrementa a quantidade de um item no carrinho do usuário
+ */
+export async function incrementCartQuantity(
+  userId: string,
+  productId: string,
+  incrementBy: number = 1
+): Promise<UserCartData> {
+  try {
+    console.log(`➕ [UserCart] Incrementando quantidade: userId=${userId}, productId=${productId}, incrementBy=${incrementBy}`)
+    
+    // Buscar produto
+    const product = await prisma.product.findUnique({
+      where: { id: productId }
+    })
+
+    if (!product) {
+      throw new Error(`Produto ${productId} não encontrado`)
+    }
+
+    // Obter ou criar carrinho
+    let userCart = await prisma.userCart.findUnique({
+      where: { userId },
+      include: { items: true }
+    })
+
+    if (!userCart) {
+      userCart = await prisma.userCart.create({
+        data: {
+          userId,
+          total: 0
+        },
+        include: { items: true }
+      })
+    }
+
+    // Verificar se o item já existe no carrinho
+    const existingItem = await prisma.userCartItem.findUnique({
+      where: {
+        cartId_productId: {
+          cartId: userCart.id,
+          productId
+        }
+      }
+    })
+
+    if (existingItem) {
+      // Incrementar quantidade
+      console.log(`🔄 [UserCart] Item já existe, incrementando quantidade de ${existingItem.quantity} em ${incrementBy}`)
+      await prisma.userCartItem.update({
+        where: { id: existingItem.id },
+        data: {
+          quantity: existingItem.quantity + incrementBy
+        }
+      })
+    } else {
+      // Criar novo item
+      await prisma.userCartItem.create({
+        data: {
+          cartId: userCart.id,
+          productId,
+          name: product.name,
+          price: product.price,
+          quantity: incrementBy,
+          image: product.image
+        }
+      })
+    }
+
+    // Recalcular total
+    await updateCartTotal(userCart.id)
+
+    // Retornar carrinho atualizado
+    return await getOrCreateUserCart(userId)
+  } catch (error) {
+    console.error('❌ [UserCart] Erro ao incrementar item:', error)
     throw error
   }
 }
