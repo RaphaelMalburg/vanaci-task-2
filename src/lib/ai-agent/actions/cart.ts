@@ -135,9 +135,12 @@ export const addToCartTool = tool({
   }),
   execute: async ({ productId, quantity }: { productId: string; quantity: number }) => {
     try {
+      console.log(`🤖 [AI Agent] Adicionando ao carrinho: productId=${productId}, quantity=${quantity}`);
+      
       const user = getUser();
       const sessionId = getGlobalContext("sessionId");
       
+      console.log(`🤖 [AI Agent] Usuário: ${user ? `autenticado (${user.id})` : 'não autenticado'}`);
       console.log("🛒 [Cart Tool] Adicionando produto ao carrinho", { 
         productId, 
         quantity, 
@@ -148,6 +151,7 @@ export const addToCartTool = tool({
       // Find the actual product ID if a name was provided
       const product = await findProductByNameOrId(productId);
       if (!product) {
+        console.log(`🤖 [AI Agent] Produto não encontrado: ${productId}`);
         return {
           success: false,
           message: `Produto não encontrado: ${productId}`,
@@ -157,8 +161,10 @@ export const addToCartTool = tool({
 
       const actualProductId = product.id;
       const productName = product.name;
+      console.log(`🤖 [AI Agent] Produto encontrado: ${productName} (ID: ${actualProductId})`);
 
       if (user) {
+        console.log(`🤖 [AI Agent] Usando carrinho de usuário autenticado`);
         logger.info("Adicionando produto ao carrinho de usuário via API", { productId: actualProductId, quantity, userId: user.id });
         
         const cart = await apiCall("/cart", {
@@ -169,12 +175,14 @@ export const addToCartTool = tool({
           }),
         });
 
+        console.log(`🤖 [AI Agent] Carrinho atualizado: ${cart.items?.length || 0} itens, total: R$ ${cart.total || 0}`);
         return {
           success: true,
           message: `${productName} adicionado ao carrinho! Quantidade: ${quantity}`,
           data: cart,
         } as ToolResult;
       } else {
+        console.log(`🤖 [AI Agent] Usando carrinho simples (sessão)`);
         logger.info("Adicionando produto ao carrinho de sessão via API", { productId: actualProductId, quantity, sessionId });
         
         const result = await apiCall("/cart-simple", {
@@ -185,6 +193,7 @@ export const addToCartTool = tool({
           }),
         });
 
+        console.log(`🤖 [AI Agent] Carrinho atualizado: ${result.cart?.items?.length || 0} itens, total: R$ ${result.cart?.total || 0}`);
         return {
           success: true,
           message: `${productName} adicionado ao carrinho! Quantidade: ${quantity}`,
@@ -192,6 +201,7 @@ export const addToCartTool = tool({
         } as ToolResult;
       }
     } catch (error) {
+      console.error('🤖 [AI Agent] Erro ao adicionar produto ao carrinho:', error);
       logger.error("Erro ao adicionar produto ao carrinho", { error, productId, quantity });
       return {
         success: false,

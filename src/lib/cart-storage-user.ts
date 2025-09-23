@@ -82,6 +82,15 @@ export async function addToUserCart(
   try {
     console.log(`➕ [UserCart] Adicionando item ao carrinho: userId=${userId}, productId=${productId}, quantity=${quantity}`)
     
+    // Validar entrada
+    if (!userId || !productId) {
+      throw new Error('userId e productId são obrigatórios')
+    }
+    
+    if (quantity <= 0) {
+      throw new Error('Quantidade deve ser maior que zero')
+    }
+    
     // Buscar produto
     const product = await prisma.product.findUnique({
       where: { id: productId }
@@ -89,6 +98,11 @@ export async function addToUserCart(
 
     if (!product) {
       throw new Error(`Produto ${productId} não encontrado`)
+    }
+    
+    // Verificar estoque
+    if (product.stock < quantity) {
+      throw new Error(`Estoque insuficiente. Disponível: ${product.stock}, solicitado: ${quantity}`)
     }
 
     // Obter ou criar carrinho
@@ -361,5 +375,68 @@ async function updateCartTotal(cartId: string): Promise<void> {
     })
   } catch (error) {
     console.error('❌ [UserCart] Erro ao atualizar total:', error)
+  }
+}
+
+/**
+ * Valida a consistência do carrinho e corrige problemas automaticamente
+ */
+export async function validateAndFixCart(userId: string): Promise<UserCartData> {
+  try {
+    console.log(`🔍 [UserCart] Validando carrinho para usuário: ${userId}`)
+    
+    const userCart = await prisma.userCart.findUnique({
+      where: { userId },
+      include: { items: true }
+    })
+
+    if (!userCart) {
+      console.log(`ℹ️ [UserCart] Carrinho não existe, criando novo`)
+      return await getOrCreateUserCart(userId)
+    }
+
+    // Verificar itens inválidos (produtos que não existem mais)
+    const validItems = []
+    const invalidItems = []
+
+    for (const item of userCart.items) {
+      const product = await prisma.product.findUnique({
+        where: { id: item.productId }
+      })
+
+      if (product) {
+        // Verificar se a quantidade não excede o estoque
+        if (item.quantity > product.stock) {
+          console.log(`⚠️ [UserCart] Ajustando quantidade do item ${item.name} de ${item.quantity} para ${product.stock} (estoque disponível)`)
+          await prisma.userCartItem.update({
+            where: { id: item.id },
+            data: { quantity: product.stock }
+          })
+        }
+        validItems.push(item)
+      } else {
+        console.log(`❌ [UserCart] Produto ${item.name} não existe mais, removendo do carrinho`)
+        invalidItems.push(item)
+      }
+    }
+
+    // Remover itens inválidos
+    if (invalidItems.length > 0) {
+      await prisma.userCartItem.deleteMany({
+        where: {
+          id: { in: invalidItems.map(item => item.id) }
+        }
+      })
+    }
+
+    // Recalcular total
+    await updateCartTotal(userCart.id)
+
+    console.log(`✅ [UserCart] Carrinho validado: ${validItems.length} itens válidos, ${invalidItems.length} itens removidos`)
+    
+    return await getOrCreateUserCart(userId)
+  } catch (error) {
+    console.error('❌ [UserCart] Erro ao validar carrinho:', error)
+    throw error
   }
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserFromRequest } from '@/lib/auth-utils'
-import { getOrCreateUserCart, addToUserCart, updateUserCartQuantity, removeFromUserCart, clearUserCart } from '@/lib/cart-storage-user'
+import { getOrCreateUserCart, addToUserCart, updateUserCartQuantity, removeFromUserCart, clearUserCart, validateAndFixCart } from '@/lib/cart-storage-user'
 
 // Cache simples para carrinho (em memória)
 const cartCache = new Map<string, { data: any; timestamp: number }>()
@@ -34,18 +34,19 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       )
     }
-    
+
     // Verificar cache primeiro
-    const cachedCart = getCachedCart(user.id)
-    if (cachedCart) {
-      return NextResponse.json(cachedCart)
+    const cached = getCachedCart(user.id)
+    if (cached) {
+      return NextResponse.json(cached)
     }
-    
-    const cart = await getOrCreateUserCart(user.id)
+
+    // Validar e obter carrinho do banco (com correção automática de problemas)
+    const cart = await validateAndFixCart(user.id)
     
     // Armazenar no cache
     setCachedCart(user.id, cart)
-
+    
     return NextResponse.json(cart)
   } catch (error) {
     console.error('❌ [Cart API GET] Erro ao buscar carrinho:', error)
