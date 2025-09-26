@@ -504,16 +504,15 @@ export class PharmacyAIAgent {
             console.log('⚠️ AI agent não forneceu resposta de texto, forçando resposta final...');
             
             // Adicionar mensagem especial para forçar resposta textual
-            messages.push({
+            currentMessages.push({
               role: "user",
               content: "Agora forneça uma resposta textual amigável ao usuário baseada nas ações que você executou. NÃO use mais tools."
             });
 
             const finalResult = await generateText({
-              model: this.llmConfig.model,
-              messages,
+              model: llmModel,
+              messages: currentMessages,
               temperature: 0.7,
-              maxTokens: 500,
             });
 
             finalResponseText = finalResult.text;
@@ -645,8 +644,6 @@ export class PharmacyAIAgent {
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
         toolChoice: "auto", // Always use "auto" to allow text generation after tools
-        maxSteps: 3, // Limit steps to prevent infinite loops but allow tool + text
-        experimental_continueSteps: true, // Continue generating after tool calls
       });
 
       // Processar tool calls do resultado com suporte a múltiplas execuções
