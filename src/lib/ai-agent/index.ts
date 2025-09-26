@@ -27,7 +27,9 @@ export const allTools = {
 };
 
 // Sistema de prompt para o agente
-const SYSTEM_PROMPT = `Você é o assistente virtual da Farmácia Vanaci. Seja amigável, profissional e direto.
+const SYSTEM_PROMPT = `INSTRUÇÃO CRÍTICA: Você DEVE SEMPRE fornecer uma resposta textual após executar qualquer tool. NUNCA termine uma conversa apenas com tool calls.
+
+Você é o assistente virtual da Farmácia Vanaci. Seja amigável, profissional e direto.
 
 **REGRAS ESSENCIAIS:**
 - Respostas CONCISAS e OBJETIVAS
@@ -50,21 +52,31 @@ const SYSTEM_PROMPT = `Você é o assistente virtual da Farmácia Vanaci. Seja a
 - Usuário: "dor de cabeça"
 - Você: list_recommended_products(symptomOrNeed: "dor de cabeça") → show_multiple_products(productIds: ["id1", "id2", "id3"]) → RESPOSTA TEXTUAL: "Para dor de cabeça, recomendo:"
 
-**IMPORTANTE**: Após usar qualquer tool de busca de produtos, você DEVE SEMPRE gerar uma resposta textual amigável explicando os produtos encontrados.
+**IMPORTANTE**: Após usar qualquer tool, você DEVE SEMPRE gerar uma resposta textual amigável. NUNCA termine a conversa apenas com tool calls - sempre forneça uma resposta em texto natural para o usuário.
 
 **FLUXO OBRIGATÓRIO PARA CARRINHO:**
 1. Quando usuário quer adicionar produto (qualquer linguagem: "adicionar", "quero", "comprar", "add mais", etc.):
-   a) SEMPRE use view_cart primeiro para verificar conteúdo atual
-   b) Se produto JÁ EXISTE no carrinho → use increment_cart
-   c) Se produto NÃO EXISTE no carrinho → use add_to_cart
+   a) **PRIMEIRO**: SEMPRE use search_products para encontrar TODOS os produtos mencionados pelo usuário
+      - Se usuário mencionar múltiplos produtos (ex: "2 benuron e 2 álcool gel"), faça uma busca separada para CADA produto
+      - Exemplo: search_products("benuron") E search_products("álcool gel")
+   b) **SEGUNDO**: use view_cart para verificar conteúdo atual
+   c) **TERCEIRO**: Para cada produto encontrado:
+      - Se produto JÁ EXISTE no carrinho → use increment_cart
+      - Se produto NÃO EXISTE no carrinho → use add_to_cart
+   d) **QUARTO**: SEMPRE complete o processo para TODOS os produtos solicitados antes de gerar resposta final
 2. Para remover: view_cart → remove_from_cart
 3. Para ver carrinho: view_cart
 4. Para limpar: clear_cart
 
 **IMPORTANTE:**
-- NUNCA use add_to_cart sem antes verificar o carrinho com view_cart
+- **NUNCA use add_to_cart ou increment_cart sem PRIMEIRO usar search_products para obter os IDs dos produtos**
+- **SEMPRE use os IDs EXATOS retornados no campo 'data.products[].id' dos resultados de search_products**
+- **NUNCA invente, modifique ou crie IDs de produtos - use APENAS os IDs retornados pela busca**
+- SEMPRE busque TODOS os produtos mencionados antes de tentar adicioná-los ao carrinho
 - SEMPRE verifique se o produto já existe antes de decidir add_to_cart vs increment_cart
 - A decisão não depende da linguagem do usuário, mas sim do conteúdo atual do carrinho
+- Se não encontrar um produto na busca, informe ao usuário que o produto não está disponível
+- **NUNCA pare o processo no meio - complete TODOS os produtos solicitados**
 
 **ESTILO DE RESPOSTA:**
 - Use frases diretas: ex. "Encontrei 2 opções de Dipirona para você:"
@@ -72,7 +84,13 @@ const SYSTEM_PROMPT = `Você é o assistente virtual da Farmácia Vanaci. Seja a
 - Confirme ações de carrinho: ex. "✅ Dipirona 500 mg adicionada ao seu carrinho."
 - Foque no cliente, não no processo
 
-Sempre priorize o bem-estar do cliente e mantenha padrões farmacêuticos.`;
+Sempre priorize o bem-estar do cliente e mantenha padrões farmacêuticos.
+
+**REGRA CRÍTICA DE RESPOSTA:**
+- SEMPRE termine suas interações com uma resposta textual clara e amigável
+- NUNCA deixe o usuário sem resposta após executar tools
+- Mesmo após adicionar produtos ao carrinho, confirme a ação com texto
+- Se executar múltiplas tools, resuma o que foi feito em uma resposta final`;
 
 // Classe do Agente AI
 export class PharmacyAIAgent {
@@ -469,55 +487,39 @@ export class PharmacyAIAgent {
             }
           }
           
-          // Após executar todas as tools, forçar uma resposta textual SEM tools
-          console.log('🔄 Forçando geração de resposta textual final sem tools...');
+          // Continue the loop to allow the AI agent to make more tool calls if needed
+          console.log('🔄 Tool calls executed, continuing to next iteration...');
           
-          // Adicionar uma mensagem especial para forçar resposta textual
-          currentMessages.push({
-            role: 'user',
-            content: 'Agora forneça uma resposta textual amigável explicando os produtos encontrados ou o resultado das ações realizadas. NÃO use mais tools.'
-          } as ModelMessage);
+          // Don't break here - let the AI agent decide if it needs more tools
+        } else {
+          // Se não há tool calls, o AI agent terminou naturalmente
+          console.log('🏁 Nenhuma tool call detectada, AI agent terminou naturalmente');
           
-          // Fazer uma chamada final SEM tools para garantir resposta textual
-          console.log('🔍 Iniciando chamada final sem tools...');
-          console.log('🔍 Número de mensagens para chamada final:', currentMessages.length);
-          
-          try {
+          // Se já temos uma resposta de texto do AI agent, usar ela
+          if (result.text && result.text.trim()) {
+            finalResponseText = result.text;
+            console.log('📝 Usando resposta de texto do AI agent:', finalResponseText);
+          } else {
+            // Fallback: forçar uma resposta textual final
+            console.log('⚠️ AI agent não forneceu resposta de texto, forçando resposta final...');
+            
+            // Adicionar mensagem especial para forçar resposta textual
+            messages.push({
+              role: "user",
+              content: "Agora forneça uma resposta textual amigável ao usuário baseada nas ações que você executou. NÃO use mais tools."
+            });
+
             const finalResult = await generateText({
-              model: llmModel,
-              messages: currentMessages,
-              // SEM tools para forçar resposta textual
-              temperature: this.llmConfig.temperature || 0.7,
+              model: this.llmConfig.model,
+              messages,
+              temperature: 0.7,
+              maxTokens: 500,
             });
-            
-            console.log('🔍 Resultado final do generateText:', {
-              hasText: !!finalResult.text,
-              textLength: finalResult.text ? finalResult.text.length : 0,
-              text: finalResult.text ? finalResult.text.substring(0, 100) + '...' : 'null'
-            });
-            
-            if (finalResult.text && finalResult.text.trim()) {
-              finalResponseText = finalResult.text;
-              console.log('✅ Resposta textual final encontrada:', JSON.stringify(finalResponseText.substring(0, 200)));
-            } else {
-              console.log('❌ Chamada final não gerou texto');
-              // Fallback dinâmico baseado no contexto
-              finalResponseText = this.generateDynamicFallback(userMessage, currentMessages);
-              console.log('🔄 Usando resposta fallback dinâmica:', finalResponseText);
-            }
-          } catch (error) {
-            console.error('❌ Erro na geração final:', error);
-            console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'Stack não disponível');
-            // Fallback dinâmico em caso de erro
-            finalResponseText = this.generateDynamicFallback(userMessage, currentMessages);
-            console.log('🔄 Usando resposta fallback dinâmica por erro:', finalResponseText);
+
+            finalResponseText = finalResult.text;
+            console.log('📝 Resposta final forçada gerada:', finalResponseText);
           }
           
-          // Sair do loop após tentar gerar resposta final
-          break;
-        } else {
-          // Se não há tool calls, sair do loop
-          console.log('🏁 Nenhuma tool call detectada, finalizando');
           break;
         }
       }
@@ -642,7 +644,9 @@ export class PharmacyAIAgent {
         messages,
         tools: allTools,
         temperature: this.llmConfig.temperature || 0.7,
-        toolChoice: requiresTools ? "required" : "auto",
+        toolChoice: "auto", // Always use "auto" to allow text generation after tools
+        maxSteps: 3, // Limit steps to prevent infinite loops but allow tool + text
+        experimental_continueSteps: true, // Continue generating after tool calls
       });
 
       // Processar tool calls do resultado com suporte a múltiplas execuções
@@ -731,6 +735,52 @@ export class PharmacyAIAgent {
 
       // For other errors, provide a more user-friendly message
       throw new Error("Erro interno ao processar mensagem. Tente novamente.");
+    }
+  }
+
+  // Gerar resposta apenas textual sem tools
+  async generateTextOnlyResponse(sessionId: string, userMessage: string, context?: { cartId?: string; userId?: string; user?: any; currentPage?: string }): Promise<string> {
+    try {
+      logger.info("Gerando resposta apenas textual", { sessionId, messageLength: userMessage.length });
+
+      const session = await this.getSession(sessionId);
+
+      // Preparar mensagens para o LLM
+      const convertedMessages = this.convertMessages(session.messages);
+      const currentMessages: ModelMessage[] = [
+        { 
+          role: "system", 
+          content: `Você é o assistente virtual da Farmácia Vanaci. Baseado no contexto da conversa anterior, forneça uma resposta textual amigável e concisa. 
+          
+          IMPORTANTE: 
+          - NÃO use nenhuma ferramenta/tool
+          - Apenas responda com texto natural
+          - Seja amigável e confirme as ações já realizadas
+          - Mantenha o tom profissional de farmácia` 
+        },
+        ...convertedMessages,
+        { role: "user", content: userMessage }
+      ];
+
+      // Gerar resposta SEM tools
+      const llmModel = await createLLMModelWithFallback(this.llmConfig);
+      
+      const result = await generateText({
+        model: llmModel,
+        messages: currentMessages,
+        // NÃO incluir tools para forçar apenas resposta textual
+        temperature: this.llmConfig.temperature || 0.7,
+      });
+
+      if (result.text && result.text.trim()) {
+        logger.info("Resposta textual gerada com sucesso", { responseLength: result.text.length });
+        return result.text.trim();
+      } else {
+        throw new Error("Nenhuma resposta textual foi gerada");
+      }
+    } catch (error) {
+      logger.error("Erro ao gerar resposta textual", { sessionId, error });
+      return "Perfeito! As ações foram realizadas com sucesso. Verifique os itens adicionados acima.";
     }
   }
 

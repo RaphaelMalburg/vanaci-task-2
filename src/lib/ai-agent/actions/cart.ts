@@ -4,6 +4,7 @@ import { getAllGlobalContext, setGlobalContext, getGlobalContext } from "../cont
 import type { ToolResult } from "../types";
 import { logger } from "@/lib/logger";
 import { getUserFromLocalStorage, getTokenFromLocalStorage, generateJWTToken } from "@/lib/auth-utils";
+import { setCartQuantity } from "@/lib/cart-storage-user";
 
 // Função para obter dados do usuário do contexto global ou localStorage
 function getUser(): { id: string; username: string } | null {
@@ -128,9 +129,9 @@ async function findProductByNameOrId(productIdentifier: string): Promise<{ id: s
 
 // Tool: Adicionar produto ao carrinho
 export const addToCartTool = tool({
-  description: "Adiciona um produto ao carrinho de compras. Pode usar o ID do produto ou o nome do produto.",
+  description: "Adiciona um produto ao carrinho de compras. Se o produto já existe no carrinho, INCREMENTA a quantidade existente. Use quando o usuário disser 'adicionar', 'quero mais', 'adicionar mais X'. IMPORTANTE: Use SEMPRE o ID exato do produto retornado pela busca (ex: 'cmfy0qxy10001vbb4pgxb5ovb'), não invente IDs.",
   inputSchema: z.object({
-    productId: z.string().describe("ID ou nome do produto a ser adicionado (ex: 'cmfb675a10002vb7gsu4jeaf8' ou 'Aspirina Express')"),
+    productId: z.string().describe("ID EXATO do produto retornado pela busca (ex: 'cmfy0qxy10001vbb4pgxb5ovb'). NUNCA invente ou modifique IDs."),
     quantity: z.number().min(1).describe("Quantidade do produto"),
   }),
   execute: async ({ productId, quantity }: { productId: string; quantity: number }) => {
@@ -474,6 +475,64 @@ export const incrementCartTool = tool({
   },
 });
 
+// Tool: Definir quantidade específica no carrinho
+export const setCartQuantityTool = tool({
+  description: "Define uma quantidade específica total para um produto no carrinho (substitui a quantidade atual). Use quando o usuário disser 'quero 4 no total', 'alterar para 3', 'deixar apenas 2'. Diferente de incrementar, esta função DEFINE a quantidade final.",
+  inputSchema: z.object({
+    productId: z.string().describe("ID ou nome do produto (ex: 'cmfb675a10002vb7gsu4jeaf8' ou 'Benuron')"),
+    quantity: z.number().min(1).describe("Quantidade total desejada no carrinho (ex: 4 para 'quero 4 no total')"),
+  }),
+  execute: async ({ productId, quantity }: { productId: string; quantity: number }) => {
+    try {
+      console.log(`🤖 [AI Agent] Definindo quantidade específica: productId=${productId}, quantity=${quantity}`);
+      
+      const user = getUser();
+      console.log(`🤖 [AI Agent] Usuário: ${user ? `autenticado (${user.id})` : 'não autenticado'}`);
+      
+      if (!user) {
+        return {
+          success: false,
+          message: "Você precisa estar logado para alterar quantidades no carrinho.",
+          data: null,
+        } as ToolResult;
+      }
+      
+      // Find the actual product ID if a name was provided
+      const product = await findProductByNameOrId(productId);
+      if (!product) {
+        console.log(`🤖 [AI Agent] Produto não encontrado: ${productId}`);
+        return {
+          success: false,
+          message: `Produto não encontrado: ${productId}`,
+          data: null,
+        } as ToolResult;
+      }
+
+      const actualProductId = product.id;
+      const productName = product.name;
+      console.log(`🤖 [AI Agent] Produto encontrado: ${productName} (ID: ${actualProductId})`);
+
+      // Use the new setCartQuantity function directly for authenticated users
+      const updatedCart = await setCartQuantity(user.id, actualProductId, quantity);
+      
+      console.log(`🤖 [AI Agent] Quantidade definida com sucesso: ${quantity} unidades de ${productName}`);
+      return {
+        success: true,
+        message: `${productName} atualizado! Agora você tem ${quantity} unidades no carrinho.`,
+        data: updatedCart,
+      } as ToolResult;
+    } catch (error) {
+      console.error('🤖 [AI Agent] Erro ao definir quantidade no carrinho:', error);
+      logger.error("Erro ao definir quantidade no carrinho", { error, productId, quantity });
+      return {
+        success: false,
+        message: `Erro ao definir quantidade no carrinho: ${error instanceof Error ? error.message : "Erro desconhecido"}`,
+        data: null,
+      } as ToolResult;
+    }
+  },
+});
+
 // Tool: Redirecionar para carrinho ou checkout
 export const redirectToCartTool = tool({
   description: "Redireciona o usuário para a página do carrinho ou checkout quando solicitado",
@@ -511,11 +570,12 @@ export const redirectToCartTool = tool({
 
 // Tool search_products removido daqui - está definido em products.ts
 
-// Exportar todas as tools do carrinho
+// Export all cart tools
 export const cartTools = {
   add_to_cart: addToCartTool,
   remove_from_cart: removeFromCartTool,
   update_cart_quantity: updateCartQuantityTool,
+  set_cart_quantity: setCartQuantityTool,
   view_cart: viewCartTool,
   clear_cart: clearCartTool,
   increment_cart: incrementCartTool,

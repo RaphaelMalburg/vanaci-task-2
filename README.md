@@ -45,7 +45,7 @@ O assistente de IA (`PharmacyAIAgent`) oferece:
 - **Styling**: Tailwind CSS, shadcn/ui
 - **Backend**: Next.js API Routes
 - **Banco de Dados**: PostgreSQL (Supabase) + Prisma ORM
-- **IA**: LangChain, OpenAI GPT
+- **IA**: LangChain, OpenRouter + GPT
 - **Testes**: Jest, React Testing Library
 
 ## 📦 Instalação

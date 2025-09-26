@@ -8,7 +8,7 @@ import type { ToolResult, Product, Category, SearchResult } from "../types";
 // Tool: Buscar produtos com sugestões inteligentes
 export const searchProductsTool = tool({
   description:
-    "Busca produtos por nome, descrição ou categoria. Prioriza correspondências exatas e só sugere alternativas relevantes quando o produto específico não é encontrado.",
+    "Busca produtos por nome, descrição ou categoria. Prioriza correspondências exatas e só sugere alternativas relevantes quando o produto específico não é encontrado. IMPORTANTE: Use SEMPRE os IDs exatos dos produtos retornados no campo 'data.products[].id' para operações subsequentes como adicionar ao carrinho.",
   inputSchema: z.object({
     query: z.string().describe("Termo de busca para encontrar produtos"),
     category: z.string().optional().describe("Filtrar por categoria específica"),

@@ -214,39 +214,51 @@ export async function POST(request: NextRequest) {
               console.log("⚠️ Isso indica um problema com o modelo LLM ou configuração");
             }
 
-            // Solução híbrida: Se tool calls foram processados mas nenhum texto foi gerado,
-            // força uma segunda chamada ao modelo para gerar resposta textual
+            // Se tool calls foram processados mas nenhum texto foi gerado,
+            // forçar uma nova chamada ao AI para gerar resposta textual
             if (hasProcessedToolCalls && textChunkCount === 0) {
-              console.log("🔄 Implementando solução híbrida: forçando resposta textual após tool calls");
+              console.log("🔄 Tool calls processados sem texto - forçando geração de resposta textual");
+              
               try {
-                const followUpResult = await agent.processMessage(
-                  finalSessionId,
-                  "Por favor, explique o que foi feito com base nos resultados das ferramentas executadas.",
-                  context
-                );
-
-                if (followUpResult && followUpResult.trim()) {
-                  console.log("📝 Resposta textual forçada gerada:", followUpResult.substring(0, 100) + "...");
+                // Criar uma nova instância do agente para forçar resposta textual
+                const followUpAgent = getPharmacyAgent(llmConfig);
+                
+                // Mensagem específica para forçar resposta textual após tool calls
+                const followUpMessage = "Resuma brevemente o que foi feito e confirme as ações realizadas para o usuário de forma amigável.";
+                
+                console.log("🤖 Iniciando follow-up para gerar resposta textual...");
+                
+                // Usar generateTextOnlyResponse para obter resposta textual sem tools
+                const followUpResponse = await followUpAgent.generateTextOnlyResponse(finalSessionId, followUpMessage, context);
+                
+                if (followUpResponse && followUpResponse.trim()) {
+                  console.log("✅ Follow-up gerou resposta textual:", followUpResponse.substring(0, 100) + "...");
+                  
+                  // Enviar a resposta textual gerada
                   const followUpData = JSON.stringify({
                     type: "text",
-                    content: followUpResult,
+                    content: followUpResponse,
                     sessionId: finalSessionId,
                     timestamp: new Date().toISOString(),
                   });
                   controller.enqueue(new TextEncoder().encode(`data: ${followUpData}\n\n`));
+                  textChunkCount++; // Marcar que enviamos texto
                 } else {
-                  console.log("⚠️ Resposta textual forçada está vazia");
+                  throw new Error("Follow-up não gerou resposta válida");
                 }
               } catch (followUpError) {
-                console.error("❌ Erro ao gerar resposta textual forçada:", followUpError);
-                // Enviar uma resposta padrão em caso de erro
+                console.error("❌ Erro no follow-up, usando fallback:", followUpError);
+                
+                // Fallback para resposta padrão se o follow-up falhar
+                const fallbackText = "Perfeito! Encontrei os produtos e adicionei ao seu carrinho. Verifique os itens adicionados acima.";
                 const fallbackData = JSON.stringify({
                   type: "text",
-                  content: "Ação executada com sucesso! Como posso ajudá-lo mais?",
+                  content: fallbackText,
                   sessionId: finalSessionId,
                   timestamp: new Date().toISOString(),
                 });
                 controller.enqueue(new TextEncoder().encode(`data: ${fallbackData}\n\n`));
+                textChunkCount++; // Marcar que enviamos texto
               }
             }
 

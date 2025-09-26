@@ -132,8 +132,100 @@ export async function addToUserCart(
     })
 
     if (existingItem) {
-      // Atualizar quantidade (substituir, não somar)
-      console.log(`🔄 [UserCart] Item já existe, atualizando quantidade de ${existingItem.quantity} para ${quantity}`)
+      // Incrementar quantidade (somar, não substituir)
+      const newQuantity = existingItem.quantity + quantity;
+      console.log(`🔄 [UserCart] Item já existe, incrementando quantidade de ${existingItem.quantity} para ${newQuantity} (+${quantity})`)
+      
+      // Verificar se a nova quantidade não excede o estoque
+      if (newQuantity > product.stock) {
+        throw new Error(`Quantidade total excederia o estoque. Disponível: ${product.stock}, atual no carrinho: ${existingItem.quantity}, tentando adicionar: ${quantity}`)
+      }
+      
+      await prisma.userCartItem.update({
+        where: { id: existingItem.id },
+        data: {
+          quantity: newQuantity
+        }
+      })
+    } else {
+      // Criar novo item
+      await prisma.userCartItem.create({
+        data: {
+          cartId: userCart.id,
+          productId,
+          name: product.name,
+          price: product.price,
+          quantity,
+          image: product.image
+        }
+      })
+    }
+
+    // Recalcular total
+    await updateCartTotal(userCart.id)
+
+    // Retornar carrinho atualizado
+    return await getOrCreateUserCart(userId)
+  } catch (error) {
+    console.error('❌ [UserCart] Erro ao adicionar item:', error)
+    throw error
+  }
+}
+
+/**
+ * Define uma quantidade específica para um item no carrinho (substitui a quantidade atual)
+ */
+export async function setCartQuantity(
+  userId: string,
+  productId: string,
+  quantity: number
+): Promise<UserCartData> {
+  try {
+    console.log(`🎯 [UserCart] Definindo quantidade específica: userId=${userId}, productId=${productId}, quantity=${quantity}`)
+    
+    // Buscar produto
+    const product = await prisma.product.findUnique({
+      where: { id: productId }
+    })
+
+    if (!product) {
+      throw new Error(`Produto ${productId} não encontrado`)
+    }
+    
+    // Verificar estoque
+    if (product.stock < quantity) {
+      throw new Error(`Estoque insuficiente. Disponível: ${product.stock}, solicitado: ${quantity}`)
+    }
+
+    // Obter ou criar carrinho
+    let userCart = await prisma.userCart.findUnique({
+      where: { userId },
+      include: { items: true }
+    })
+
+    if (!userCart) {
+      userCart = await prisma.userCart.create({
+        data: {
+          userId,
+          total: 0
+        },
+        include: { items: true }
+      })
+    }
+
+    // Verificar se o item já existe no carrinho
+    const existingItem = await prisma.userCartItem.findUnique({
+      where: {
+        cartId_productId: {
+          cartId: userCart.id,
+          productId
+        }
+      }
+    })
+
+    if (existingItem) {
+      // Definir quantidade específica (substituir)
+      console.log(`🔄 [UserCart] Item já existe, definindo quantidade de ${existingItem.quantity} para ${quantity}`)
       await prisma.userCartItem.update({
         where: { id: existingItem.id },
         data: {
@@ -160,7 +252,7 @@ export async function addToUserCart(
     // Retornar carrinho atualizado
     return await getOrCreateUserCart(userId)
   } catch (error) {
-    console.error('❌ [UserCart] Erro ao adicionar item:', error)
+    console.error('❌ [UserCart] Erro ao definir quantidade:', error)
     throw error
   }
 }
